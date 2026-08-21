@@ -6,7 +6,7 @@ describe("AgoraClient + Agent API", () => {
         const client = new AgoraClient({
             area: Area.US,
             appId: "app-id",
-            appCertificate: "app-certificate",
+            appCertificate: "app-certificate-0123456789abcdef",
         });
 
         const agent = new Agent({

@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- **Preview endpoint support** — `AgoraPreviewClient` routes every request to the preview gateway and pins the `agora-feature` gate header, which is merged after caller-supplied `headers` so it cannot be dropped or blanked. A request that loses it is not rejected; it routes to the production environment, where the preview providers do not exist.
+- **Gemini preview MLLMs** — `GeminiWalkieTalkie` (`walkie-talkie`) and `GeminiCleverChatter` (`clever-chatter`), served only by the preview gateway. `thinkingLevel` is exclusive to clever-chatter, so it is a separate class rather than an ignored option on the other.
+- **Preview MLLM rename constants** — `GeminiPreviewMllmModels.Live35` (`gemini-3.5-live`) and `.Live35Thinking` (`gemini-3.5-live-thinking`) are the post-rename IDs for walkie-talkie and clever-chatter. Both spellings are accepted by `requiredPreviewFeatures`, so the guard works throughout Google's rollout. The vendor classes still send the codenames — see `GEMINI_PREVIEW_MLLM_DEFAULTS`.
+- **Preview support guard** — `assertPreviewSupport` throws before any request when preview providers are paired with a plain `AgoraClient`. It reads the resolved request body, so hand-written configs are covered.
+- **Debug redaction** — `redactSecrets` and `redactHeadersForDebug` replace vendor API keys, RTC tokens, and the App ID with `[REDACTED]` in `debug: true` output. Empty strings stay visible so an unset environment variable remains diagnosable. Neither mutates its input.
+- **Preview MLLM language** — `languageCodes` serializes to `params.language_codes`, omitted when unset. The preview MLLMs never send the singular `params.language`: that field belongs to xAI Grok in the Agora schema, and the production Gemini Live provider sends no language field at all.
+- **Preview MLLM greeting** — the option is `greeting` (not `greetingMessage`) and serializes to `greeting`, the spelling the new Gemini preview models read. An agent-level `greeting` also works — the builder writes it as `mllm.greeting_message` and `applyPreviewShape` retargets it.
+- **Preview wire-shape translation** — `applyPreviewShape` runs at session start and retargets MLLM fields the shared builder wrote with production spellings, so an agent-level `greeting` reaches the preview models as `greeting` rather than the `greeting_message` they ignore. A hand-written `greeting_message` migrates too, so an existing config keeps working after only swapping the model. `failure_message` is left alone as an Agora engine field, and production MLLMs are untouched.
+
+### Fixed
+
+- **Malformed credentials no longer produce an empty token** — `agora-token` returns `""` rather than throwing when `appId` or `appCertificate` is not exactly 32 characters, so a value with a trailing newline or a truncated paste was sent as `token: ""` and failed at the gateway with an error naming neither field. The token builders now throw locally and say which field is the wrong length. Credential values are never included in the message.
+- **An unrecognised MLLM model no longer silently skips the wire-shape translation** — preview detection matched only the four known model names, so overriding `model` to a rename this SDK had not shipped yet turned off `applyPreviewShape` with no error: the greeting stayed in `greeting_message`, which these models ignore, and the agent never greeted. A config is now also recognised by its envelope (`params.api_key` set and `url` on the Gemini Developer API host), which the production `GeminiLive` vendor does not emit.
+
+### Documentation
+
+- Added [Preview Endpoint](docs/guides/preview-endpoint.md), covering the gate header, intake-node failure signatures, and how to add a future preview family.
+- Documented every field `Agent.toProperties` injects into a vendor config, and why a preview provider must be verified against the resolved request body rather than the vendor class output — a value written under a spelling the route ignores fails silently.
+- Documented the two signals that mark a config as preview, and why matching on the model name alone was a silent failure.
+
 ## [v2.2.0] — 2026-06-05
 
 ### Added

@@ -14,7 +14,7 @@ const SUPPORT_PROMPT = "You are a concise support assistant.";
 const client = new AgoraClient({
     area: Area.US,
     appId: "app-id",
-    appCertificate: "app-certificate",
+    appCertificate: "app-certificate-0123456789abcdef",
 });
 
 new Agent({
@@ -80,7 +80,7 @@ new Agent({
     const client = new AgoraClient({
         area: Area.CN,
         appId: "app-id",
-        appCertificate: "app-certificate",
+        appCertificate: "app-certificate-0123456789abcdef",
     });
 
     new Agent({
@@ -114,7 +114,7 @@ new Agent({
     const client = new AgoraClient({
         area: Area.US,
         appId: "app-id",
-        appCertificate: "app-certificate",
+        appCertificate: "app-certificate-0123456789abcdef",
     });
 
     new Agent({ client, turnDetection: { language: "en-US" } })

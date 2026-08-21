@@ -12,7 +12,7 @@ import { GenericTTS, MiniMaxTTS } from "../vendors/tts.js";
 const client = new AgoraClient({
     area: Area.US,
     appId: "app-id",
-    appCertificate: "app-certificate",
+    appCertificate: "app-certificate-0123456789abcdef",
 });
 
 new Agent({ client, turnDetection: { language: "en-US" } })
@@ -81,7 +81,7 @@ const _invalidGlobalMllm: GlobalMllmVendor = new QwenOmni({
     const client = new AgoraClient({
         area: Area.CN,
         appId: "app-id",
-        appCertificate: "app-certificate",
+        appCertificate: "app-certificate-0123456789abcdef",
     });
 
     new Agent({ client, turnDetection: { language: "zh-CN" } })

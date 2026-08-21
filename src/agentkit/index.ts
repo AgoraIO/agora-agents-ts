@@ -86,6 +86,7 @@ export {
     ThinkOnThinkingActionInterrupt,
     TurnDetectionTypeValues,
 } from "./constants.js";
+export { REDACTED, redactHeadersForDebug, redactSecrets } from "./debug.js";
 export type {
     AgentPreset,
     AsrPreset,
@@ -99,6 +100,33 @@ export type {
     TtsPreset,
 } from "./presets.js";
 export { AgentPresets, normalizePresetInput } from "./presets.js";
+// Preview endpoint: client, providers, and feature gating.
+// Temporary surface — removed when these providers ship on the production gateway.
+export type {
+    GeminiCleverChatterOptions,
+    GeminiPreviewMllmModel,
+    GeminiPreviewMllmOptions,
+    GeminiPreviewVoice,
+    GeminiThinkingLevel,
+    GeminiWalkieTalkieOptions,
+    PreviewClientOptions,
+    PreviewFeature,
+} from "./preview/index.js";
+export {
+    AgoraPreviewClient,
+    applyPreviewShape,
+    assertPreviewSupport,
+    GEMINI_PREVIEW_MLLM_DEFAULTS,
+    GEMINI_PREVIEW_MLLM_URL,
+    GeminiCleverChatter,
+    GeminiPreviewMllmModels,
+    GeminiThinkingLevels,
+    GeminiWalkieTalkie,
+    PREVIEW_API_BASE_URL,
+    PREVIEW_FEATURE_HEADER,
+    PreviewFeatures,
+    requiredPreviewFeatures,
+} from "./preview/index.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,

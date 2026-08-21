@@ -8,7 +8,7 @@ function createClient(area: Area.US | Area.EU | Area.AP | Area.CN): AgoraClient 
     return new AgoraClient({
         area,
         appId: "test-app-id",
-        appCertificate: "test-app-certificate",
+        appCertificate: "test-app-certificate-01234567890",
     });
 }
 
@@ -49,7 +49,7 @@ describe("AgoraClient configured base URL", () => {
         const client = new AgoraClient({
             area: Area.CN,
             appId: "test-app-id",
-            appCertificate: "test-app-certificate",
+            appCertificate: "test-app-certificate-01234567890",
             fetch: fetchMock,
         });
 

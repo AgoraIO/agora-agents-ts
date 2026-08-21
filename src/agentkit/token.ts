@@ -15,6 +15,44 @@ const DEFAULT_EXPIRY_SECONDS = 86400;
 export const MAX_EXPIRY_SECONDS = 86400;
 
 /**
+ * Length `agora-token` requires of both the app ID and the app certificate.
+ * Either one being a different length yields an empty token.
+ */
+const AGORA_CREDENTIAL_LENGTH = 32;
+
+/**
+ * Rejects the empty string `agora-token` returns for a malformed credential.
+ *
+ * The builders validate nothing and never throw — they hand back `""` whenever
+ * `appId` or `appCertificate` is not exactly {@link AGORA_CREDENTIAL_LENGTH}
+ * characters. That empty token is then sent as `token: ""`, and the failure
+ * surfaces as an opaque gateway auth error naming neither field. A value pasted
+ * with a trailing newline or a stray space is enough to trigger it, so fail
+ * here, where the cause is still visible.
+ *
+ * Credential values are never included in the message — only their lengths.
+ */
+function _requireBuiltToken(token: string, appId: string, appCertificate: string): string {
+    if (token) {
+        return token;
+    }
+    const wrong = [["appId", appId] as const, ["appCertificate", appCertificate] as const].filter(
+        ([, value]) => value.length !== AGORA_CREDENTIAL_LENGTH,
+    );
+
+    const detail =
+        wrong.length > 0
+            ? wrong.map(([name, value]) => `${name} is ${value.length} characters`).join(" and ")
+            : "both are the right length, so the values themselves were rejected";
+
+    throw new Error(
+        `Failed to build an Agora token: appId and appCertificate must each be exactly ` +
+            `${AGORA_CREDENTIAL_LENGTH} characters (${detail}). ` +
+            "Check the values for stray whitespace or a truncated paste.",
+    );
+}
+
+/**
  * Convenience helpers for specifying token expiry durations.
  *
  * Agora AccessToken2 tokens are valid for a maximum of 24 hours (86400 seconds).
@@ -105,14 +143,18 @@ export interface GenerateTokenOptions {
  */
 export function generateRtcToken(opts: GenerateTokenOptions): string {
     const expiry = opts.expirySeconds ?? DEFAULT_EXPIRY_SECONDS;
-    return agoraToken.RtcTokenBuilder.buildTokenWithUid(
+    return _requireBuiltToken(
+        agoraToken.RtcTokenBuilder.buildTokenWithUid(
+            opts.appId,
+            opts.appCertificate,
+            opts.channel,
+            opts.uid,
+            opts.role ?? agoraToken.RtcRole.PUBLISHER,
+            expiry,
+            expiry,
+        ),
         opts.appId,
         opts.appCertificate,
-        opts.channel,
-        opts.uid,
-        opts.role ?? agoraToken.RtcRole.PUBLISHER,
-        expiry,
-        expiry,
     );
 }
 
@@ -137,14 +179,18 @@ export interface GenerateRtcTokenWithAccountOptions {
  */
 export function generateRtcTokenWithAccount(opts: GenerateRtcTokenWithAccountOptions): string {
     const expiry = opts.expirySeconds ?? DEFAULT_EXPIRY_SECONDS;
-    return agoraToken.RtcTokenBuilder.buildTokenWithUserAccount(
+    return _requireBuiltToken(
+        agoraToken.RtcTokenBuilder.buildTokenWithUserAccount(
+            opts.appId,
+            opts.appCertificate,
+            opts.channel,
+            opts.account,
+            opts.role ?? agoraToken.RtcRole.PUBLISHER,
+            expiry,
+            expiry,
+        ),
         opts.appId,
         opts.appCertificate,
-        opts.channel,
-        opts.account,
-        opts.role ?? agoraToken.RtcRole.PUBLISHER,
-        expiry,
-        expiry,
     );
 }
 
@@ -180,14 +226,18 @@ export function generateConvoAIToken(opts: GenerateConvoAITokenOptions): string 
     const configuredPrivilegeExpire = opts.privilegeExpire ?? 0;
     const privilegeExpire = configuredPrivilegeExpire === 0 ? tokenExpire : configuredPrivilegeExpire;
     const account = _uidToAccount(opts.uid);
-    return agoraToken.RtcTokenBuilder.buildTokenWithRtm(
+    return _requireBuiltToken(
+        agoraToken.RtcTokenBuilder.buildTokenWithRtm(
+            opts.appId,
+            opts.appCertificate,
+            opts.channelName,
+            account,
+            agoraToken.RtcRole.PUBLISHER,
+            tokenExpire,
+            privilegeExpire,
+        ),
         opts.appId,
         opts.appCertificate,
-        opts.channelName,
-        account,
-        agoraToken.RtcRole.PUBLISHER,
-        tokenExpire,
-        privilegeExpire,
     );
 }
 

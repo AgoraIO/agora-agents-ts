@@ -24,6 +24,7 @@ import {
     validateAvatarConfig,
     validateTtsSampleRate,
 } from "./avatar-types.js";
+import { redactHeadersForDebug, redactSecrets } from "./debug.js";
 import {
     getPresetCategory,
     inferAsrPreset,
@@ -34,6 +35,7 @@ import {
     type PresetInput,
     resolveSessionPresets,
 } from "./presets.js";
+import { applyPreviewShape, assertPreviewSupport } from "./preview/client.js";
 import { ExpiresIn as ExpiresInHelper, generateConvoAIToken } from "./token.js";
 import type {
     AgentConfigUpdate,
@@ -205,6 +207,31 @@ export class AgentSession {
     }
 
     /**
+     * Client-level default headers, for debug logging only.
+     *
+     * These carry the preview `agora-feature` gate, which the generated client
+     * merges in below the SDK's view — so without this the header that decides
+     * whether a request reaches a preview provider is invisible in debug output.
+     * Reaches into `_options` the same way `authMode` is read in the constructor;
+     * supplier-valued headers are skipped rather than resolved, since debug
+     * logging must not trigger side effects.
+     */
+    private _clientDefaultHeaders(): Record<string, string> {
+        const headers = (this._client as unknown as { _options?: { headers?: Record<string, unknown> } })._options
+            ?.headers;
+        if (!headers) {
+            return {};
+        }
+        const result: Record<string, string> = {};
+        for (const [key, value] of Object.entries(headers)) {
+            if (typeof value === "string") {
+                result[key] = value;
+            }
+        }
+        return result;
+    }
+
+    /**
      * The current agent ID (null if not started).
      */
     get id(): string | null {
@@ -271,6 +298,28 @@ export class AgentSession {
             return true;
         }
         return mllm !== undefined;
+    }
+
+    /**
+     * Warns when agent-level `instructions` would be silently discarded.
+     *
+     * `instructions` is only serialized into `llm.system_messages`, which does
+     * not exist in an MLLM pipeline — the Go and Python SDKs drop it the same
+     * way. Without this warning the agent starts with no system prompt at all
+     * and the only symptom is off-persona replies.
+     */
+    private _warnOnDroppedMllmInstructions(): void {
+        if (!this._isMllmMode() || this._agent.instructions === undefined) {
+            return;
+        }
+        const params = this._agent.mllm?.params as { instructions?: unknown } | undefined;
+        if (typeof params?.instructions === "string" && params.instructions.length > 0) {
+            return;
+        }
+        this._warn(
+            "Warning: agent-level `instructions` is ignored in MLLM mode and this agent will start with no " +
+                "system prompt. Pass `instructions` to the MLLM vendor instead (it serializes to mllm.params.instructions).",
+        );
     }
 
     /**
@@ -500,6 +549,7 @@ export class AgentSession {
 
         // Validate avatar configuration before starting
         this._validateAvatarConfig();
+        this._warnOnDroppedMllmInstructions();
 
         // Validate that we can generate a token if one is not provided
         if (!this._token && !this._appCertificate) {
@@ -544,6 +594,10 @@ export class AgentSession {
             });
             const enrichedProperties = this._enrichAvatarParams(resolved.properties, expiresIn);
             this._validateEnrichedAvatarConfig(enrichedProperties);
+            assertPreviewSupport(this._client, enrichedProperties);
+            // Retarget MLLM fields the shared builder wrote with production
+            // spellings, so a preview config follows the preview route's structure.
+            applyPreviewShape(enrichedProperties);
 
             const request: Agora.StartAgentsRequest = {
                 appid: this._appId,
@@ -553,15 +607,25 @@ export class AgentSession {
                 properties: enrichedProperties,
             };
 
+            const requestHeaders = this._convoAIHeaders();
+
             if (this._debug) {
                 console.log("[Agora Debug] Starting agent session...");
                 if ("getCurrentURL" in this._client && typeof this._client.getCurrentURL === "function") {
                     console.log("[Agora Debug] API Endpoint:", this._client.getCurrentURL());
                 }
-                console.log("[Agora Debug] Request:", JSON.stringify(request, null, 2));
+                console.log(
+                    "[Agora Debug] Headers:",
+                    JSON.stringify(
+                        redactHeadersForDebug({ ...this._clientDefaultHeaders(), ...requestHeaders }),
+                        null,
+                        2,
+                    ),
+                );
+                console.log("[Agora Debug] Request:", JSON.stringify(redactSecrets(request), null, 2));
             }
 
-            const response = await this._client.agents.start(request, { headers: this._convoAIHeaders() });
+            const response = await this._client.agents.start(request, { headers: requestHeaders });
 
             this._agentId = response.agent_id ?? null;
             this._status = "running";

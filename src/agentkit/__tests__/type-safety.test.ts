@@ -23,7 +23,7 @@ import { CartesiaTTS, ElevenLabsTTS, MicrosoftTTS, MiniMaxTTS, OpenAITTS } from 
 const TEST_AGENT_CLIENT = new AgoraClient({
     area: Area.US,
     appId: "test-app-id",
-    appCertificate: "test-app-certificate",
+    appCertificate: "test-app-certificate-01234567890",
 });
 
 // ============================================

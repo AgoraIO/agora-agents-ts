@@ -63,7 +63,7 @@ import { Area } from "../../../src/core/domain/index.js";
 const TEST_AGENT_CLIENT = new AgoraClient({
     area: Area.US,
     appId: "test-app-id",
-    appCertificate: "test-app-certificate",
+    appCertificate: "test-app-certificate-01234567890",
 });
 
 function createClient() {
@@ -1424,7 +1424,7 @@ describe("MLLM vendor coverage", () => {
         const qwenClient = new AgoraClient({
             area: Area.CN,
             appId: "test-app-id",
-            appCertificate: "test-app-certificate",
+            appCertificate: "test-app-certificate-01234567890",
         });
         const properties = new Agent({ client: qwenClient })
             .withMllm(

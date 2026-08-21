@@ -55,6 +55,7 @@ npm install agora-agents
 | [Pagination](./guides/pagination.md) | Iterate over paginated list endpoints |
 | [Advanced](./guides/advanced.md) | Headers, retries, timeouts, logging, custom fetcher |
 | [Low-Level API](./guides/low-level-api.md) | Generated REST APIs |
+| [Preview Endpoint](./guides/preview-endpoint.md) | `AgoraPreviewClient`, the `agora-feature` gate header, and preview routing |
 | [AgoraClient Reference](./reference/client.md) | Constructor options, public methods |
 | [Agent Reference](./reference/agent.md) | Full builder API with TypeScript signatures |
 | [AgentSession Reference](./reference/session.md) | All methods, events, and payload types |
