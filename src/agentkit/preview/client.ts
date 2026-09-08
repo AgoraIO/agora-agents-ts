@@ -85,7 +85,7 @@ export function createPreviewRoute(client: AgoraClient, features: readonly Previ
 }
 
 /** ASR vendor served only by the preview endpoint. */
-const PREVIEW_ASR_VENDORS: ReadonlySet<string> = new Set(["gemini"]);
+const PREVIEW_ASR_VENDORS: ReadonlySet<string> = new Set();
 
 /**
  * Returns the preview features a start request needs, derived from the request

@@ -91,6 +91,7 @@ The `sampleRate` is critical when using avatars. See [Avatar Integration](../gui
 | `AresSTT`         | Agora ARES        | `keywords?`, `additionalParams?`                 |
 | `SarvamSTT`       | Sarvam AI         | `apiKey`, `language`                             |
 | `XAiSTT`          | xAI               | `apiKey`, `language?`, `baseUrl?`, `sampleRate?` |
+| `GeminiSTT`       | Google Gemini     | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp` |
 
 `AresSTT` and `FengmingSTT` serialize `keywords` at the ASR top level (`asr.keywords`), while arbitrary fields passed through `additionalParams` are kept under `asr.params`.
 
@@ -105,8 +106,6 @@ const stt = new DeepgramSTT({
   language: 'en-US',
 });
 ```
-
-> **Preview providers** — `GeminiSTT` (ASR) is served by the preview gateway; `AgoraClient` routes its sessions automatically. See [Preview Endpoint](../guides/preview-endpoint.md).
 
 ## MLLM vendors
 

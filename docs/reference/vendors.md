@@ -382,8 +382,11 @@ When `.withStt()` is omitted, AgentKit now selects the wire ASR vendor from `cli
 | `AresSTT` | `keywords?`, `additionalParams?` |
 | `SarvamSTT` | `apiKey`, `language` |
 | `XAiSTT` | `apiKey`, `language?`, `baseUrl?`, `sampleRate?`, `additionalParams?` |
+| `GeminiSTT` | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp`, `additionalParams` |
 
 For both `AresSTT` and `FengmingSTT`, `keywords` is serialized at the ASR top level as `asr.keywords`. Extra vendor fields supplied through `additionalParams` remain supported and are serialized under `asr.params`.
+
+`GeminiSTT.model` defaults to `gemini-3.5-transcribe-live`, and `sampleRate` defaults to `16000`. `languageHints` serializes as `params.language_hints`; deprecated `languageCodes` is used only when `languageHints` is unset. Omitted arrays are not sent, while explicitly empty arrays are preserved. `customVocabulary` cannot be combined with `wordTimestamp: true`.
 
 `SpeechmaticsSTT` always serializes its credential as `asr.params.key`. The deprecated `apiKey` option remains accepted for backward compatibility and is normalized to `key`; when both are provided, `key` takes precedence.
 

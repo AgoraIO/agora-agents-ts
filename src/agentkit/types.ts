@@ -696,39 +696,25 @@ export interface SarvamAsrParams {
 export type XAiAsr = XAiAsrType;
 export type XAiAsrParams = XAiAsrParamsType;
 
-/**
- * Gemini STT parameters (preview).
- *
- * Served only by the preview endpoint and routed automatically by AgentSession.
- * Not part of the generated `Asr` union, so the variant
- * is declared here until the provider ships on the production gateway.
- */
+/** Google Gemini STT parameters, including the legacy preview wire spelling. */
 export interface GeminiAsrParams {
-    /** Google API key */
+    /** Google API key. */
     api_key: string;
-    /** Model name (e.g., 'gemini-3.5-transcribe-live') */
+    /** Gemini transcription model. */
     model: string;
-    /** Audio sample rate in Hz */
+    /** Audio sample rate in Hz. */
     sample_rate?: number;
-    /**
-     * Languages to transcribe (e.g., `['en-US']`).
-     *
-     * Omit the field or send `[]` to let the model auto-detect. Note this is
-     * `language_codes` — an array — not the singular `language` other ASR
-     * vendors take.
-     */
+    /** Recognition language used by the production API. */
+    language?: string;
+    /** @deprecated Use `language_hints`; retained for preview API compatibility. */
     language_codes?: string[];
-    /**
-     * Words and phrases to bias recognition toward (e.g., product names,
-     * jargon). Optional.
-     */
+    /** Candidate transcription languages used by the production Gemini extension. */
+    language_hints?: string[];
+    /** Words and phrases used to bias recognition. */
     custom_vocabulary?: string[];
-    /**
-     * Emit per-word timestamps in transcription results. Cannot be `true`
-     * when `custom_vocabulary` is set.
-     */
+    /** Whether to include word-level timestamps. */
     word_timestamp?: boolean;
-    /** Additional Gemini-specific parameters */
+    /** Additional Gemini-specific parameters. */
     [key: string]: unknown;
 }
 

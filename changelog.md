@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - **Inline REST tools for text LLMs** — All global and Chinese mainland LLM vendor helpers now accept typed `tools: LlmTool[]` definitions and serialize them to `llm.tools`. AgentKit exports `LlmTool`, `LlmToolFunction`, `LlmToolServer`, and `LlmToolExecution`; call `Agent.withTools(true)` to enable invocation for inline REST tools or MCP servers.
 - **Generated filler words** — `FillerWordsConfig` now supports `content.mode: "generated"` with an optional OpenAI-compatible `llm_provider` (`url`, `api_key`, and request `params`), custom `prompt`, and `fallback_strategy`. AgentKit also exports `FillerWordsContentGeneratedConfig` and `FillerWordsGeneratedLlmProvider` aliases.
+- **Gemini ASR** — `GeminiSTT` is now a global production vendor backed by the Fern-generated schema while retaining the preview API's `languageCodes`, `customVocabulary`, `sampleRate`, default model, and validation behavior. The production API's optional `language` parameter is also available.
+
+### Changed
+
+- **Gemini ASR routing** — Gemini ASR now uses the production endpoint without requiring callers to migrate preview-era constructor options.
+- **Gemini ASR language mapping** — `languageCodes` now serializes as `params.language_hints`, which the Gemini ASR extension converts to the Google API's `language_codes` field.
+
+### Removed
+
+- **Gemini preview routing** — Removed automatic preview endpoint and `agora-feature` gate routing. Deprecated preview routing exports remain available for source compatibility, while Gemini STT options are also available from AgentKit's standard vendor exports. Generic `debug: true` request logging and credential redaction remain available.
 
 ### Changed
 
