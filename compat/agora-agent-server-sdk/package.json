@@ -1,6 +1,6 @@
 {
     "name": "agora-agent-server-sdk",
-    "version": "2.6.0",
+    "version": "2.8.0",
     "private": false,
     "description": "Compatibility shim for the renamed agora-agents package.",
     "repository": "github:AgoraIO/agora-agents-ts",
@@ -25,6 +25,6 @@
     ],
     "sideEffects": false,
     "dependencies": {
-        "agora-agents": "^2.6.0"
+        "agora-agents": "^2.8.0"
     }
 }
