@@ -118,7 +118,7 @@ Set advanced features (e.g. `enable_rtm`).
 
 ### `withTools(enabled = true): Agent<TTSSampleRate, TArea>`
 
-Enable or disable MCP tool invocation by setting `advanced_features.enable_tools`.
+Enable or disable MCP and inline REST tool invocation by setting `advanced_features.enable_tools`.
 
 ### `withParameters(parameters: SessionParamsInput): Agent<TTSSampleRate, TArea>`
 

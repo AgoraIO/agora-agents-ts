@@ -805,6 +805,12 @@ describe("ASR vendor coverage", () => {
         expect(p.asr?.params).not.toHaveProperty("keywords");
     });
 
+    test("AresSTT rejects keywords inside additionalParams", () => {
+        expect(() => new AresSTT({ additionalParams: { keywords: ["Agora"] } })).toThrow(
+            "use the top-level keywords option",
+        );
+    });
+
     test("SpeechmaticsSTT normalizes deprecated apiKey to key", () => {
         const p = new Agent({ client: TEST_AGENT_CLIENT })
             .withStt(new SpeechmaticsSTT({ apiKey: "sm-key", language: "en" }))

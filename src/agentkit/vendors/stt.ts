@@ -450,6 +450,9 @@ export class AresSTT extends BaseSTT {
 
     constructor(options: AresSTTOptions = {}) {
         super();
+        if (Object.keys(options.additionalParams ?? {}).includes("keywords")) {
+            throw new Error("AresSTT additionalParams must not contain keywords; use the top-level keywords option");
+        }
         this.options = options;
     }
 
