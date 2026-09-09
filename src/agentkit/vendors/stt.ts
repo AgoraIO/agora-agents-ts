@@ -24,6 +24,13 @@ export const GeminiSTTModels = {
 /** A Gemini transcription model. Known models autocomplete while newer model names remain accepted. */
 export type GeminiSTTModel = (typeof GeminiSTTModels)[keyof typeof GeminiSTTModels] | (string & {});
 
+/** Transcription output mode for Gemini ASR. */
+export const GeminiTranscriptionMode = {
+    Smart: "SMART",
+    Verbatim: "VERBATIM",
+} as const;
+export type GeminiTranscriptionMode = (typeof GeminiTranscriptionMode)[keyof typeof GeminiTranscriptionMode];
+
 /** Constructor options for Google Gemini STT. */
 export interface GeminiSTTOptions {
     /** Google Gemini API key. */
@@ -40,8 +47,12 @@ export interface GeminiSTTOptions {
     customVocabulary?: readonly string[];
     /** Audio sample rate in Hz. Defaults to 16000. */
     sampleRate?: SampleRate;
-    /** Whether to include word-level timestamps. Cannot be true when custom vocabulary is present. */
+    /** Whether to include word-level timestamps. Cannot be true when custom vocabulary or SMART mode is used. */
     wordTimestamp?: boolean;
+    /** Transcript cleanup mode. Defaults to VERBATIM when omitted. */
+    mode?: GeminiTranscriptionMode;
+    /** Whether to include speaker labels. Cannot be true when mode is SMART. */
+    diarization?: boolean;
     /** Additional vendor-specific parameters. Explicit options take precedence. */
     additionalParams?: Record<string, unknown>;
 }
@@ -53,6 +64,22 @@ export class GeminiSTT extends BaseSTT {
     constructor(options: GeminiSTTOptions) {
         super();
         _requireString(options.apiKey, "apiKey", "GeminiSTT");
+        const wordTimestamp = options.wordTimestamp === true;
+        if ((options.customVocabulary?.length ?? 0) > 0 && wordTimestamp) {
+            throw new Error("customVocabulary cannot be used with wordTimestamp=true");
+        }
+        const mode = options.mode ?? GeminiTranscriptionMode.Verbatim;
+        if (mode !== GeminiTranscriptionMode.Smart && mode !== GeminiTranscriptionMode.Verbatim) {
+            throw new Error("GeminiSTT Mode must be SMART or VERBATIM");
+        }
+        if (mode === GeminiTranscriptionMode.Smart) {
+            if (wordTimestamp) {
+                throw new Error("GeminiSTT Mode=SMART cannot be used with WordTimestamp=true");
+            }
+            if (options.diarization === true) {
+                throw new Error("GeminiSTT Mode=SMART cannot be used with Diarization=true");
+            }
+        }
         this.options = options;
     }
 
@@ -66,6 +93,8 @@ export class GeminiSTT extends BaseSTT {
             customVocabulary,
             sampleRate,
             wordTimestamp,
+            mode,
+            diarization,
             additionalParams,
         } = this.options;
         const params = {
@@ -79,11 +108,9 @@ export class GeminiSTT extends BaseSTT {
             }),
             ...(customVocabulary !== undefined && { custom_vocabulary: [...customVocabulary] }),
             ...(wordTimestamp !== undefined && { word_timestamp: wordTimestamp }),
+            ...(mode !== undefined && { mode }),
+            ...(diarization !== undefined && { diarization }),
         };
-
-        if ("custom_vocabulary" in params && params.word_timestamp === true) {
-            throw new Error("customVocabulary cannot be used with wordTimestamp=true");
-        }
 
         return {
             vendor: "gemini",

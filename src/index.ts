@@ -291,6 +291,7 @@ export {
     GeminiLive,
     GeminiSTT,
     GeminiSTTModels,
+    GeminiTranscriptionMode,
     GenericAvatar,
     GenericTTS,
     Geofence,

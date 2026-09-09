@@ -411,6 +411,7 @@ export {
     DeepgramSTT,
     GeminiSTT,
     GeminiSTTModels,
+    GeminiTranscriptionMode,
     GoogleSTT,
     MicrosoftSTT,
     OpenAISTT,

@@ -20,6 +20,7 @@ import type {
     GetAgentsResponse,
     GetHistoryAgentsResponse,
     GetTurnsAgentsResponse,
+    GeminiAsrParams as GeminiAsrParamsType,
     GoogleTtsParams as GoogleTtsParamsType,
     GoogleTts as GoogleTtsType,
     GradiumTtsParams as GradiumTtsParamsType,
@@ -696,27 +697,8 @@ export interface SarvamAsrParams {
 export type XAiAsr = XAiAsrType;
 export type XAiAsrParams = XAiAsrParamsType;
 
-/** Google Gemini STT parameters, including the legacy preview wire spelling. */
-export interface GeminiAsrParams {
-    /** Google API key. */
-    api_key: string;
-    /** Gemini transcription model. */
-    model: string;
-    /** Audio sample rate in Hz. */
-    sample_rate?: number;
-    /** Recognition language used by the production API. */
-    language?: string;
-    /** @deprecated Use `language_hints`; retained for preview API compatibility. */
-    language_codes?: string[];
-    /** Candidate transcription languages used by the production Gemini extension. */
-    language_hints?: string[];
-    /** Words and phrases used to bias recognition. */
-    custom_vocabulary?: string[];
-    /** Whether to include word-level timestamps. */
-    word_timestamp?: boolean;
-    /** Additional Gemini-specific parameters. */
-    [key: string]: unknown;
-}
+/** Google Gemini STT parameters generated from the API schema. */
+export type GeminiAsrParams = GeminiAsrParamsType;
 
 // =============================================================================
 // TTS Vendor-Specific Types (re-exports for convenience)
