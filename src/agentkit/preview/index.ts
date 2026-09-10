@@ -1,9 +1,8 @@
 /**
  * Preview provider surface.
  *
- * Self-contained on purpose: when these providers ship on the production
- * gateway, this directory is deleted and the vendor classes move into
- * `vendors/stt.ts`.
+ * Preview routing stays here while provider implementations can graduate to
+ * the production vendor modules independently.
  */
 
 // The preview namespace keeps its historical names, but Gemini ASR now uses
@@ -19,3 +18,5 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./client.js";
+export type { OpenAIGPTLiveOptions } from "./vendors.js";
+export { OpenAIGPTLive } from "./vendors.js";

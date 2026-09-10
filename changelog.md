@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - **ASR hotwords** — `keywords` on `AresSTT` and `FengmingSTT` now serialize as top-level `asr.keywords`, matching the current OpenAPI schema. Vendor-specific `additionalParams` remain under `asr.params`; nested `additionalParams.keywords` is rejected to prevent ambiguous requests.
 
+### Fixed
+
+- **GPT Live v3 contract selection** — `OpenAIGPTLive` now serializes `params.alpha_selector: "quicksilver=v3"` by default so preview workers consistently send the required OpenAI alpha header. Callers can still override the selector explicitly.
+
 ## [v2.7.0] — 2026-08-26
 
 ### Added

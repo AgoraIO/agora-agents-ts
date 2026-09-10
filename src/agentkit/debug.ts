@@ -43,6 +43,10 @@ const SENSITIVE_BODY_KEYS: ReadonlySet<string> = new Set([
     "agora_token",
     "agoratoken",
     "authorization",
+    "headers",
+    "x-api-key",
+    "cookie",
+    "set-cookie",
     "appid",
     "app_id",
     "agora_appid",
@@ -66,7 +70,7 @@ function redactQueryKeys(value: string): string {
     }
     let changed = false;
     for (const key of [...parsed.searchParams.keys()]) {
-        if (key.toLowerCase() !== "key") {
+        if (!isSensitiveKey(key)) {
             continue;
         }
         const current = parsed.searchParams.getAll(key);
@@ -120,8 +124,18 @@ export function redactSecrets(value: unknown): unknown {
 export function redactHeadersForDebug(headers: Record<string, string>): Record<string, string> {
     const result: Record<string, string> = {};
     for (const [key, value] of Object.entries(headers)) {
-        if (key.toLowerCase() !== "authorization") {
+        const normalized = key.toLowerCase();
+        const sensitive =
+            isSensitiveKey(normalized) ||
+            ["authorization", "api-key", "api_key", "token", "secret", "credential", "cookie"].some((marker) =>
+                normalized.includes(marker),
+            );
+        if (!sensitive || value.length === 0) {
             result[key] = value;
+            continue;
+        }
+        if (normalized !== "authorization") {
+            result[key] = REDACTED;
             continue;
         }
         const scheme = value.split(/[\s=]/, 1)[0];

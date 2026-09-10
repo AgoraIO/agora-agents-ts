@@ -97,14 +97,15 @@ export class GeminiSTT extends BaseSTT {
             diarization,
             additionalParams,
         } = this.options;
+        const resolvedLanguageHints = languageHints ?? languageCodes;
         const params = {
             ...additionalParams,
             api_key: apiKey,
             model: model === undefined ? GeminiSTTModels.Transcribe35Live : model,
             sample_rate: sampleRate === undefined ? 16000 : sampleRate,
             ...(language !== undefined && { language }),
-            ...((languageHints ?? languageCodes) !== undefined && {
-                language_hints: [...(languageHints ?? languageCodes)!],
+            ...(resolvedLanguageHints !== undefined && {
+                language_hints: [...resolvedLanguageHints],
             }),
             ...(customVocabulary !== undefined && { custom_vocabulary: [...customVocabulary] }),
             ...(wordTimestamp !== undefined && { word_timestamp: wordTimestamp }),

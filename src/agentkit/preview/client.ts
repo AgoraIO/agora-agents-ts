@@ -7,9 +7,9 @@
  * and binds that session to the preview host while ordinary AgoraClient calls
  * remain on the regional production endpoint.
  *
- * Everything under `agentkit/preview/` is temporary. When these providers ship
- * on the production gateway, delete this directory and move the vendor classes
- * into `vendors/stt.ts`.
+ * Everything under `agentkit/preview/` is temporary. When a provider ships on
+ * the production gateway, remove its preview registration and move its class
+ * into the corresponding production vendor module.
  */
 
 import type { AgoraClient } from "../../AgoraPoolClient.js";
@@ -17,6 +17,7 @@ import type * as Agora from "../../api/index.js";
 import { AgentManagementClient } from "../../api/resources/agentManagement/client/Client.js";
 import { AgentsClient } from "../../api/resources/agents/client/Client.js";
 import type { BaseClientOptions } from "../../BaseClient.js";
+import { isOpenAIGPTLiveConfig } from "./vendors.js";
 
 /** Base URL that serves the preview providers. */
 export const PREVIEW_API_BASE_URL = "https://partner.ai.agora.io/preview/api/conversational-ai-agent";
@@ -36,11 +37,12 @@ export const PREVIEW_FEATURE_HEADER = "agora-feature";
  * preview endpoint.
  */
 export const PreviewFeatures = {
-    /** Gemini 3.5 Transcribe ASR. */
+    /** @deprecated Gemini ASR now uses the production endpoint. */
     GeminiLive: "gemini-live",
+    LiveModels: "live-models",
 } as const;
 
-/** A preview provider family (`"gemini-live"`). */
+/** A preview provider family gate value. */
 export type PreviewFeature = (typeof PreviewFeatures)[keyof typeof PreviewFeatures];
 
 /** Session-scoped clients bound to one resolved route. */
@@ -98,6 +100,9 @@ export function requiredPreviewFeatures(properties: Agora.StartAgentsRequest.Pro
     const asrVendor = (properties.asr as { vendor?: string } | undefined)?.vendor;
     if (asrVendor !== undefined && PREVIEW_ASR_VENDORS.has(asrVendor)) {
         features.add(PreviewFeatures.GeminiLive);
+    }
+    if (isOpenAIGPTLiveConfig(properties.mllm)) {
+        features.add(PreviewFeatures.LiveModels);
     }
 
     return [...features];
