@@ -7,5 +7,5 @@
         "verbatimModuleSyntax": true
     },
     "include": ["src"],
-    "exclude": []
+    "exclude": ["src/**/__tests__/**"]
 }

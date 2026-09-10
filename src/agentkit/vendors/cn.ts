@@ -15,8 +15,16 @@ export interface FengmingSTTOptions {
 }
 
 export class FengmingSTT extends BaseCNSTT {
-    constructor(private readonly options: FengmingSTTOptions = {}) {
+    private readonly options: FengmingSTTOptions;
+
+    constructor(options: FengmingSTTOptions = {}) {
         super();
+        if (Object.keys(options.additionalParams ?? {}).includes("keywords")) {
+            throw new Error(
+                "FengmingSTT additionalParams must not contain keywords; use the top-level keywords option",
+            );
+        }
+        this.options = options;
     }
 
     toConfig(): SttConfig {

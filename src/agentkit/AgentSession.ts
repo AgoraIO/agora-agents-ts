@@ -232,9 +232,6 @@ export class AgentSession {
     /**
      * Client-level default headers, for debug logging only.
      *
-     * These carry the preview `agora-feature` gate, which the generated client
-     * merges in below the SDK's view — so without this the header that decides
-     * whether a request reaches a preview provider is invisible in debug output.
      * Reaches into `_options` the same way `authMode` is read in the constructor;
      * supplier-valued headers are skipped rather than resolved, since debug
      * logging must not trigger side effects.
@@ -250,6 +247,9 @@ export class AgentSession {
             if (typeof value === "string") {
                 result[key] = value;
             }
+        }
+        if (this._previewFeatures.length > 0) {
+            return previewRequestHeaders(this._previewFeatures, result);
         }
         return result;
     }

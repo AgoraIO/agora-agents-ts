@@ -15,6 +15,7 @@ import type {
     ElevenLabsTts as ElevenLabsTtsType,
     FishAudioTtsParams as FishAudioTtsParamsType,
     FishAudioTts as FishAudioTtsType,
+    GeminiAsrParams as GeminiAsrParamsType,
     GenericHttpTtsParams as GenericTtsParamsType,
     GenericHttpTts as GenericTtsType,
     GetAgentsResponse,
@@ -115,11 +116,13 @@ export type LlmToolExecution = LlmToolExecutionType;
 export type LlmToolFunction = LlmToolFunctionType;
 export type LlmToolServer = LlmToolServerType;
 
-/** MLLM (Multimodal LLM) configuration */
-export type MllmConfig = Mllm;
+/** MLLM configuration, including preview vendors not present in the generated schema yet. */
+export type MllmConfig = Omit<Mllm, "vendor"> & {
+    vendor?: Mllm.Vendor | "openai_gpt_live";
+};
 
-/** MLLM wire vendor name (openai, azure, gemini, vertexai, xai, qwen_omni) */
-export type MllmVendor = Mllm.Vendor;
+/** MLLM wire vendor name, including preview vendors. */
+export type MllmVendor = Exclude<MllmConfig["vendor"], undefined>;
 
 /** Avatar configuration */
 export type AvatarConfig = StartAgentsRequest.Properties.Avatar;
@@ -316,7 +319,7 @@ export type LlmGreetingConfigs = Llm.GreetingConfigs;
 /** Greeting broadcast ASR policy: `"merge_reply"` | `"context"` */
 export type LlmGreetingConfigsMode = Llm.GreetingConfigs.UninterruptibleAsrPolicy;
 
-/** MCP server config item (`llm.mcp_servers[]`) */
+/** MCP server config item (`llm.mcp_servers[]` or `mllm.mcp_servers[]`) */
 export type McpServersItem = Record<string, unknown>;
 
 // =============================================================================
@@ -696,41 +699,8 @@ export interface SarvamAsrParams {
 export type XAiAsr = XAiAsrType;
 export type XAiAsrParams = XAiAsrParamsType;
 
-/**
- * Gemini STT parameters (preview).
- *
- * Served only by the preview endpoint and routed automatically by AgentSession.
- * Not part of the generated `Asr` union, so the variant
- * is declared here until the provider ships on the production gateway.
- */
-export interface GeminiAsrParams {
-    /** Google API key */
-    api_key: string;
-    /** Model name (e.g., 'gemini-3.5-transcribe-live') */
-    model: string;
-    /** Audio sample rate in Hz */
-    sample_rate?: number;
-    /**
-     * Languages to transcribe (e.g., `['en-US']`).
-     *
-     * Omit the field or send `[]` to let the model auto-detect. Note this is
-     * `language_codes` — an array — not the singular `language` other ASR
-     * vendors take.
-     */
-    language_codes?: string[];
-    /**
-     * Words and phrases to bias recognition toward (e.g., product names,
-     * jargon). Optional.
-     */
-    custom_vocabulary?: string[];
-    /**
-     * Emit per-word timestamps in transcription results. Cannot be `true`
-     * when `custom_vocabulary` is set.
-     */
-    word_timestamp?: boolean;
-    /** Additional Gemini-specific parameters */
-    [key: string]: unknown;
-}
+/** Google Gemini STT parameters generated from the API schema. */
+export type GeminiAsrParams = GeminiAsrParamsType;
 
 // =============================================================================
 // TTS Vendor-Specific Types (re-exports for convenience)

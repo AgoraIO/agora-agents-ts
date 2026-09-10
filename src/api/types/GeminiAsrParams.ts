@@ -12,8 +12,25 @@ export interface GeminiAsrParams {
     sample_rate?: number | null;
     /** The language code for speech recognition. This takes precedence over the top-level `asr.language` value. */
     language?: string;
-    /** Whether to include word-level timestamps in the transcription results. */
+    /** Candidate language codes for transcription. When non-empty, these take precedence over language. */
+    language_hints?: string[];
+    /** Words and phrases used to bias transcription. A non-empty custom vocabulary cannot be combined with word_timestamp. */
+    custom_vocabulary?: string[];
+    /** Transcription output mode. SMART removes disfluencies and applies formatting; VERBATIM preserves literal speech. When omitted, the service defaults to VERBATIM. SMART cannot be combined with word_timestamp or diarization. */
+    mode?: GeminiAsrParams.Mode;
+    /** Whether to include word-level timestamps in the transcription results. Cannot be enabled when mode is SMART or custom_vocabulary is non-empty. */
     word_timestamp?: boolean;
+    /** Whether to include speaker labels in the transcription results. Cannot be enabled when mode is SMART. */
+    diarization?: boolean;
     /** Accepts any additional properties */
     [key: string]: any;
+}
+
+export namespace GeminiAsrParams {
+    /** Transcription output mode. SMART removes disfluencies and applies formatting; VERBATIM preserves literal speech. When omitted, the service defaults to VERBATIM. SMART cannot be combined with word_timestamp or diarization. */
+    export const Mode = {
+        Smart: "SMART",
+        Verbatim: "VERBATIM",
+    } as const;
+    export type Mode = (typeof Mode)[keyof typeof Mode];
 }

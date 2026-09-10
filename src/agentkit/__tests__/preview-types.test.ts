@@ -8,14 +8,17 @@
 import { AgoraClient } from "../../AgoraPoolClient.js";
 import { Area } from "../../core/domain/index.js";
 import { Agent } from "../Agent.js";
-import { GeminiSTT } from "../preview/index.js";
-import type { SttConfig } from "../types.js";
+import { GeminiSTT, OpenAIGPTLive } from "../preview/index.js";
+import type { MllmVendor, SttConfig } from "../types.js";
+import { OpenAIRealtime } from "../vendors/mllm.js";
 
 const CLIENT = new AgoraClient({
     area: Area.US,
     appId: "test-app-id",
     appCertificate: "test-app-certificate-01234567890",
 });
+
+const _gptLiveVendorName: MllmVendor = "openai_gpt_live";
 
 // ============================================
 // ✅ VALID CONFIGURATIONS
@@ -32,6 +35,20 @@ function _validTranscribeStt(): Agent {
             wordTimestamp: false,
         }),
     );
+}
+
+function _validOpenAIGPTLive(): Agent {
+    return new Agent({ client: CLIENT }).withMllm(
+        new OpenAIGPTLive({
+            apiKey: "test",
+            greeting: "Hello from GPT Live",
+        }),
+    );
+}
+
+function _openAIRealtimeCannotSelectGPTLive(): OpenAIRealtime {
+    // @ts-expect-error - GPT Live has a separate preview vendor.
+    return new OpenAIRealtime({ apiKey: "test", mode: "live" });
 }
 
 /** The preview ASR variant is part of `SttConfig`, so hand-written configs type-check too. */

@@ -1,12 +1,18 @@
 import { AgoraClient } from "../../AgoraPoolClient.js";
 import { Area } from "../../core/domain/index.js";
 import { Agent } from "../Agent.js";
-import type { CNMllmVendor, CNTtsVendor, GlobalMllmVendor, GlobalTtsVendor } from "../region-vendors.js";
+import type {
+    CNMllmVendor,
+    CNTtsVendor,
+    GlobalMllmVendor,
+    GlobalSttVendor,
+    GlobalTtsVendor,
+} from "../region-vendors.js";
 import { AliyunLLM, FengmingSTT, MiniMaxCNTTS } from "../vendors/cn.js";
 import { OpenAI } from "../vendors/llm.js";
 import type { AzureOpenAIRealtimeOptions, AzureOpenAIRealtimeParams, QwenOmniOptions } from "../vendors/mllm.js";
 import { AzureOpenAIRealtime, QwenOmni } from "../vendors/mllm.js";
-import { DeepgramSTT } from "../vendors/stt.js";
+import { DeepgramSTT, GeminiSTT } from "../vendors/stt.js";
 import { GenericTTS, MiniMaxTTS } from "../vendors/tts.js";
 
 const client = new AgoraClient({
@@ -36,6 +42,12 @@ new Agent({ client }).withTts(
 );
 const globalGenericTts: GlobalTtsVendor = new GenericTTS({ url: "https://tts.example.com/v1/audio/speech" });
 new Agent({ client }).withTts(globalGenericTts);
+const globalGeminiStt: GlobalSttVendor = new GeminiSTT({
+    apiKey: "gemini-key",
+    model: "gemini-3.7-transcribe-live",
+    language: "en-US",
+});
+new Agent({ client }).withStt(globalGeminiStt);
 const globalMllm: GlobalMllmVendor = new AzureOpenAIRealtime({
     apiKey: "azure-key",
     url: "wss://example.openai.azure.com/openai/realtime",
