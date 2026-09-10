@@ -111,6 +111,8 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
+export type { OpenAIGPTLiveOptions } from "./preview/vendors.js";
+export { OpenAIGPTLive } from "./preview/vendors.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,

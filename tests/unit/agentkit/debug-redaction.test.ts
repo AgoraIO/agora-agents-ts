@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
-import { redactHeadersForDebug, redactSecrets } from "../../../src/agentkit/debug.js";
+import { REDACTED, redactHeadersForDebug, redactSecrets } from "../../../src/agentkit/debug.js";
 import { Gemini } from "../../../src/agentkit/vendors/llm.js";
 import { GeminiSTT } from "../../../src/agentkit/vendors/stt.js";
 import { GoogleTTS } from "../../../src/agentkit/vendors/tts.js";
@@ -96,6 +96,12 @@ describe("redactHeadersForDebug", () => {
         expect(redactHeadersForDebug({ "x-fern-sdk-name": "agora-agents" })).toEqual({
             "x-fern-sdk-name": "agora-agents",
         });
+    });
+
+    test("redacts custom credential headers", () => {
+        expect(
+            redactHeadersForDebug({ "x-api-key": "secret", cookie: "session=secret", "x-trace-id": "trace" }),
+        ).toEqual({ "x-api-key": REDACTED, cookie: REDACTED, "x-trace-id": "trace" });
     });
 });
 

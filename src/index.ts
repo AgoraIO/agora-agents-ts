@@ -155,6 +155,7 @@ export type {
     MurfTTSOptions,
     MurfTts,
     MurfTtsParams,
+    OpenAIGPTLiveOptions,
     // Vendor option types
     OpenAIOptions,
     OpenAIRealtimeOptions,
@@ -335,6 +336,7 @@ export {
     normalizePresetInput,
     // LLM vendors
     OpenAI,
+    OpenAIGPTLive,
     // MLLM vendors
     OpenAIRealtime,
     OpenAISTT,

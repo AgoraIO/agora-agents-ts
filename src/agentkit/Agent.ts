@@ -12,6 +12,7 @@ import { Area } from "../core/domain/index.js";
 import { AgentSession } from "./AgentSession.js";
 import type { AgoraArea } from "./area.js";
 import { AudioScenario } from "./constants.js";
+import { isOpenAIGPTLiveConfig } from "./preview/vendors.js";
 import type {
     AvatarVendor,
     CNMllmVendor,
@@ -43,6 +44,12 @@ import type {
 } from "./types.js";
 
 const DEFAULT_TURN_DETECTION_LANGUAGE: TurnDetectionLanguage = "en-US";
+
+function toGeneratedMllm(config: MllmConfig | undefined): Agora.Mllm | undefined {
+    // The preview vendor predates its generated schema enum. Keep the assertion at
+    // this wire boundary so the public and builder APIs remain accurately typed.
+    return config as Agora.Mllm | undefined;
+}
 
 const INTERACTION_LANGUAGES = new Set<string>([
     "ar-EG",
@@ -833,7 +840,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             remote_rtc_uids: opts.remoteUids,
             idle_timeout: opts.idleTimeout,
             enable_string_uid: opts.enableStringUid,
-            mllm: this._mllm,
+            mllm: toGeneratedMllm(this._mllm),
             interruption: this._interruption,
             sal: this._sal,
             avatar: this._avatar,
@@ -846,7 +853,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         };
 
         if (isMllmMode) {
-            const mllmConfig = this._mllm ? { ...this._mllm } : undefined;
+            const mllmConfig = toGeneratedMllm(this._mllm ? { ...this._mllm } : undefined);
             if (mllmConfig) {
                 // Vendor config wins: only apply agent-level values when the vendor hasn't already set them.
                 // Consistent with Python (setdefault) and Go (!exists) semantics.
@@ -859,10 +866,17 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
                     c.failure_message = this._failureMessage;
                 }
             }
+            const isOpenAIGPTLive = isOpenAIGPTLiveConfig(mllmConfig);
+            if (isOpenAIGPTLive && this._turnDetection !== undefined) {
+                console.warn("GPT Live v3 ignores agent-level turn_detection; endpointing is internal");
+            }
             return {
                 ...base,
                 mllm: mllmConfig,
-                turn_detection: this._turnDetection as Agora.StartAgentsRequest.Properties.TurnDetection | undefined,
+                ...(!isOpenAIGPTLive &&
+                    this._turnDetection !== undefined && {
+                        turn_detection: this._turnDetection as Agora.StartAgentsRequest.Properties.TurnDetection,
+                    }),
             };
         }
 

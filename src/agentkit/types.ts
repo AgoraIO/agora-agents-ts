@@ -116,11 +116,13 @@ export type LlmToolExecution = LlmToolExecutionType;
 export type LlmToolFunction = LlmToolFunctionType;
 export type LlmToolServer = LlmToolServerType;
 
-/** MLLM (Multimodal LLM) configuration */
-export type MllmConfig = Mllm;
+/** MLLM configuration, including preview vendors not present in the generated schema yet. */
+export type MllmConfig = Omit<Mllm, "vendor"> & {
+    vendor?: Mllm.Vendor | "openai_gpt_live";
+};
 
-/** MLLM wire vendor name (openai, azure, gemini, vertexai, xai, qwen_omni) */
-export type MllmVendor = Mllm.Vendor;
+/** MLLM wire vendor name, including preview vendors. */
+export type MllmVendor = Exclude<MllmConfig["vendor"], undefined>;
 
 /** Avatar configuration */
 export type AvatarConfig = StartAgentsRequest.Properties.Avatar;
@@ -317,7 +319,7 @@ export type LlmGreetingConfigs = Llm.GreetingConfigs;
 /** Greeting broadcast ASR policy: `"merge_reply"` | `"context"` */
 export type LlmGreetingConfigsMode = Llm.GreetingConfigs.UninterruptibleAsrPolicy;
 
-/** MCP server config item (`llm.mcp_servers[]`) */
+/** MCP server config item (`llm.mcp_servers[]` or `mllm.mcp_servers[]`) */
 export type McpServersItem = Record<string, unknown>;
 
 // =============================================================================
