@@ -1,9 +1,9 @@
 # Agora Conversational AI TypeScript SDK
 
-[![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-Built%20with%20Fern-brightgreen)](https://buildwithfern.com?utm_source=github&utm_medium=github&utm_campaign=readme&utm_source=https%3A%2F%2Fgithub.com%2FAgoraIO-Conversational-AI%2Fagent-server-sdk-ts)
+[![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-Built%20with%20Fern-brightgreen)](https://buildwithfern.com?utm_source=github&utm_medium=github&utm_campaign=readme&utm_source=https%3A%2F%2Fgithub.com%2FAgoraIO%2Fagora-agents-ts)
 [![npm shield](https://img.shields.io/npm/v/agora-agents)](https://www.npmjs.com/package/agora-agents)
-[![ci](https://github.com/AgoraIO-Conversational-AI/agent-server-sdk-ts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AgoraIO-Conversational-AI/agent-server-sdk-ts/actions/workflows/ci.yml)
-[![coverage](https://codecov.io/gh/AgoraIO-Conversational-AI/agent-server-sdk-ts/branch/main/graph/badge.svg)](https://codecov.io/gh/AgoraIO-Conversational-AI/agent-server-sdk-ts/branch/main)
+[![ci](https://github.com/AgoraIO/agora-agents-ts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AgoraIO/agora-agents-ts/actions/workflows/ci.yml)
+[![coverage](https://codecov.io/gh/AgoraIO/agora-agents-ts/branch/main/graph/badge.svg)](https://codecov.io/gh/AgoraIO/agora-agents-ts/branch/main)
 
 The Agora Agents SDK for TypeScript lets you build real-time voice agents on Agora Conversational AI with a high-level `Agent` / `AgentSession` API and a generated REST client.
 
