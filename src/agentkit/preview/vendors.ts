@@ -46,7 +46,9 @@ export interface GeminiSTTOptions {
      * `asr.language` is supplied by `Agent` from `turnDetection.language`, as
      * it is for every STT vendor.
      */
+    /** @deprecated Use `languageHints` instead. */
     languageCodes?: readonly TurnDetectionLanguage[];
+    languageHints?: readonly TurnDetectionLanguage[];
     /**
      * Words and phrases to bias recognition toward — product names, jargon,
      * proper nouns the model would otherwise mis-hear.
@@ -89,6 +91,7 @@ export class GeminiSTT extends BaseSTT {
         const {
             apiKey,
             model = GeminiSTTModels.Transcribe35Live,
+            languageHints,
             languageCodes,
             customVocabulary,
             sampleRate = 16000,
@@ -106,7 +109,9 @@ export class GeminiSTT extends BaseSTT {
             // how the provider spells auto-detect, and seeding it from
             // `language` would pin every request to a language the caller
             // never chose.
-            ...(languageCodes && { language_codes: [...languageCodes] }),
+            ...((languageHints ?? languageCodes) !== undefined && {
+                language_codes: [...(languageHints ?? languageCodes)!],
+            }),
             ...(customVocabulary && { custom_vocabulary: [...customVocabulary] }),
             ...(wordTimestamp !== undefined && { word_timestamp: wordTimestamp }),
         };

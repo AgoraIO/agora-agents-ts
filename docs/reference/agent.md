@@ -227,7 +227,7 @@ const session = agent.createSession({
 | `enableStringUid` | `boolean` | No | Use string UIDs instead of numeric |
 | `preset` | `PresetInput` | No | Advanced project-specific presets. Use only when Agora provides a specific preset ID for your project. |
 | `pipelineId` | `string` | No | Published AI Studio pipeline ID to use as this session's base configuration. Overrides `agent.pipelineId`. |
-| `debug` | `boolean` | No | Log the API endpoint, headers, and request body to the console. Credentials (vendor API keys, RTC token, App ID) are replaced with `[REDACTED]` first — see [Preview Endpoint](../guides/preview-endpoint.md#debug-output) |
+| `debug` | `boolean` | No | Log the API endpoint, headers, and request body to the console. Credentials (vendor API keys, RTC token, App ID) are replaced with `[REDACTED]`. |
 | `warn` | `(message: string) => void` | No | Custom warning logger; pass a no-op to silence warnings |
 
 `PresetInput` is `AgentPreset | readonly AgentPreset[] | string`.

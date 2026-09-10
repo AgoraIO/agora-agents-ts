@@ -851,10 +851,6 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
                 // Vendor config wins: only apply agent-level values when the vendor hasn't already set them.
                 // Consistent with Python (setdefault) and Go (!exists) semantics.
                 //
-                // These are production wire spellings. A route that spells one of them
-                // differently needs a rename entry in `preview/client.ts`, or the value
-                // lands in a field the provider ignores and fails silently. See
-                // docs/guides/preview-endpoint.md#the-vendor-class-is-not-the-whole-wire-shape.
                 const c = mllmConfig as Record<"greeting_message" | "failure_message", unknown>;
                 if (this._greeting !== undefined && c.greeting_message === undefined) {
                     c.greeting_message = this._greeting;
@@ -965,10 +961,16 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
                 : ({
                       vendor: this._client.area === Area.CN ? "fengming" : "ares",
                   } as SttConfig & { language?: string });
-        // Unconditional: turn detection is the single source of truth for the
-        // interaction language, so a vendor-level `language` would be silently
-        // discarded here. Do not add one to a vendor class — see
-        // docs/guides/preview-endpoint.md#the-vendor-class-is-not-the-whole-wire-shape.
+        if (asrConfig.vendor === "gemini" && asrConfig.params !== undefined) {
+            const params = { ...asrConfig.params } as Record<string, unknown>;
+            if (params.language_hints === undefined && params.language_codes !== undefined) {
+                params.language_hints = params.language_codes;
+            }
+            delete params.language_codes;
+            (asrConfig as unknown as { params: Record<string, unknown> }).params = params;
+        }
+        // Turn detection is the single source of truth for the top-level
+        // interaction language. Provider-specific languages remain in params.
         asrConfig.language = turnDetectionConfig.language;
 
         return Object.keys(asrConfig).length > 0 ? asrConfig : undefined;

@@ -2,7 +2,9 @@ import { describe, expect, test, vi } from "vitest";
 import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
 import { AudioScenario } from "../../../src/agentkit/constants.js";
+import type { SttConfig } from "../../../src/agentkit/types.js";
 import { AnamAvatar } from "../../../src/agentkit/vendors/avatar.js";
+import { BaseSTT } from "../../../src/agentkit/vendors/base.js";
 import { SpatiusAvatar } from "../../../src/agentkit/vendors/cn.js";
 import {
     AmazonBedrock,
@@ -28,6 +30,7 @@ import {
     AresSTT,
     AssemblyAISTT,
     DeepgramSTT,
+    GeminiSTT,
     GoogleSTT,
     MicrosoftSTT,
     OpenAISTT,
@@ -690,6 +693,58 @@ describe("Scenario 8 — MLLM mode", () => {
 // ---------------------------------------------------------------------------
 
 describe("ASR vendor coverage", () => {
+    test("GeminiSTT preserves compatibility options in the production schema", () => {
+        const p = new Agent({ client: TEST_AGENT_CLIENT })
+            .withStt(
+                new GeminiSTT({
+                    apiKey: "gemini-key",
+                    model: "gemini-3.7-transcribe-live",
+                    language: "en-US",
+                    languageHints: ["en-US"],
+                    languageCodes: ["en-US", "es-ES"],
+                    customVocabulary: ["Agora"],
+                    sampleRate: 24_000,
+                    wordTimestamp: false,
+                }),
+            )
+            .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
+
+        expect(p.asr).toMatchObject({
+            vendor: "gemini",
+            params: {
+                api_key: "gemini-key",
+                model: "gemini-3.7-transcribe-live",
+                language: "en-US",
+                language_hints: ["en-US"],
+                custom_vocabulary: ["Agora"],
+                sample_rate: 24_000,
+                word_timestamp: false,
+            },
+        });
+    });
+
+    test("normalizes the legacy Gemini language_codes field before sending", () => {
+        class LegacyGeminiSTT extends BaseSTT {
+            toConfig(): SttConfig {
+                return {
+                    vendor: "gemini",
+                    params: {
+                        api_key: "gemini-key",
+                        model: "gemini-3.5-transcribe-live",
+                        language_codes: ["en-US", "es-ES"],
+                    },
+                };
+            }
+        }
+
+        const p = new Agent({ client: TEST_AGENT_CLIENT })
+            .withStt(new LegacyGeminiSTT())
+            .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
+
+        expect(p.asr?.params).toMatchObject({ language_hints: ["en-US", "es-ES"] });
+        expect(p.asr?.params).not.toHaveProperty("language_codes");
+    });
+
     test("DeepgramSTT BYOK serializes key and model in params", () => {
         const p = new Agent({ client: TEST_AGENT_CLIENT })
             .withStt(new DeepgramSTT({ apiKey: "dg-key", model: "nova-2", language: "en-US" }))

@@ -114,10 +114,8 @@ export function redactSecrets(value: unknown): unknown {
 /**
  * Redacts request headers for debug logging.
  *
- * `agora-feature` and the SDK identification headers are kept — they are what
- * makes a preview request identifiable, and no header carries a secret except
- * the authorization scheme's credential, whose scheme name is preserved so the
- * active auth mode stays visible.
+ * Non-authorization headers are kept. The authorization credential is removed,
+ * while its scheme name stays visible so the active auth mode can be diagnosed.
  */
 export function redactHeadersForDebug(headers: Record<string, string>): Record<string, string> {
     const result: Record<string, string> = {};

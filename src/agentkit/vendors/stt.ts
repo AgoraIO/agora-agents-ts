@@ -3,8 +3,8 @@
  */
 
 import { type DeepgramPresetModel, DeepgramPresetModels } from "../presets.js";
-import type { SttConfig } from "../types.js";
-import { BaseSTT } from "./base.js";
+import type { SttConfig, TurnDetectionLanguage } from "../types.js";
+import { BaseSTT, type SampleRate } from "./base.js";
 
 function _requireString(value: unknown, field: string, vendor: string): asserts value is string {
     if (typeof value !== "string" || value.length === 0) {
@@ -14,6 +14,109 @@ function _requireString(value: unknown, field: string, vendor: string): asserts 
 
 function isDeepgramManagedModel(model: string | undefined): model is DeepgramPresetModel {
     return model !== undefined && DeepgramPresetModels.includes(model.trim().toLowerCase() as DeepgramPresetModel);
+}
+
+/** Gemini transcription models. */
+export const GeminiSTTModels = {
+    Transcribe35Live: "gemini-3.5-transcribe-live",
+} as const;
+
+/** A Gemini transcription model. Known models autocomplete while newer model names remain accepted. */
+export type GeminiSTTModel = (typeof GeminiSTTModels)[keyof typeof GeminiSTTModels] | (string & {});
+
+/** Transcription output mode for Gemini ASR. */
+export const GeminiTranscriptionMode = {
+    Smart: "SMART",
+    Verbatim: "VERBATIM",
+} as const;
+export type GeminiTranscriptionMode = (typeof GeminiTranscriptionMode)[keyof typeof GeminiTranscriptionMode];
+
+/** Constructor options for Google Gemini STT. */
+export interface GeminiSTTOptions {
+    /** Google Gemini API key. */
+    apiKey: string;
+    /** Gemini transcription model. Defaults to `gemini-3.5-transcribe-live`. */
+    model?: GeminiSTTModel;
+    /** Language code for speech recognition (for example, `en-US`). */
+    language?: string;
+    /** Candidate transcription languages, serialized as `params.language_hints`. */
+    languageHints?: readonly TurnDetectionLanguage[];
+    /** @deprecated Use `languageHints` instead. */
+    languageCodes?: readonly TurnDetectionLanguage[];
+    /** Words and phrases used to bias recognition. */
+    customVocabulary?: readonly string[];
+    /** Audio sample rate in Hz. Defaults to 16000. */
+    sampleRate?: SampleRate;
+    /** Whether to include word-level timestamps. Cannot be true when custom vocabulary or SMART mode is used. */
+    wordTimestamp?: boolean;
+    /** Transcript cleanup mode. Defaults to VERBATIM when omitted. */
+    mode?: GeminiTranscriptionMode;
+    /** Whether to include speaker labels. Cannot be true when mode is SMART. */
+    diarization?: boolean;
+    /** Additional vendor-specific parameters. Explicit options take precedence. */
+    additionalParams?: Record<string, unknown>;
+}
+
+/** Google Gemini STT vendor. */
+export class GeminiSTT extends BaseSTT {
+    private readonly options: GeminiSTTOptions;
+
+    constructor(options: GeminiSTTOptions) {
+        super();
+        _requireString(options.apiKey, "apiKey", "GeminiSTT");
+        const wordTimestamp = options.wordTimestamp === true;
+        if ((options.customVocabulary?.length ?? 0) > 0 && wordTimestamp) {
+            throw new Error("customVocabulary cannot be used with wordTimestamp=true");
+        }
+        const mode = options.mode ?? GeminiTranscriptionMode.Verbatim;
+        if (mode !== GeminiTranscriptionMode.Smart && mode !== GeminiTranscriptionMode.Verbatim) {
+            throw new Error("GeminiSTT Mode must be SMART or VERBATIM");
+        }
+        if (mode === GeminiTranscriptionMode.Smart) {
+            if (wordTimestamp) {
+                throw new Error("GeminiSTT Mode=SMART cannot be used with WordTimestamp=true");
+            }
+            if (options.diarization === true) {
+                throw new Error("GeminiSTT Mode=SMART cannot be used with Diarization=true");
+            }
+        }
+        this.options = options;
+    }
+
+    toConfig(): SttConfig {
+        const {
+            apiKey,
+            model,
+            language,
+            languageHints,
+            languageCodes,
+            customVocabulary,
+            sampleRate,
+            wordTimestamp,
+            mode,
+            diarization,
+            additionalParams,
+        } = this.options;
+        const params = {
+            ...additionalParams,
+            api_key: apiKey,
+            model: model === undefined ? GeminiSTTModels.Transcribe35Live : model,
+            sample_rate: sampleRate === undefined ? 16000 : sampleRate,
+            ...(language !== undefined && { language }),
+            ...((languageHints ?? languageCodes) !== undefined && {
+                language_hints: [...(languageHints ?? languageCodes)!],
+            }),
+            ...(customVocabulary !== undefined && { custom_vocabulary: [...customVocabulary] }),
+            ...(wordTimestamp !== undefined && { word_timestamp: wordTimestamp }),
+            ...(mode !== undefined && { mode }),
+            ...(diarization !== undefined && { diarization }),
+        };
+
+        return {
+            vendor: "gemini",
+            params,
+        };
+    }
 }
 
 /**

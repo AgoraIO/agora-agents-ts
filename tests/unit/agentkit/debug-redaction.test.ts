@@ -2,8 +2,8 @@ import { describe, expect, test, vi } from "vitest";
 import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
 import { redactHeadersForDebug, redactSecrets } from "../../../src/agentkit/debug.js";
-import { GeminiSTT } from "../../../src/agentkit/preview/index.js";
 import { Gemini } from "../../../src/agentkit/vendors/llm.js";
+import { GeminiSTT } from "../../../src/agentkit/vendors/stt.js";
 import { GoogleTTS } from "../../../src/agentkit/vendors/tts.js";
 import { Area } from "../../../src/core/domain/index.js";
 
@@ -92,9 +92,8 @@ describe("redactHeadersForDebug", () => {
         });
     });
 
-    test("preserves the preview feature gate and SDK headers", () => {
-        expect(redactHeadersForDebug({ "agora-feature": "gemini-live", "x-fern-sdk-name": "agora-agents" })).toEqual({
-            "agora-feature": "gemini-live",
+    test("preserves non-authorization headers", () => {
+        expect(redactHeadersForDebug({ "x-fern-sdk-name": "agora-agents" })).toEqual({
             "x-fern-sdk-name": "agora-agents",
         });
     });
@@ -119,7 +118,7 @@ describe("debug output", () => {
                     fetch: fetchMock,
                 }),
             })
-                .withStt(new GeminiSTT({ apiKey: GOOGLE_KEY }))
+                .withStt(new GeminiSTT({ apiKey: GOOGLE_KEY, model: "gemini-3.7-transcribe-live" }))
                 .withLlm(new Gemini({ apiKey: GOOGLE_KEY, model: "gemini-2.0-flash" }))
                 .withTts(
                     new GoogleTTS({
@@ -137,9 +136,7 @@ describe("debug output", () => {
         const output = logs.join("\n");
         expect(output).not.toContain(GOOGLE_KEY);
         expect(output).not.toContain("81190c52971d4004b7244bdcd93e2f34");
-        // The header that gates preview routing must be visible.
-        expect(output).toContain("agora-feature");
-        expect(output).toContain("gemini-live");
+        expect(output).not.toContain("agora-feature");
         // The request itself still carries the real key.
         const sent = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
         expect(sent.properties.asr.params.api_key).toBe(GOOGLE_KEY);
