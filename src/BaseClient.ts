@@ -44,8 +44,8 @@ export function normalizeClientOptions<T extends BaseClientOptions>(options: T):
         {
             "X-Fern-Language": "JavaScript",
             "X-Fern-SDK-Name": "agora-agents",
-            "X-Fern-SDK-Version": "v2.8.0",
-            "User-Agent": "agora-agents/v2.8.0",
+            "X-Fern-SDK-Version": "v2.8.1",
+            "User-Agent": "agora-agents/v2.8.1",
             "X-Fern-Runtime": core.RUNTIME.type,
             "X-Fern-Runtime-Version": core.RUNTIME.version,
         },

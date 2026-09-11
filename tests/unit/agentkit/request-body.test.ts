@@ -1409,8 +1409,7 @@ describe("MLLM vendor coverage", () => {
             greeting_message: "Hello from GPT Live",
         });
         expect(config.params).toEqual({
-            model: "gpt-live-1-diamond-alpha",
-            alpha_selector: "quicksilver=v3",
+            model: "gpt-live-1",
         });
     });
 

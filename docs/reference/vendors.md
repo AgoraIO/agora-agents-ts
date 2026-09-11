@@ -416,20 +416,20 @@ new OpenAIRealtime(options: OpenAIRealtimeOptions)
 
 ### OpenAIGPTLive (preview)
 
-GPT Live v3 uses `mllm.vendor: "openai_gpt_live"`, model `gpt-live-1-diamond-alpha`, and `wss://api.openai.com/v1/live/sessions`. Sessions route through the preview gateway automatically. This alpha must not carry production traffic.
+GPT Live v3 uses `mllm.vendor: "openai_gpt_live"`, model `gpt-live-1`, and `wss://api.openai.com/v1/live/sessions`. Sessions route through the preview gateway automatically. This alpha must not carry production traffic.
 
-The SDK sends `params.alpha_selector: "quicksilver=v3"` by default so the Agora worker selects the required GPT Live v3 OpenAI contract. Set `alphaSelector` to override it. Other tuning defaults remain owned by the provider. Explicit options override entries in `params`. Zero and false values are preserved.
+The SDK omits `params.alpha_selector` by default. Set `alphaSelector` only when a future preview contract requires an `OpenAI-Alpha` selector. Other tuning defaults remain owned by the provider. Explicit options override entries in `params`. Zero and false values are preserved.
 
 | Option | Type | Wire parameter / behavior |
 |---|---|---|
 | `apiKey` | string, required | `mllm.api_key` |
 | `url` | string | `mllm.url`; overrides base/path. Only the legacy `/v1/live` route on OpenAI's host is rewritten to `/v1/live/sessions`. Custom endpoints are preserved. |
-| `model` | `string` | `params.model`. Defaults to gpt-live-1-diamond-alpha. |
+| `model` | `string` | `params.model`. Defaults to gpt-live-1. |
 | `voice` | `string` | `params.voice`. Output voice; provider default marin. Custom voice objects require PR #1522; use params after rollout. |
 | `prompt` | `string` | `params.prompt`. Session instructions. |
 | `baseUrl` | `string` | `params.base_url`. Host when url is omitted; default wss://api.openai.com. |
 | `path` | `string` | `params.path`. WebSocket path; default /v1/live/sessions. |
-| `alphaSelector` | `string` | `params.alpha_selector`; defaults to `quicksilver=v3` for the required GPT Live v3 contract. |
+| `alphaSelector` | `string` | Optional `params.alpha_selector` for preview contracts; omitted by default. |
 | `headers` | `string` | `params.headers`. Extra provider request headers as a JSON string; protocol headers win. |
 | `outputIdleEndMs` | `number` | `params.output_idle_end_ms`. Assistant silence boundary in ms; provider default 600. Zero disables inference. |
 | `inputIdleEndMs` | `number` | `params.input_idle_end_ms`. Caller silence boundary in ms; provider default 1500. |
