@@ -2,13 +2,12 @@ import { describe, expect, test, vi } from "vitest";
 import { OpenAIGPTLive } from "../../../src/agentkit/preview/vendors.js";
 
 describe("GPT Live v3", () => {
-    test("defaults the alpha selector to v3 and normalizes MCP transport", () => {
+    test("omits the alpha selector by default and normalizes MCP transport", () => {
         const servers = [{ name: "lookup", endpoint: "https://tools.example/mcp" }];
         const config = new OpenAIGPTLive({ apiKey: "test", mcpServers: servers }).toConfig();
 
         expect(config.params).toEqual({
-            model: "gpt-live-1-diamond-alpha",
-            alpha_selector: "quicksilver=v3",
+            model: "gpt-live-1",
         });
         expect((config as Record<string, unknown>).mcp_servers).toEqual([
             { ...servers[0], transport: "streamable_http" },
@@ -20,7 +19,7 @@ describe("GPT Live v3", () => {
         const original = { model: "other", prompt: "other", output_idle_end_ms: 900 };
         const config = new OpenAIGPTLive({
             apiKey: "test",
-            model: "gpt-live-1-diamond-alpha",
+            model: "caller-supplied-model",
             voice: "cedar",
             instructions: "alias",
             prompt: "Be brief",
@@ -40,7 +39,7 @@ describe("GPT Live v3", () => {
             params: original,
         }).toConfig();
         expect(config.params).toEqual({
-            model: "gpt-live-1-diamond-alpha",
+            model: "caller-supplied-model",
             voice: "cedar",
             prompt: "Be brief",
             alpha_selector: "custom=v4",

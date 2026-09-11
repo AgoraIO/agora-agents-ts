@@ -304,7 +304,7 @@ test("GPT Live v3 routes the full session to preview with the live-models gate",
         enable: true,
         vendor: "openai_gpt_live",
         url: "wss://api.openai.com/v1/live/sessions",
-        params: { model: "gpt-live-1-diamond-alpha", prompt: "Be brief", output_idle_end_ms: 0 },
+        params: { model: "gpt-live-1", prompt: "Be brief", output_idle_end_ms: 0 },
     });
 });
 
