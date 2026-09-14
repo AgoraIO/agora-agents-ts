@@ -24,12 +24,38 @@ import {
 } from "../../../src/index.js";
 
 describe("CN vendor helpers", () => {
+    test("serializes inline REST tools for CN LLM vendors", () => {
+        const tool = {
+            type: "function" as const,
+            function: {
+                name: "lookup_order",
+                parameters: { type: "object" as const, properties: { orderId: { type: "string" } } },
+            },
+            server: { method: "GET" as const, url: "https://example.com/orders/{{args.orderId}}" },
+        };
+
+        expect(
+            new AliyunLLM({
+                apiKey: "key",
+                model: "qwen-plus",
+                url: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+                tools: [tool],
+            }).toConfig().tools,
+        ).toEqual([tool]);
+    });
+
     test("serializes CN STT vendors", () => {
         expect(new FengmingSTT().toConfig()).toMatchObject({ vendor: "fengming" });
-        expect(new FengmingSTT({ keywords: ["声网", "Agora"] }).toConfig()).toMatchObject({
-            vendor: "fengming",
-            params: { keywords: ["声网", "Agora"] },
-        });
+        expect(new FengmingSTT({ keywords: ["声网", "Agora"], additionalParams: { custom: true } }).toConfig()).toEqual(
+            {
+                vendor: "fengming",
+                keywords: ["声网", "Agora"],
+                params: { custom: true },
+            },
+        );
+        expect(() => new FengmingSTT({ additionalParams: { keywords: ["声网"] } })).toThrow(
+            "use the top-level keywords option",
+        );
 
         expect(
             new TencentSTT({

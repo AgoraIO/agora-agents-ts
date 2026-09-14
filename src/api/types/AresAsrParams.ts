@@ -3,9 +3,4 @@
 /**
  * ARES ASR configuration parameters.
  */
-export interface AresAsrParams {
-    /** A list of hotwords to improve ASR accuracy. */
-    keywords?: string[];
-    /** Accepts any additional properties */
-    [key: string]: any;
-}
+export type AresAsrParams = Record<string, unknown>;

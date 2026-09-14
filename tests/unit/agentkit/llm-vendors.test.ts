@@ -10,6 +10,18 @@ import {
     VertexAILLM,
 } from "../../../src/agentkit/vendors/llm.js";
 
+const INLINE_TOOL = {
+    type: "function" as const,
+    function: {
+        name: "lookup_order",
+        parameters: { type: "object" as const, properties: { orderId: { type: "string" } } },
+    },
+    server: {
+        method: "GET" as const,
+        url: "https://example.com/orders/{{args.orderId}}",
+    },
+};
+
 describe("LLM vendor helpers", () => {
     test("Groq serializes as OpenAI-compatible without exposing style choice", () => {
         expect(
@@ -172,6 +184,24 @@ describe("LLM vendor helpers", () => {
                 uninterruptible_asr_policy: "context",
             },
         });
+    });
+
+    test("serializes inline REST tools through direct and OpenAI-compatible vendors", () => {
+        const openAIConfig = new OpenAI({
+            apiKey: "openai-key",
+            model: "gpt-4o",
+            url: "https://api.openai.com/v1/chat/completions",
+            tools: [INLINE_TOOL],
+        }).toConfig();
+        const groqConfig = new Groq({
+            apiKey: "groq-key",
+            model: "llama-3.3-70b-versatile",
+            url: "https://api.groq.com/openai/v1/chat/completions",
+            tools: [INLINE_TOOL],
+        }).toConfig();
+
+        expect(openAIConfig.tools).toEqual([INLINE_TOOL]);
+        expect(groqConfig.tools).toEqual([INLINE_TOOL]);
     });
 
     test("rejects missing required LLM fields at runtime", () => {

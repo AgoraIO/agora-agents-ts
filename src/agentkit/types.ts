@@ -15,6 +15,7 @@ import type {
     ElevenLabsTts as ElevenLabsTtsType,
     FishAudioTtsParams as FishAudioTtsParamsType,
     FishAudioTts as FishAudioTtsType,
+    GeminiAsrParams as GeminiAsrParamsType,
     GenericHttpTtsParams as GenericTtsParamsType,
     GenericHttpTts as GenericTtsType,
     GetAgentsResponse,
@@ -28,6 +29,10 @@ import type {
     HumeAiTts as HumeAiTtsType,
     ListAgentsResponse,
     Llm,
+    LlmToolExecution as LlmToolExecutionType,
+    LlmToolFunction as LlmToolFunctionType,
+    LlmToolServer as LlmToolServerType,
+    LlmTool as LlmToolType,
     MicrosoftTtsParams as MicrosoftTtsParamsType,
     MicrosoftTts as MicrosoftTtsType,
     MinimaxTtsParams as MinimaxTtsParamsType,
@@ -73,7 +78,12 @@ export type LlmStyle = Llm.Style;
  * When using shorthand strings or minimal configs, the untyped variant is available.
  */
 export type SttConfig =
-    | { vendor: "fengming"; language?: TurnDetectionLanguage; params?: Record<string, unknown> }
+    | {
+          vendor: "fengming";
+          language?: TurnDetectionLanguage;
+          keywords?: string[];
+          params?: Record<string, unknown>;
+      }
     | { vendor: "tencent"; language?: TurnDetectionLanguage; params?: Record<string, unknown> }
     | { vendor: "xfyun"; language?: TurnDetectionLanguage; params?: Record<string, unknown> }
     | { vendor: "xfyun_bigmodel"; language?: TurnDetectionLanguage; params?: Record<string, unknown> }
@@ -85,9 +95,10 @@ export type SttConfig =
     | { vendor: "google"; language?: TurnDetectionLanguage; params: GoogleAsrParams }
     | { vendor: "amazon"; language?: TurnDetectionLanguage; params: AmazonAsrParams }
     | { vendor: "assemblyai"; language?: TurnDetectionLanguage; params: AssemblyAiParams }
-    | { vendor: "ares"; language?: TurnDetectionLanguage; params?: AresParams }
+    | { vendor: "ares"; language?: TurnDetectionLanguage; keywords?: string[]; params?: AresParams }
     | { vendor: "sarvam"; language?: TurnDetectionLanguage; params: SarvamAsrParams }
     | { vendor: "xai"; language?: TurnDetectionLanguage; params: XAiAsrParams }
+    | { vendor: "gemini"; language?: TurnDetectionLanguage; params: GeminiAsrParams }
     | Asr; // Fallback for shorthand/untyped configs
 
 /** ASR configuration — alias for {@link SttConfig} (wire field: `asr`). */
@@ -99,11 +110,19 @@ export type AsrVendorName = string;
 /** TTS (Text-to-Speech) configuration - discriminated union */
 export type TtsConfig = Tts;
 
-/** MLLM (Multimodal LLM) configuration */
-export type MllmConfig = Mllm;
+/** Inline synchronous REST tool exposed to a standard text LLM. */
+export type LlmTool = LlmToolType;
+export type LlmToolExecution = LlmToolExecutionType;
+export type LlmToolFunction = LlmToolFunctionType;
+export type LlmToolServer = LlmToolServerType;
 
-/** MLLM wire vendor name (openai, azure, gemini, vertexai, xai, qwen_omni) */
-export type MllmVendor = Mllm.Vendor;
+/** MLLM configuration, including preview vendors not present in the generated schema yet. */
+export type MllmConfig = Omit<Mllm, "vendor"> & {
+    vendor?: Mllm.Vendor | "openai_gpt_live";
+};
+
+/** MLLM wire vendor name, including preview vendors. */
+export type MllmVendor = Exclude<MllmConfig["vendor"], undefined>;
 
 /** Avatar configuration */
 export type AvatarConfig = StartAgentsRequest.Properties.Avatar;
@@ -276,6 +295,13 @@ export type FillerWordsContent = StartAgentsRequest.Properties.FillerWords.Conte
 /** Static filler word content config (`content.static_config`) */
 export type FillerWordsContentStaticConfig = StartAgentsRequest.Properties.FillerWords.Content.StaticConfig;
 
+/** Generated filler word content configuration. */
+export type FillerWordsContentGeneratedConfig = StartAgentsRequest.Properties.FillerWords.Content.GeneratedConfig;
+
+/** OpenAI-compatible provider settings for generated filler words. */
+export type FillerWordsGeneratedLlmProvider =
+    StartAgentsRequest.Properties.FillerWords.Content.GeneratedConfig.LlmProvider;
+
 /** Filler word selection rule: `"shuffle"` | `"round_robin"` */
 export type FillerWordsContentSelectionRule =
     StartAgentsRequest.Properties.FillerWords.Content.StaticConfig.SelectionRule;
@@ -293,7 +319,7 @@ export type LlmGreetingConfigs = Llm.GreetingConfigs;
 /** Greeting broadcast ASR policy: `"merge_reply"` | `"context"` */
 export type LlmGreetingConfigsMode = Llm.GreetingConfigs.UninterruptibleAsrPolicy;
 
-/** MCP server config item (`llm.mcp_servers[]`) */
+/** MCP server config item (`llm.mcp_servers[]` or `mllm.mcp_servers[]`) */
 export type McpServersItem = Record<string, unknown>;
 
 // =============================================================================
@@ -504,6 +530,8 @@ interface BaseLlmConfig {
     template_variables?: Record<string, string>;
     /** MCP server configurations enabling the agent to call tools from external services */
     mcp_servers?: McpServersItem[];
+    /** Inline synchronous REST tools exposed to the LLM for function calling */
+    tools?: LlmTool[];
 }
 
 /**
@@ -528,7 +556,9 @@ export type LlmConfig =
  */
 export interface SpeechmaticsParams {
     /** Speechmatics API key for authentication (required) */
-    api_key: string;
+    key: string;
+    /** @deprecated The REST API expects `key`; use `key` instead. */
+    api_key?: string;
     /** Language code for transcription (e.g., 'en', 'es', 'fr') (required) */
     language: string;
     /** Speechmatics streaming WebSocket URL */
@@ -635,7 +665,7 @@ export interface AssemblyAiParams {
     /** Language code */
     language?: string;
     /** AssemblyAI streaming WebSocket URL */
-    uri?: string;
+    ws_url?: string;
     /** Additional AssemblyAI-specific parameters */
     [key: string]: unknown;
 }
@@ -668,6 +698,9 @@ export interface SarvamAsrParams {
  */
 export type XAiAsr = XAiAsrType;
 export type XAiAsrParams = XAiAsrParamsType;
+
+/** Google Gemini STT parameters generated from the API schema. */
+export type GeminiAsrParams = GeminiAsrParamsType;
 
 // =============================================================================
 // TTS Vendor-Specific Types (re-exports for convenience)

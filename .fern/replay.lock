@@ -30,14 +30,44 @@ generations:
     cli_version: unknown
     generator_versions:
       fernapi/fern-typescript-node-sdk: 3.31.1
-current_generation: 1c26b7f0e4b7bf5aa462ff01dac2455903eb37c8
+  - commit_sha: ea02f9398069bf0c6ce9938f0c52e2c5d778dc5d
+    tree_hash: cfc4d107f22d15b72a534ad3c2d7f620a90f1be9
+    timestamp: 2026-08-10T06:40:22.002Z
+    cli_version: unknown
+    generator_versions:
+      fernapi/fern-typescript-node-sdk: 3.31.1
+  - commit_sha: 1f08d27f733887cba7f89c5ef2ea3b0a549481f8
+    tree_hash: a89812b40f1004ea31b64f8ac742e1eb0888ccfc
+    timestamp: 2026-08-19T13:29:51.873Z
+    cli_version: unknown
+    generator_versions:
+      fernapi/fern-typescript-node-sdk: 3.31.1
+  - commit_sha: ab7b59c1f1f70abf3e35c32adc1cd7e067a56251
+    tree_hash: 2e91d5a0afd210f1d4ef7769770904c741e72cdb
+    timestamp: 2026-08-27T08:21:47.701Z
+    cli_version: unknown
+    generator_versions:
+      fernapi/fern-typescript-node-sdk: 3.31.1
+  - commit_sha: e200110274db598b0e0cd2d27f40f49102de6f50
+    tree_hash: 1def1b5e82a21154a165076c0b897fec48d60c76
+    timestamp: 2026-09-01T03:18:26.876Z
+    cli_version: unknown
+    generator_versions:
+      fernapi/fern-typescript-node-sdk: 3.31.1
+  - commit_sha: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    tree_hash: a2b50a03a19b95becdb938060d513f7a212df003
+    timestamp: 2026-09-09T15:14:28.506Z
+    cli_version: unknown
+    generator_versions:
+      fernapi/fern-typescript-node-sdk: 3.31.1
+current_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
 patches:
   - id: patch-fee3d812
     content_hash: sha256:a682f317c80be32b9fa689ae5d3584b7c9b1b2ada52a1560dcf51b0f3f82fbb7
     original_commit: fee3d8126a03bf95cb09c6b33ab2c32911ce8cf2
     original_message: "fix: update Anam avatar configuration to require avatar_id instead of persona_id"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 1c26b7f0e4b7bf5aa462ff01dac2455903eb37c8
+    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
     files:
       - pnpm-workspace.yaml
     patch_content: |
@@ -58,4 +88,1798 @@ patches:
         allowBuilds:
           esbuild: set this to true or false
           msw: set this to true or false
+    user_owned: true
+  - id: patch-8078c202
+    content_hash: sha256:81c0a65e3959bc44d39af59598b22dc312b93ac3e6915055e9962a14d8936b07
+    original_commit: 8078c202c81fd5caf258ed5af174dc15d255ccdc
+    original_message: "feat: implement internal fixed base URL support in AgoraClient"
+    original_author: seymourtang <tangxianmeng@live.com>
+    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    files:
+      - tests/unit/AgoraPoolClient.test.ts
+    patch_content: |
+      diff --git a/tests/unit/AgoraPoolClient.test.ts b/tests/unit/AgoraPoolClient.test.ts
+      new file mode 100644
+      index 0000000..7553229
+      --- /dev/null
+      +++ b/tests/unit/AgoraPoolClient.test.ts
+      @@ -0,0 +1,103 @@
+      +import { afterEach, describe, expect, test, vi } from "vitest";
+      +import { Area } from "../../src/core/domain/index.js";
+      +import { AgoraClient } from "../../src/index.js";
+      +
+      +const API_BASE_URL_ENV = "AGORA_AGENTS_API_BASE_URL";
+      +
+      +function createClient(area: Area.US | Area.EU | Area.AP | Area.CN): AgoraClient {
+      +    return new AgoraClient({
+      +        area,
+      +        appId: "test-app-id",
+      +        appCertificate: "test-app-certificate-01234567890",
+      +    });
+      +}
+      +
+      +afterEach(() => {
+      +    vi.unstubAllEnvs();
+      +});
+      +
+      +describe("AgoraClient configured base URL", () => {
+      +    test.each([
+      +        [Area.US, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.EU, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.AP, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.CN, "https://api-test.agora.io/cn/api/conversational-ai-agent"],
+      +    ] as const)("uses the area-specific API path for area %s", (area, expected) => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io/");
+      +
+      +        expect(createClient(area).getCurrentURL()).toBe(expected);
+      +    });
+      +
+      +    test("disables dynamic routing for the client and exposed pool", async () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const client = createClient(Area.US);
+      +        const expected = "https://api-test.agora.io/api/conversational-ai-agent";
+      +
+      +        for (let index = 0; index < 3; index += 1) {
+      +            client.nextRegion();
+      +            await client.selectBestDomain();
+      +            client.pool.nextRegion();
+      +            await client.pool.selectBestDomain();
+      +            expect(client.getCurrentURL()).toBe(expected);
+      +            expect(client.pool.getCurrentURL()).toBe(expected);
+      +        }
+      +    });
+      +
+      +    test("uses the configured base URL for API requests", async () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+      +        const client = new AgoraClient({
+      +            area: Area.CN,
+      +            appId: "test-app-id",
+      +            appCertificate: "test-app-certificate-01234567890",
+      +            fetch: fetchMock,
+      +        });
+      +
+      +        client.nextRegion();
+      +        await client.selectBestDomain();
+      +        await client.agents.stop({ appid: "test-app-id", agentId: "test-agent-id" });
+      +
+      +        expect(fetchMock).toHaveBeenCalledOnce();
+      +        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      +            "https://api-test.agora.io/cn/api/conversational-ai-agent/v2/projects/test-app-id/agents/test-agent-id/leave",
+      +        );
+      +    });
+      +
+      +    test.each([
+      +        ["https://staging.example.com/", "https://staging.example.com/api/conversational-ai-agent"],
+      +        ["http://localhost:8080", "http://localhost:8080/api/conversational-ai-agent"],
+      +        [
+      +            "https://user:password@staging.example.com/gateway?debug=true#section",
+      +            "https://user:password@staging.example.com/gateway/api/conversational-ai-agent?debug=true#section",
+      +        ],
+      +    ])("joins the API path onto %s", (baseUrl, expected) => {
+      +        vi.stubEnv(API_BASE_URL_ENV, baseUrl);
+      +
+      +        expect(createClient(Area.US).getCurrentURL()).toBe(expected);
+      +    });
+      +
+      +    test("keeps regional routing when the environment variable is empty", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "   ");
+      +        const client = createClient(Area.US);
+      +
+      +        expect(client.getCurrentURL()).toBe("https://api-us-west-1.agora.io/api/conversational-ai-agent");
+      +        client.nextRegion();
+      +        expect(client.getCurrentURL()).toBe("https://api-us-east-1.agora.io/api/conversational-ai-agent");
+      +    });
+      +
+      +    test("captures the configured base URL when the client is constructed", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const client = createClient(Area.CN);
+      +
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://staging.example.com");
+      +        client.nextRegion();
+      +
+      +        expect(client.getCurrentURL()).toBe("https://api-test.agora.io/cn/api/conversational-ai-agent");
+      +    });
+      +
+      +    test("rejects an invalid base URL", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "://invalid");
+      +
+      +        expect(() => createClient(Area.US)).toThrow(`invalid ${API_BASE_URL_ENV}`);
+      +    });
+      +});
+    theirs_snapshot:
+      tests/unit/AgoraPoolClient.test.ts: |
+        import { afterEach, describe, expect, test, vi } from "vitest";
+        import { Area } from "../../src/core/domain/index.js";
+        import { AgoraClient } from "../../src/index.js";
+
+        const API_BASE_URL_ENV = "AGORA_AGENTS_API_BASE_URL";
+
+        function createClient(area: Area.US | Area.EU | Area.AP | Area.CN): AgoraClient {
+            return new AgoraClient({
+                area,
+                appId: "test-app-id",
+                appCertificate: "test-app-certificate-01234567890",
+            });
+        }
+
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        describe("AgoraClient configured base URL", () => {
+            test.each([
+                [Area.US, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.EU, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.AP, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.CN, "https://api-test.agora.io/cn/api/conversational-ai-agent"],
+            ] as const)("uses the area-specific API path for area %s", (area, expected) => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io/");
+
+                expect(createClient(area).getCurrentURL()).toBe(expected);
+            });
+
+            test("disables dynamic routing for the client and exposed pool", async () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const client = createClient(Area.US);
+                const expected = "https://api-test.agora.io/api/conversational-ai-agent";
+
+                for (let index = 0; index < 3; index += 1) {
+                    client.nextRegion();
+                    await client.selectBestDomain();
+                    client.pool.nextRegion();
+                    await client.pool.selectBestDomain();
+                    expect(client.getCurrentURL()).toBe(expected);
+                    expect(client.pool.getCurrentURL()).toBe(expected);
+                }
+            });
+
+            test("uses the configured base URL for API requests", async () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+                const client = new AgoraClient({
+                    area: Area.CN,
+                    appId: "test-app-id",
+                    appCertificate: "test-app-certificate-01234567890",
+                    fetch: fetchMock,
+                });
+
+                client.nextRegion();
+                await client.selectBestDomain();
+                await client.agents.stop({ appid: "test-app-id", agentId: "test-agent-id" });
+
+                expect(fetchMock).toHaveBeenCalledOnce();
+                expect(fetchMock.mock.calls[0]?.[0]).toBe(
+                    "https://api-test.agora.io/cn/api/conversational-ai-agent/v2/projects/test-app-id/agents/test-agent-id/leave",
+                );
+            });
+
+            test.each([
+                ["https://staging.example.com/", "https://staging.example.com/api/conversational-ai-agent"],
+                ["http://localhost:8080", "http://localhost:8080/api/conversational-ai-agent"],
+                [
+                    "https://user:password@staging.example.com/gateway?debug=true#section",
+                    "https://user:password@staging.example.com/gateway/api/conversational-ai-agent?debug=true#section",
+                ],
+            ])("joins the API path onto %s", (baseUrl, expected) => {
+                vi.stubEnv(API_BASE_URL_ENV, baseUrl);
+
+                expect(createClient(Area.US).getCurrentURL()).toBe(expected);
+            });
+
+            test("keeps regional routing when the environment variable is empty", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "   ");
+                const client = createClient(Area.US);
+
+                expect(client.getCurrentURL()).toBe("https://api-us-west-1.agora.io/api/conversational-ai-agent");
+                client.nextRegion();
+                expect(client.getCurrentURL()).toBe("https://api-us-east-1.agora.io/api/conversational-ai-agent");
+            });
+
+            test("captures the configured base URL when the client is constructed", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const client = createClient(Area.CN);
+
+                vi.stubEnv(API_BASE_URL_ENV, "https://staging.example.com");
+                client.nextRegion();
+
+                expect(client.getCurrentURL()).toBe("https://api-test.agora.io/cn/api/conversational-ai-agent");
+            });
+
+            test("rejects an invalid base URL", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "://invalid");
+
+                expect(() => createClient(Area.US)).toThrow(`invalid ${API_BASE_URL_ENV}`);
+            });
+        });
+    user_owned: true
+  - id: patch-bf6e10d7
+    content_hash: sha256:81c0a65e3959bc44d39af59598b22dc312b93ac3e6915055e9962a14d8936b07
+    original_commit: bf6e10d79516d17968d12c7aef0da2e40602a51f
+    original_message: "refactor: update AgoraClient to use configurable API base URL"
+    original_author: seymourtang <tangxianmeng@live.com>
+    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    files:
+      - tests/unit/AgoraPoolClient.test.ts
+    patch_content: |
+      diff --git a/tests/unit/AgoraPoolClient.test.ts b/tests/unit/AgoraPoolClient.test.ts
+      new file mode 100644
+      index 0000000..7553229
+      --- /dev/null
+      +++ b/tests/unit/AgoraPoolClient.test.ts
+      @@ -0,0 +1,103 @@
+      +import { afterEach, describe, expect, test, vi } from "vitest";
+      +import { Area } from "../../src/core/domain/index.js";
+      +import { AgoraClient } from "../../src/index.js";
+      +
+      +const API_BASE_URL_ENV = "AGORA_AGENTS_API_BASE_URL";
+      +
+      +function createClient(area: Area.US | Area.EU | Area.AP | Area.CN): AgoraClient {
+      +    return new AgoraClient({
+      +        area,
+      +        appId: "test-app-id",
+      +        appCertificate: "test-app-certificate-01234567890",
+      +    });
+      +}
+      +
+      +afterEach(() => {
+      +    vi.unstubAllEnvs();
+      +});
+      +
+      +describe("AgoraClient configured base URL", () => {
+      +    test.each([
+      +        [Area.US, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.EU, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.AP, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.CN, "https://api-test.agora.io/cn/api/conversational-ai-agent"],
+      +    ] as const)("uses the area-specific API path for area %s", (area, expected) => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io/");
+      +
+      +        expect(createClient(area).getCurrentURL()).toBe(expected);
+      +    });
+      +
+      +    test("disables dynamic routing for the client and exposed pool", async () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const client = createClient(Area.US);
+      +        const expected = "https://api-test.agora.io/api/conversational-ai-agent";
+      +
+      +        for (let index = 0; index < 3; index += 1) {
+      +            client.nextRegion();
+      +            await client.selectBestDomain();
+      +            client.pool.nextRegion();
+      +            await client.pool.selectBestDomain();
+      +            expect(client.getCurrentURL()).toBe(expected);
+      +            expect(client.pool.getCurrentURL()).toBe(expected);
+      +        }
+      +    });
+      +
+      +    test("uses the configured base URL for API requests", async () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+      +        const client = new AgoraClient({
+      +            area: Area.CN,
+      +            appId: "test-app-id",
+      +            appCertificate: "test-app-certificate-01234567890",
+      +            fetch: fetchMock,
+      +        });
+      +
+      +        client.nextRegion();
+      +        await client.selectBestDomain();
+      +        await client.agents.stop({ appid: "test-app-id", agentId: "test-agent-id" });
+      +
+      +        expect(fetchMock).toHaveBeenCalledOnce();
+      +        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      +            "https://api-test.agora.io/cn/api/conversational-ai-agent/v2/projects/test-app-id/agents/test-agent-id/leave",
+      +        );
+      +    });
+      +
+      +    test.each([
+      +        ["https://staging.example.com/", "https://staging.example.com/api/conversational-ai-agent"],
+      +        ["http://localhost:8080", "http://localhost:8080/api/conversational-ai-agent"],
+      +        [
+      +            "https://user:password@staging.example.com/gateway?debug=true#section",
+      +            "https://user:password@staging.example.com/gateway/api/conversational-ai-agent?debug=true#section",
+      +        ],
+      +    ])("joins the API path onto %s", (baseUrl, expected) => {
+      +        vi.stubEnv(API_BASE_URL_ENV, baseUrl);
+      +
+      +        expect(createClient(Area.US).getCurrentURL()).toBe(expected);
+      +    });
+      +
+      +    test("keeps regional routing when the environment variable is empty", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "   ");
+      +        const client = createClient(Area.US);
+      +
+      +        expect(client.getCurrentURL()).toBe("https://api-us-west-1.agora.io/api/conversational-ai-agent");
+      +        client.nextRegion();
+      +        expect(client.getCurrentURL()).toBe("https://api-us-east-1.agora.io/api/conversational-ai-agent");
+      +    });
+      +
+      +    test("captures the configured base URL when the client is constructed", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const client = createClient(Area.CN);
+      +
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://staging.example.com");
+      +        client.nextRegion();
+      +
+      +        expect(client.getCurrentURL()).toBe("https://api-test.agora.io/cn/api/conversational-ai-agent");
+      +    });
+      +
+      +    test("rejects an invalid base URL", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "://invalid");
+      +
+      +        expect(() => createClient(Area.US)).toThrow(`invalid ${API_BASE_URL_ENV}`);
+      +    });
+      +});
+    theirs_snapshot:
+      tests/unit/AgoraPoolClient.test.ts: |
+        import { afterEach, describe, expect, test, vi } from "vitest";
+        import { Area } from "../../src/core/domain/index.js";
+        import { AgoraClient } from "../../src/index.js";
+
+        const API_BASE_URL_ENV = "AGORA_AGENTS_API_BASE_URL";
+
+        function createClient(area: Area.US | Area.EU | Area.AP | Area.CN): AgoraClient {
+            return new AgoraClient({
+                area,
+                appId: "test-app-id",
+                appCertificate: "test-app-certificate-01234567890",
+            });
+        }
+
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        describe("AgoraClient configured base URL", () => {
+            test.each([
+                [Area.US, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.EU, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.AP, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.CN, "https://api-test.agora.io/cn/api/conversational-ai-agent"],
+            ] as const)("uses the area-specific API path for area %s", (area, expected) => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io/");
+
+                expect(createClient(area).getCurrentURL()).toBe(expected);
+            });
+
+            test("disables dynamic routing for the client and exposed pool", async () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const client = createClient(Area.US);
+                const expected = "https://api-test.agora.io/api/conversational-ai-agent";
+
+                for (let index = 0; index < 3; index += 1) {
+                    client.nextRegion();
+                    await client.selectBestDomain();
+                    client.pool.nextRegion();
+                    await client.pool.selectBestDomain();
+                    expect(client.getCurrentURL()).toBe(expected);
+                    expect(client.pool.getCurrentURL()).toBe(expected);
+                }
+            });
+
+            test("uses the configured base URL for API requests", async () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+                const client = new AgoraClient({
+                    area: Area.CN,
+                    appId: "test-app-id",
+                    appCertificate: "test-app-certificate-01234567890",
+                    fetch: fetchMock,
+                });
+
+                client.nextRegion();
+                await client.selectBestDomain();
+                await client.agents.stop({ appid: "test-app-id", agentId: "test-agent-id" });
+
+                expect(fetchMock).toHaveBeenCalledOnce();
+                expect(fetchMock.mock.calls[0]?.[0]).toBe(
+                    "https://api-test.agora.io/cn/api/conversational-ai-agent/v2/projects/test-app-id/agents/test-agent-id/leave",
+                );
+            });
+
+            test.each([
+                ["https://staging.example.com/", "https://staging.example.com/api/conversational-ai-agent"],
+                ["http://localhost:8080", "http://localhost:8080/api/conversational-ai-agent"],
+                [
+                    "https://user:password@staging.example.com/gateway?debug=true#section",
+                    "https://user:password@staging.example.com/gateway/api/conversational-ai-agent?debug=true#section",
+                ],
+            ])("joins the API path onto %s", (baseUrl, expected) => {
+                vi.stubEnv(API_BASE_URL_ENV, baseUrl);
+
+                expect(createClient(Area.US).getCurrentURL()).toBe(expected);
+            });
+
+            test("keeps regional routing when the environment variable is empty", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "   ");
+                const client = createClient(Area.US);
+
+                expect(client.getCurrentURL()).toBe("https://api-us-west-1.agora.io/api/conversational-ai-agent");
+                client.nextRegion();
+                expect(client.getCurrentURL()).toBe("https://api-us-east-1.agora.io/api/conversational-ai-agent");
+            });
+
+            test("captures the configured base URL when the client is constructed", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const client = createClient(Area.CN);
+
+                vi.stubEnv(API_BASE_URL_ENV, "https://staging.example.com");
+                client.nextRegion();
+
+                expect(client.getCurrentURL()).toBe("https://api-test.agora.io/cn/api/conversational-ai-agent");
+            });
+
+            test("rejects an invalid base URL", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "://invalid");
+
+                expect(() => createClient(Area.US)).toThrow(`invalid ${API_BASE_URL_ENV}`);
+            });
+        });
+    user_owned: true
+  - id: patch-d83a891b
+    content_hash: sha256:3d688dc59f724ae72a26c05afa2995dd6c1505611399f3d2cef59f8d31f7c1e5
+    original_commit: d83a891bf5068e57afc8b3bcfb7e1ed8d15e8d6f
+    original_message: "fix(vendors): send Speechmatics STT key instead of api_key"
+    original_author: digitallysavvy <hermes.frangoudis@gmail.com>
+    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    files:
+      - src/api/resources/agents/client/Client.ts
+      - src/api/types/SpeechmaticsAsrParams.ts
+    patch_content: |
+      diff --git a/src/api/resources/agents/client/Client.ts b/src/api/resources/agents/client/Client.ts
+      index 32c8f89..bdc1773 100644
+      --- a/src/api/resources/agents/client/Client.ts
+      +++ b/src/api/resources/agents/client/Client.ts
+      @@ -8,6 +8,29 @@ import * as environments from "../../../../environments.js";
+       import * as errors from "../../../../errors/index.js";
+       import type * as Agora from "../../../index.js";
+       
+      +function normalizeSpeechmaticsCredential<T extends Omit<Agora.StartAgentsRequest, "appid">>(body: T): T {
+      +    const asr = body.properties.asr;
+      +    if (asr?.vendor !== "speechmatics" || asr.params == null) {
+      +        return body;
+      +    }
+      +
+      +    const params = asr.params as Record<string, unknown>;
+      +    const wireKey = params.key ?? params.api_key;
+      +    if (wireKey === undefined) {
+      +        return body;
+      +    }
+      +
+      +    const normalizedParams: Record<string, unknown> = { ...params, key: wireKey };
+      +    delete normalizedParams.api_key;
+      +    return {
+      +        ...body,
+      +        properties: {
+      +            ...body.properties,
+      +            asr: { ...asr, params: normalizedParams },
+      +        },
+      +    } as T;
+      +}
+      +
+       export declare namespace AgentsClient {
+           export interface Options extends BaseClientOptions {}
+       
+      @@ -86,6 +109,7 @@ export class AgentsClient {
+               requestOptions?: AgentsClient.RequestOptions,
+           ): Promise<core.WithRawResponse<Agora.StartAgentsResponse>> {
+               const { appid, ..._body } = request;
+      +        const _normalizedBody = normalizeSpeechmaticsCredential(_body);
+               const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                   this._options?.headers,
+                   mergeOnlyDefinedHeaders({
+      @@ -106,7 +130,7 @@ export class AgentsClient {
+                   contentType: "application/json",
+                   queryParameters: requestOptions?.queryParams,
+                   requestType: "json",
+      -            body: _body,
+      +            body: _normalizedBody,
+                   timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                   maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                   abortSignal: requestOptions?.abortSignal,
+      diff --git a/src/api/types/SpeechmaticsAsrParams.ts b/src/api/types/SpeechmaticsAsrParams.ts
+      index 3e554df..d3ba2d6 100644
+      --- a/src/api/types/SpeechmaticsAsrParams.ts
+      +++ b/src/api/types/SpeechmaticsAsrParams.ts
+      @@ -3,9 +3,7 @@
+       /**
+        * Speechmatics ASR configuration parameters.
+        */
+      -export interface SpeechmaticsAsrParams {
+      -    /** Speechmatics API key */
+      -    api_key: string;
+      +interface SpeechmaticsAsrParamsBase {
+           /** Language code to use for transcription */
+           language: string;
+           /** WebSocket URL for the Speechmatics streaming API */
+      @@ -13,3 +11,18 @@ export interface SpeechmaticsAsrParams {
+           /** Accepts any additional properties */
+           [key: string]: any;
+       }
+      +
+      +export type SpeechmaticsAsrParams = SpeechmaticsAsrParamsBase &
+      +    (
+      +        | {
+      +              /** Speechmatics API key */
+      +              key: string;
+      +              /** @deprecated Use `key` instead. The client normalizes this alias to `key`. */
+      +              api_key?: string;
+      +          }
+      +        | {
+      +              key?: undefined;
+      +              /** @deprecated Use `key` instead. The client normalizes this alias to `key`. */
+      +              api_key: string;
+      +          }
+      +    );
+    theirs_snapshot:
+      src/api/resources/agents/client/Client.ts: |
+        // This file was auto-generated by Fern from our API Definition.
+
+        import type { BaseClientOptions, BaseRequestOptions } from "../../../../BaseClient.js";
+        import { normalizeClientOptions } from "../../../../BaseClient.js";
+        import { mergeHeaders, mergeOnlyDefinedHeaders } from "../../../../core/headers.js";
+        import * as core from "../../../../core/index.js";
+        import * as environments from "../../../../environments.js";
+        import * as errors from "../../../../errors/index.js";
+        import type * as Agora from "../../../index.js";
+
+        function normalizeSpeechmaticsCredential<T extends Omit<Agora.StartAgentsRequest, "appid">>(body: T): T {
+            const asr = body.properties.asr;
+            if (asr?.vendor !== "speechmatics" || asr.params == null) {
+                return body;
+            }
+
+            const params = asr.params as Record<string, unknown>;
+            const wireKey = params.key ?? params.api_key;
+            if (wireKey === undefined) {
+                return body;
+            }
+
+            const normalizedParams: Record<string, unknown> = { ...params, key: wireKey };
+            delete normalizedParams.api_key;
+            return {
+                ...body,
+                properties: {
+                    ...body.properties,
+                    asr: { ...asr, params: normalizedParams },
+                },
+            } as T;
+        }
+
+        export declare namespace AgentsClient {
+            export interface Options extends BaseClientOptions {}
+
+            export interface RequestOptions extends BaseRequestOptions {}
+        }
+
+        export class AgentsClient {
+            protected readonly _options: AgentsClient.Options;
+
+            constructor(options: AgentsClient.Options) {
+                this._options = normalizeClientOptions(options);
+            }
+
+            /**
+             * Create and start a Conversational AI agent instance.
+             *
+             * @param {Agora.StartAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.start({
+             *         appid: "appid",
+             *         name: "unique_name",
+             *         properties: {
+             *             channel: "channel_name",
+             *             token: "token",
+             *             agent_rtc_uid: "1001",
+             *             remote_rtc_uids: ["1002"],
+             *             idle_timeout: 120,
+             *             asr: {
+             *                 vendor: "ares",
+             *                 vendor: "ares"
+             *             },
+             *             tts: {
+             *                 vendor: "microsoft",
+             *                 params: {
+             *                     key: "key",
+             *                     region: "region",
+             *                     voice_name: "voice_name"
+             *                 }
+             *             },
+             *             llm: {
+             *                 url: "https://api.openai.com/v1/chat/completions",
+             *                 api_key: "<your_llm_key>",
+             *                 system_messages: [{
+             *                         "role": "system",
+             *                         "content": "You are a helpful chatbot."
+             *                     }],
+             *                 params: {
+             *                     model: "gpt-4o-mini"
+             *                 },
+             *                 max_history: 32,
+             *                 greeting_message: "Hello, how can I assist you today?",
+             *                 failure_message: "Please hold on a second."
+             *             },
+             *             turn_detection: {
+             *                 mode: "default",
+             *                 config: {
+             *                     end_of_speech: {
+             *                         mode: "semantic"
+             *                     }
+             *                 }
+             *             }
+             *         }
+             *     })
+             */
+            public start(
+                request: Agora.StartAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): core.HttpResponsePromise<Agora.StartAgentsResponse> {
+                return core.HttpResponsePromise.fromPromise(this.__start(request, requestOptions));
+            }
+
+            private async __start(
+                request: Agora.StartAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.WithRawResponse<Agora.StartAgentsResponse>> {
+                const { appid, ..._body } = request;
+                const _normalizedBody = normalizeSpeechmaticsCredential(_body);
+                const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                    this._options?.headers,
+                    mergeOnlyDefinedHeaders({
+                        Authorization: await this._getAuthorizationHeader(),
+                        ...(await this._getCustomAuthorizationHeaders()),
+                    }),
+                    requestOptions?.headers,
+                );
+                const _response = await core.fetcher({
+                    url: core.url.join(
+                        (await core.Supplier.get(this._options.baseUrl)) ??
+                            (await core.Supplier.get(this._options.environment)) ??
+                            environments.AgoraEnvironment.Default,
+                        `v2/projects/${core.url.encodePathParam(appid)}/join`,
+                    ),
+                    method: "POST",
+                    headers: _headers,
+                    contentType: "application/json",
+                    queryParameters: requestOptions?.queryParams,
+                    requestType: "json",
+                    body: _normalizedBody,
+                    timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                    maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                    abortSignal: requestOptions?.abortSignal,
+                    fetchFn: this._options?.fetch,
+                    logging: this._options.logging,
+                });
+                if (_response.ok) {
+                    return { data: _response.body as Agora.StartAgentsResponse, rawResponse: _response.rawResponse };
+                }
+
+                if (_response.error.reason === "status-code") {
+                    throw new errors.AgoraError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+                }
+
+                switch (_response.error.reason) {
+                    case "non-json":
+                        throw new errors.AgoraError({
+                            statusCode: _response.error.statusCode,
+                            body: _response.error.rawBody,
+                            rawResponse: _response.rawResponse,
+                        });
+                    case "timeout":
+                        throw new errors.AgoraTimeoutError("Timeout exceeded when calling POST /v2/projects/{appid}/join.");
+                    case "unknown":
+                        throw new errors.AgoraError({
+                            message: _response.error.errorMessage,
+                            rawResponse: _response.rawResponse,
+                        });
+                }
+            }
+
+            /**
+             * Retrieve a list of agents that meet the specified conditions.
+             *
+             * @param {Agora.ListAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.list({
+             *         appid: "appid"
+             *     })
+             */
+            public async list(
+                request: Agora.ListAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.Page<Agora.ListAgentsResponse.Data.List.Item, Agora.ListAgentsResponse>> {
+                const list = core.HttpResponsePromise.interceptFunction(
+                    async (request: Agora.ListAgentsRequest): Promise<core.WithRawResponse<Agora.ListAgentsResponse>> => {
+                        const { appid, channel, from_time: fromTime, to_time: toTime, state, limit, cursor } = request;
+                        const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+                        if (channel != null) {
+                            _queryParams.channel = channel;
+                        }
+                        if (fromTime != null) {
+                            _queryParams.from_time = fromTime.toString();
+                        }
+                        if (toTime != null) {
+                            _queryParams.to_time = toTime.toString();
+                        }
+                        if (state != null) {
+                            _queryParams.state = state;
+                        }
+                        if (limit != null) {
+                            _queryParams.limit = limit.toString();
+                        }
+                        if (cursor != null) {
+                            _queryParams.cursor = cursor;
+                        }
+                        const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                            this._options?.headers,
+                            mergeOnlyDefinedHeaders({
+                                Authorization: await this._getAuthorizationHeader(),
+                                ...(await this._getCustomAuthorizationHeaders()),
+                            }),
+                            requestOptions?.headers,
+                        );
+                        const _response = await core.fetcher({
+                            url: core.url.join(
+                                (await core.Supplier.get(this._options.baseUrl)) ??
+                                    (await core.Supplier.get(this._options.environment)) ??
+                                    environments.AgoraEnvironment.Default,
+                                `v2/projects/${core.url.encodePathParam(appid)}/agents`,
+                            ),
+                            method: "GET",
+                            headers: _headers,
+                            queryParameters: { ..._queryParams, ...requestOptions?.queryParams },
+                            timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                            abortSignal: requestOptions?.abortSignal,
+                            fetchFn: this._options?.fetch,
+                            logging: this._options.logging,
+                        });
+                        if (_response.ok) {
+                            return { data: _response.body as Agora.ListAgentsResponse, rawResponse: _response.rawResponse };
+                        }
+                        if (_response.error.reason === "status-code") {
+                            throw new errors.AgoraError({
+                                statusCode: _response.error.statusCode,
+                                body: _response.error.body,
+                                rawResponse: _response.rawResponse,
+                            });
+                        }
+                        switch (_response.error.reason) {
+                            case "non-json":
+                                throw new errors.AgoraError({
+                                    statusCode: _response.error.statusCode,
+                                    body: _response.error.rawBody,
+                                    rawResponse: _response.rawResponse,
+                                });
+                            case "timeout":
+                                throw new errors.AgoraTimeoutError(
+                                    "Timeout exceeded when calling GET /v2/projects/{appid}/agents.",
+                                );
+                            case "unknown":
+                                throw new errors.AgoraError({
+                                    message: _response.error.errorMessage,
+                                    rawResponse: _response.rawResponse,
+                                });
+                        }
+                    },
+                );
+                const dataWithRawResponse = await list(request).withRawResponse();
+                return new core.Page<Agora.ListAgentsResponse.Data.List.Item, Agora.ListAgentsResponse>({
+                    response: dataWithRawResponse.data,
+                    rawResponse: dataWithRawResponse.rawResponse,
+                    hasNextPage: (response) =>
+                        response?.meta?.cursor != null &&
+                        !(typeof response?.meta?.cursor === "string" && response?.meta?.cursor === ""),
+                    getItems: (response) => response?.data.list ?? [],
+                    loadPage: (response) => {
+                        return list(core.setObjectProperty(request, "cursor", response?.meta?.cursor));
+                    },
+                });
+            }
+
+            /**
+             * Get the current state information of the specified agent instance.
+             *
+             * @param {Agora.GetAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.get({
+             *         appid: "appid",
+             *         agentId: "agentId"
+             *     })
+             */
+            public get(
+                request: Agora.GetAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): core.HttpResponsePromise<Agora.GetAgentsResponse> {
+                return core.HttpResponsePromise.fromPromise(this.__get(request, requestOptions));
+            }
+
+            private async __get(
+                request: Agora.GetAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.WithRawResponse<Agora.GetAgentsResponse>> {
+                const { appid, agentId } = request;
+                const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                    this._options?.headers,
+                    mergeOnlyDefinedHeaders({
+                        Authorization: await this._getAuthorizationHeader(),
+                        ...(await this._getCustomAuthorizationHeaders()),
+                    }),
+                    requestOptions?.headers,
+                );
+                const _response = await core.fetcher({
+                    url: core.url.join(
+                        (await core.Supplier.get(this._options.baseUrl)) ??
+                            (await core.Supplier.get(this._options.environment)) ??
+                            environments.AgoraEnvironment.Default,
+                        `v2/projects/${core.url.encodePathParam(appid)}/agents/${core.url.encodePathParam(agentId)}`,
+                    ),
+                    method: "GET",
+                    headers: _headers,
+                    queryParameters: requestOptions?.queryParams,
+                    timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                    maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                    abortSignal: requestOptions?.abortSignal,
+                    fetchFn: this._options?.fetch,
+                    logging: this._options.logging,
+                });
+                if (_response.ok) {
+                    return { data: _response.body as Agora.GetAgentsResponse, rawResponse: _response.rawResponse };
+                }
+
+                if (_response.error.reason === "status-code") {
+                    throw new errors.AgoraError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+                }
+
+                switch (_response.error.reason) {
+                    case "non-json":
+                        throw new errors.AgoraError({
+                            statusCode: _response.error.statusCode,
+                            body: _response.error.rawBody,
+                            rawResponse: _response.rawResponse,
+                        });
+                    case "timeout":
+                        throw new errors.AgoraTimeoutError(
+                            "Timeout exceeded when calling GET /v2/projects/{appid}/agents/{agentId}.",
+                        );
+                    case "unknown":
+                        throw new errors.AgoraError({
+                            message: _response.error.errorMessage,
+                            rawResponse: _response.rawResponse,
+                        });
+                }
+            }
+
+            /**
+             * Get the history of the conversation between the user and the agent.
+             *
+             * Call this endpoint while the agent is running to retrieve the conversation history. You can set the maximum number of cached entries using the `llm.max_history` parameter when calling the start agent endpoint. The default value is `32`.
+             *
+             * @param {Agora.GetHistoryAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.getHistory({
+             *         appid: "appid",
+             *         agentId: "agentId"
+             *     })
+             */
+            public getHistory(
+                request: Agora.GetHistoryAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): core.HttpResponsePromise<Agora.GetHistoryAgentsResponse> {
+                return core.HttpResponsePromise.fromPromise(this.__getHistory(request, requestOptions));
+            }
+
+            private async __getHistory(
+                request: Agora.GetHistoryAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.WithRawResponse<Agora.GetHistoryAgentsResponse>> {
+                const { appid, agentId } = request;
+                const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                    this._options?.headers,
+                    mergeOnlyDefinedHeaders({
+                        Authorization: await this._getAuthorizationHeader(),
+                        ...(await this._getCustomAuthorizationHeaders()),
+                    }),
+                    requestOptions?.headers,
+                );
+                const _response = await core.fetcher({
+                    url: core.url.join(
+                        (await core.Supplier.get(this._options.baseUrl)) ??
+                            (await core.Supplier.get(this._options.environment)) ??
+                            environments.AgoraEnvironment.Default,
+                        `v2/projects/${core.url.encodePathParam(appid)}/agents/${core.url.encodePathParam(agentId)}/history`,
+                    ),
+                    method: "GET",
+                    headers: _headers,
+                    queryParameters: requestOptions?.queryParams,
+                    timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                    maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                    abortSignal: requestOptions?.abortSignal,
+                    fetchFn: this._options?.fetch,
+                    logging: this._options.logging,
+                });
+                if (_response.ok) {
+                    return { data: _response.body as Agora.GetHistoryAgentsResponse, rawResponse: _response.rawResponse };
+                }
+
+                if (_response.error.reason === "status-code") {
+                    throw new errors.AgoraError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+                }
+
+                switch (_response.error.reason) {
+                    case "non-json":
+                        throw new errors.AgoraError({
+                            statusCode: _response.error.statusCode,
+                            body: _response.error.rawBody,
+                            rawResponse: _response.rawResponse,
+                        });
+                    case "timeout":
+                        throw new errors.AgoraTimeoutError(
+                            "Timeout exceeded when calling GET /v2/projects/{appid}/agents/{agentId}/history.",
+                        );
+                    case "unknown":
+                        throw new errors.AgoraError({
+                            message: _response.error.errorMessage,
+                            rawResponse: _response.rawResponse,
+                        });
+                }
+            }
+
+            /**
+             * Query conversation turn information for a conversational AI agent session.
+             *
+             * After a conversation with the agent ends, use this endpoint to query the conversation turn information, including the start information, end information, and performance metrics of each conversation turn.
+             *
+             * You can query sessions within the last 7 days.
+             *
+             * @param {Agora.GetTurnsAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.getTurns({
+             *         appid: "appid",
+             *         agentId: "agentId"
+             *     })
+             */
+            public getTurns(
+                request: Agora.GetTurnsAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): core.HttpResponsePromise<Agora.GetTurnsAgentsResponse> {
+                return core.HttpResponsePromise.fromPromise(this.__getTurns(request, requestOptions));
+            }
+
+            private async __getTurns(
+                request: Agora.GetTurnsAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.WithRawResponse<Agora.GetTurnsAgentsResponse>> {
+                const { appid, agentId, page_index: pageIndex, page_size: pageSize } = request;
+                const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+                if (pageIndex != null) {
+                    _queryParams.page_index = pageIndex.toString();
+                }
+
+                if (pageSize != null) {
+                    _queryParams.page_size = pageSize.toString();
+                }
+
+                const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                    this._options?.headers,
+                    mergeOnlyDefinedHeaders({
+                        Authorization: await this._getAuthorizationHeader(),
+                        ...(await this._getCustomAuthorizationHeaders()),
+                    }),
+                    requestOptions?.headers,
+                );
+                const _response = await core.fetcher({
+                    url: core.url.join(
+                        (await core.Supplier.get(this._options.baseUrl)) ??
+                            (await core.Supplier.get(this._options.environment)) ??
+                            environments.AgoraEnvironment.Default,
+                        `v2/projects/${core.url.encodePathParam(appid)}/agents/${core.url.encodePathParam(agentId)}/turns`,
+                    ),
+                    method: "GET",
+                    headers: _headers,
+                    queryParameters: { ..._queryParams, ...requestOptions?.queryParams },
+                    timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                    maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                    abortSignal: requestOptions?.abortSignal,
+                    fetchFn: this._options?.fetch,
+                    logging: this._options.logging,
+                });
+                if (_response.ok) {
+                    return { data: _response.body as Agora.GetTurnsAgentsResponse, rawResponse: _response.rawResponse };
+                }
+
+                if (_response.error.reason === "status-code") {
+                    throw new errors.AgoraError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+                }
+
+                switch (_response.error.reason) {
+                    case "non-json":
+                        throw new errors.AgoraError({
+                            statusCode: _response.error.statusCode,
+                            body: _response.error.rawBody,
+                            rawResponse: _response.rawResponse,
+                        });
+                    case "timeout":
+                        throw new errors.AgoraTimeoutError(
+                            "Timeout exceeded when calling GET /v2/projects/{appid}/agents/{agentId}/turns.",
+                        );
+                    case "unknown":
+                        throw new errors.AgoraError({
+                            message: _response.error.errorMessage,
+                            rawResponse: _response.rawResponse,
+                        });
+                }
+            }
+
+            /**
+             * Stop the specified conversational agent instance. The API responds after request parameters are validated, and the stop operation is processed asynchronously after the response is returned.
+             *
+             * @param {Agora.StopAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.stop({
+             *         appid: "appid",
+             *         agentId: "agentId"
+             *     })
+             */
+            public stop(
+                request: Agora.StopAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): core.HttpResponsePromise<void> {
+                return core.HttpResponsePromise.fromPromise(this.__stop(request, requestOptions));
+            }
+
+            private async __stop(
+                request: Agora.StopAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.WithRawResponse<void>> {
+                const { appid, agentId } = request;
+                const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                    this._options?.headers,
+                    mergeOnlyDefinedHeaders({
+                        Authorization: await this._getAuthorizationHeader(),
+                        ...(await this._getCustomAuthorizationHeaders()),
+                    }),
+                    requestOptions?.headers,
+                );
+                const _response = await core.fetcher({
+                    url: core.url.join(
+                        (await core.Supplier.get(this._options.baseUrl)) ??
+                            (await core.Supplier.get(this._options.environment)) ??
+                            environments.AgoraEnvironment.Default,
+                        `v2/projects/${core.url.encodePathParam(appid)}/agents/${core.url.encodePathParam(agentId)}/leave`,
+                    ),
+                    method: "POST",
+                    headers: _headers,
+                    queryParameters: requestOptions?.queryParams,
+                    timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                    maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                    abortSignal: requestOptions?.abortSignal,
+                    fetchFn: this._options?.fetch,
+                    logging: this._options.logging,
+                });
+                if (_response.ok) {
+                    return { data: undefined, rawResponse: _response.rawResponse };
+                }
+
+                if (_response.error.reason === "status-code") {
+                    throw new errors.AgoraError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+                }
+
+                switch (_response.error.reason) {
+                    case "non-json":
+                        throw new errors.AgoraError({
+                            statusCode: _response.error.statusCode,
+                            body: _response.error.rawBody,
+                            rawResponse: _response.rawResponse,
+                        });
+                    case "timeout":
+                        throw new errors.AgoraTimeoutError(
+                            "Timeout exceeded when calling POST /v2/projects/{appid}/agents/{agentId}/leave.",
+                        );
+                    case "unknown":
+                        throw new errors.AgoraError({
+                            message: _response.error.errorMessage,
+                            rawResponse: _response.rawResponse,
+                        });
+                }
+            }
+
+            /**
+             * Adjust Conversation AI Engine parameters at runtime.
+             *
+             * @param {Agora.UpdateAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.update({
+             *         appid: "appid",
+             *         agentId: "agentId",
+             *         properties: {
+             *             token: "007eJxTYxxxxxxxxxxIaHMLAAAA0ex66",
+             *             llm: {
+             *                 system_messages: [{
+             *                         "role": "system",
+             *                         "content": "You are a helpful assistant. xxx"
+             *                     }, {
+             *                         "role": "system",
+             *                         "content": "Previously, user has talked about their favorite hobbies with some key topics: xxx"
+             *                     }],
+             *                 params: {
+             *                     "model": "abab6.5s-chat",
+             *                     "max_token": 1024
+             *                 }
+             *             }
+             *         }
+             *     })
+             */
+            public update(
+                request: Agora.UpdateAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): core.HttpResponsePromise<Agora.UpdateAgentsResponse> {
+                return core.HttpResponsePromise.fromPromise(this.__update(request, requestOptions));
+            }
+
+            private async __update(
+                request: Agora.UpdateAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.WithRawResponse<Agora.UpdateAgentsResponse>> {
+                const { appid, agentId, ..._body } = request;
+                const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                    this._options?.headers,
+                    mergeOnlyDefinedHeaders({
+                        Authorization: await this._getAuthorizationHeader(),
+                        ...(await this._getCustomAuthorizationHeaders()),
+                    }),
+                    requestOptions?.headers,
+                );
+                const _response = await core.fetcher({
+                    url: core.url.join(
+                        (await core.Supplier.get(this._options.baseUrl)) ??
+                            (await core.Supplier.get(this._options.environment)) ??
+                            environments.AgoraEnvironment.Default,
+                        `v2/projects/${core.url.encodePathParam(appid)}/agents/${core.url.encodePathParam(agentId)}/update`,
+                    ),
+                    method: "POST",
+                    headers: _headers,
+                    contentType: "application/json",
+                    queryParameters: requestOptions?.queryParams,
+                    requestType: "json",
+                    body: _body,
+                    timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                    maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                    abortSignal: requestOptions?.abortSignal,
+                    fetchFn: this._options?.fetch,
+                    logging: this._options.logging,
+                });
+                if (_response.ok) {
+                    return { data: _response.body as Agora.UpdateAgentsResponse, rawResponse: _response.rawResponse };
+                }
+
+                if (_response.error.reason === "status-code") {
+                    throw new errors.AgoraError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+                }
+
+                switch (_response.error.reason) {
+                    case "non-json":
+                        throw new errors.AgoraError({
+                            statusCode: _response.error.statusCode,
+                            body: _response.error.rawBody,
+                            rawResponse: _response.rawResponse,
+                        });
+                    case "timeout":
+                        throw new errors.AgoraTimeoutError(
+                            "Timeout exceeded when calling POST /v2/projects/{appid}/agents/{agentId}/update.",
+                        );
+                    case "unknown":
+                        throw new errors.AgoraError({
+                            message: _response.error.errorMessage,
+                            rawResponse: _response.rawResponse,
+                        });
+                }
+            }
+
+            /**
+             * Broadcast a custom message using the TTS module.
+             *
+             * During a conversation with an agent, call this endpoint to immediately broadcast a custom message using the TTS module. Upon receiving the request, the system interrupts the agent's speech and thought process to deliver the message. This broadcast can be interrupted by human voice.
+             *
+             * Note: The speak API is not supported when using `mllm` configuration.
+             *
+             * @param {Agora.SpeakAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.speak({
+             *         appid: "appid",
+             *         agentId: "agentId",
+             *         text: "Sorry, the conversation content is not compliant.",
+             *         priority: "INTERRUPT",
+             *         interruptable: false
+             *     })
+             */
+            public speak(
+                request: Agora.SpeakAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): core.HttpResponsePromise<Agora.SpeakAgentsResponse> {
+                return core.HttpResponsePromise.fromPromise(this.__speak(request, requestOptions));
+            }
+
+            private async __speak(
+                request: Agora.SpeakAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.WithRawResponse<Agora.SpeakAgentsResponse>> {
+                const { appid, agentId, ..._body } = request;
+                const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                    this._options?.headers,
+                    mergeOnlyDefinedHeaders({
+                        Authorization: await this._getAuthorizationHeader(),
+                        ...(await this._getCustomAuthorizationHeaders()),
+                    }),
+                    requestOptions?.headers,
+                );
+                const _response = await core.fetcher({
+                    url: core.url.join(
+                        (await core.Supplier.get(this._options.baseUrl)) ??
+                            (await core.Supplier.get(this._options.environment)) ??
+                            environments.AgoraEnvironment.Default,
+                        `v2/projects/${core.url.encodePathParam(appid)}/agents/${core.url.encodePathParam(agentId)}/speak`,
+                    ),
+                    method: "POST",
+                    headers: _headers,
+                    contentType: "application/json",
+                    queryParameters: requestOptions?.queryParams,
+                    requestType: "json",
+                    body: _body,
+                    timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                    maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                    abortSignal: requestOptions?.abortSignal,
+                    fetchFn: this._options?.fetch,
+                    logging: this._options.logging,
+                });
+                if (_response.ok) {
+                    return { data: _response.body as Agora.SpeakAgentsResponse, rawResponse: _response.rawResponse };
+                }
+
+                if (_response.error.reason === "status-code") {
+                    throw new errors.AgoraError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+                }
+
+                switch (_response.error.reason) {
+                    case "non-json":
+                        throw new errors.AgoraError({
+                            statusCode: _response.error.statusCode,
+                            body: _response.error.rawBody,
+                            rawResponse: _response.rawResponse,
+                        });
+                    case "timeout":
+                        throw new errors.AgoraTimeoutError(
+                            "Timeout exceeded when calling POST /v2/projects/{appid}/agents/{agentId}/speak.",
+                        );
+                    case "unknown":
+                        throw new errors.AgoraError({
+                            message: _response.error.errorMessage,
+                            rawResponse: _response.rawResponse,
+                        });
+                }
+            }
+
+            /**
+             * Interrupt the specified agent while speaking or thinking.
+             *
+             * @param {Agora.InterruptAgentsRequest} request
+             * @param {AgentsClient.RequestOptions} requestOptions - Request-specific configuration.
+             *
+             * @example
+             *     await client.agents.interrupt({
+             *         appid: "appid",
+             *         agentId: "agentId"
+             *     })
+             */
+            public interrupt(
+                request: Agora.InterruptAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): core.HttpResponsePromise<Agora.InterruptAgentsResponse> {
+                return core.HttpResponsePromise.fromPromise(this.__interrupt(request, requestOptions));
+            }
+
+            private async __interrupt(
+                request: Agora.InterruptAgentsRequest,
+                requestOptions?: AgentsClient.RequestOptions,
+            ): Promise<core.WithRawResponse<Agora.InterruptAgentsResponse>> {
+                const { appid, agentId, ..._body } = request;
+                const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+                    this._options?.headers,
+                    mergeOnlyDefinedHeaders({
+                        Authorization: await this._getAuthorizationHeader(),
+                        ...(await this._getCustomAuthorizationHeaders()),
+                    }),
+                    requestOptions?.headers,
+                );
+                const _response = await core.fetcher({
+                    url: core.url.join(
+                        (await core.Supplier.get(this._options.baseUrl)) ??
+                            (await core.Supplier.get(this._options.environment)) ??
+                            environments.AgoraEnvironment.Default,
+                        `v2/projects/${core.url.encodePathParam(appid)}/agents/${core.url.encodePathParam(agentId)}/interrupt`,
+                    ),
+                    method: "POST",
+                    headers: _headers,
+                    contentType: "application/json",
+                    queryParameters: requestOptions?.queryParams,
+                    requestType: "json",
+                    body: _body,
+                    timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+                    maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+                    abortSignal: requestOptions?.abortSignal,
+                    fetchFn: this._options?.fetch,
+                    logging: this._options.logging,
+                });
+                if (_response.ok) {
+                    return { data: _response.body as Agora.InterruptAgentsResponse, rawResponse: _response.rawResponse };
+                }
+
+                if (_response.error.reason === "status-code") {
+                    throw new errors.AgoraError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+                }
+
+                switch (_response.error.reason) {
+                    case "non-json":
+                        throw new errors.AgoraError({
+                            statusCode: _response.error.statusCode,
+                            body: _response.error.rawBody,
+                            rawResponse: _response.rawResponse,
+                        });
+                    case "timeout":
+                        throw new errors.AgoraTimeoutError(
+                            "Timeout exceeded when calling POST /v2/projects/{appid}/agents/{agentId}/interrupt.",
+                        );
+                    case "unknown":
+                        throw new errors.AgoraError({
+                            message: _response.error.errorMessage,
+                            rawResponse: _response.rawResponse,
+                        });
+                }
+            }
+
+            protected async _getAuthorizationHeader(): Promise<string | undefined> {
+                return core.BasicAuth.toAuthorizationHeader({
+                    username: await core.Supplier.get(this._options.username),
+                    password: await core.Supplier.get(this._options.password),
+                });
+            }
+
+            protected async _getCustomAuthorizationHeaders(): Promise<Record<string, string | undefined>> {
+                const authorizationValue = await core.Supplier.get(this._options.authorization);
+                return { Authorization: authorizationValue };
+            }
+        }
+      src/api/types/SpeechmaticsAsrParams.ts: |
+        // This file was auto-generated by Fern from our API Definition.
+
+        /**
+         * Speechmatics ASR configuration parameters.
+         */
+        interface SpeechmaticsAsrParamsBase {
+            /** Language code to use for transcription */
+            language: string;
+            /** WebSocket URL for the Speechmatics streaming API */
+            uri?: string | null;
+            /** Accepts any additional properties */
+            [key: string]: any;
+        }
+
+        export type SpeechmaticsAsrParams = SpeechmaticsAsrParamsBase &
+            (
+                | {
+                      /** Speechmatics API key */
+                      key: string;
+                      /** @deprecated Use `key` instead. The client normalizes this alias to `key`. */
+                      api_key?: string;
+                  }
+                | {
+                      key?: undefined;
+                      /** @deprecated Use `key` instead. The client normalizes this alias to `key`. */
+                      api_key: string;
+                  }
+            );
+    user_owned: true
+  - id: patch-1c1e48ba
+    content_hash: sha256:af94b2d861fc305debed4a5480c2f00740d349c0c487ae8e59a16900a4fb980f
+    original_commit: 1c1e48ba9d7d8d45ed083dc87de9fa8cf6dcea65
+    original_message: "feat(asr): add GeminiTranscribe STT"
+    original_author: digitallysavvy <hermes.frangoudis@gmail.com>
+    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    files:
+      - tests/tsconfig.json
+      - tests/unit/AgoraPoolClient.test.ts
+      - tsconfig.base.json
+      - tsconfig.cjs.json
+      - tsconfig.esm.json
+    patch_content: |
+      diff --git a/tests/tsconfig.json b/tests/tsconfig.json
+      index a477df4..ac39744 100644
+      --- a/tests/tsconfig.json
+      +++ b/tests/tsconfig.json
+      @@ -3,7 +3,6 @@
+           "compilerOptions": {
+               "outDir": null,
+               "rootDir": "..",
+      -        "baseUrl": "..",
+               "types": ["vitest/globals"]
+           },
+           "include": ["../src", "../tests"],
+      diff --git a/tests/unit/AgoraPoolClient.test.ts b/tests/unit/AgoraPoolClient.test.ts
+      new file mode 100644
+      index 0000000..7553229
+      --- /dev/null
+      +++ b/tests/unit/AgoraPoolClient.test.ts
+      @@ -0,0 +1,103 @@
+      +import { afterEach, describe, expect, test, vi } from "vitest";
+      +import { Area } from "../../src/core/domain/index.js";
+      +import { AgoraClient } from "../../src/index.js";
+      +
+      +const API_BASE_URL_ENV = "AGORA_AGENTS_API_BASE_URL";
+      +
+      +function createClient(area: Area.US | Area.EU | Area.AP | Area.CN): AgoraClient {
+      +    return new AgoraClient({
+      +        area,
+      +        appId: "test-app-id",
+      +        appCertificate: "test-app-certificate-01234567890",
+      +    });
+      +}
+      +
+      +afterEach(() => {
+      +    vi.unstubAllEnvs();
+      +});
+      +
+      +describe("AgoraClient configured base URL", () => {
+      +    test.each([
+      +        [Area.US, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.EU, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.AP, "https://api-test.agora.io/api/conversational-ai-agent"],
+      +        [Area.CN, "https://api-test.agora.io/cn/api/conversational-ai-agent"],
+      +    ] as const)("uses the area-specific API path for area %s", (area, expected) => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io/");
+      +
+      +        expect(createClient(area).getCurrentURL()).toBe(expected);
+      +    });
+      +
+      +    test("disables dynamic routing for the client and exposed pool", async () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const client = createClient(Area.US);
+      +        const expected = "https://api-test.agora.io/api/conversational-ai-agent";
+      +
+      +        for (let index = 0; index < 3; index += 1) {
+      +            client.nextRegion();
+      +            await client.selectBestDomain();
+      +            client.pool.nextRegion();
+      +            await client.pool.selectBestDomain();
+      +            expect(client.getCurrentURL()).toBe(expected);
+      +            expect(client.pool.getCurrentURL()).toBe(expected);
+      +        }
+      +    });
+      +
+      +    test("uses the configured base URL for API requests", async () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+      +        const client = new AgoraClient({
+      +            area: Area.CN,
+      +            appId: "test-app-id",
+      +            appCertificate: "test-app-certificate-01234567890",
+      +            fetch: fetchMock,
+      +        });
+      +
+      +        client.nextRegion();
+      +        await client.selectBestDomain();
+      +        await client.agents.stop({ appid: "test-app-id", agentId: "test-agent-id" });
+      +
+      +        expect(fetchMock).toHaveBeenCalledOnce();
+      +        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      +            "https://api-test.agora.io/cn/api/conversational-ai-agent/v2/projects/test-app-id/agents/test-agent-id/leave",
+      +        );
+      +    });
+      +
+      +    test.each([
+      +        ["https://staging.example.com/", "https://staging.example.com/api/conversational-ai-agent"],
+      +        ["http://localhost:8080", "http://localhost:8080/api/conversational-ai-agent"],
+      +        [
+      +            "https://user:password@staging.example.com/gateway?debug=true#section",
+      +            "https://user:password@staging.example.com/gateway/api/conversational-ai-agent?debug=true#section",
+      +        ],
+      +    ])("joins the API path onto %s", (baseUrl, expected) => {
+      +        vi.stubEnv(API_BASE_URL_ENV, baseUrl);
+      +
+      +        expect(createClient(Area.US).getCurrentURL()).toBe(expected);
+      +    });
+      +
+      +    test("keeps regional routing when the environment variable is empty", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "   ");
+      +        const client = createClient(Area.US);
+      +
+      +        expect(client.getCurrentURL()).toBe("https://api-us-west-1.agora.io/api/conversational-ai-agent");
+      +        client.nextRegion();
+      +        expect(client.getCurrentURL()).toBe("https://api-us-east-1.agora.io/api/conversational-ai-agent");
+      +    });
+      +
+      +    test("captures the configured base URL when the client is constructed", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+      +        const client = createClient(Area.CN);
+      +
+      +        vi.stubEnv(API_BASE_URL_ENV, "https://staging.example.com");
+      +        client.nextRegion();
+      +
+      +        expect(client.getCurrentURL()).toBe("https://api-test.agora.io/cn/api/conversational-ai-agent");
+      +    });
+      +
+      +    test("rejects an invalid base URL", () => {
+      +        vi.stubEnv(API_BASE_URL_ENV, "://invalid");
+      +
+      +        expect(() => createClient(Area.US)).toThrow(`invalid ${API_BASE_URL_ENV}`);
+      +    });
+      +});
+      diff --git a/tsconfig.base.json b/tsconfig.base.json
+      index d762767..0cec9f4 100644
+      --- a/tsconfig.base.json
+      +++ b/tsconfig.base.json
+      @@ -3,13 +3,13 @@
+               "extendedDiagnostics": true,
+               "strict": true,
+               "target": "ES6",
+      -        "moduleResolution": "node",
+      +        "module": "nodenext",
+      +        "moduleResolution": "nodenext",
+               "esModuleInterop": true,
+               "skipLibCheck": true,
+               "declaration": true,
+               "outDir": "dist",
+               "rootDir": "src",
+      -        "baseUrl": "src",
+               "isolatedModules": true,
+               "isolatedDeclarations": true
+           },
+      diff --git a/tsconfig.cjs.json b/tsconfig.cjs.json
+      index 5c11446..275f211 100644
+      --- a/tsconfig.cjs.json
+      +++ b/tsconfig.cjs.json
+      @@ -1,7 +1,6 @@
+       {
+           "extends": "./tsconfig.base.json",
+           "compilerOptions": {
+      -        "module": "CommonJS",
+               "outDir": "dist/cjs"
+           },
+           "include": ["src"],
+      diff --git a/tsconfig.esm.json b/tsconfig.esm.json
+      index 6ce9097..021e74d 100644
+      --- a/tsconfig.esm.json
+      +++ b/tsconfig.esm.json
+      @@ -2,6 +2,7 @@
+           "extends": "./tsconfig.base.json",
+           "compilerOptions": {
+               "module": "esnext",
+      +        "moduleResolution": "bundler",
+               "outDir": "dist/esm",
+               "verbatimModuleSyntax": true
+           },
+    theirs_snapshot:
+      tests/tsconfig.json: |
+        {
+            "extends": "../tsconfig.base.json",
+            "compilerOptions": {
+                "outDir": null,
+                "rootDir": "..",
+                "types": ["vitest/globals"]
+            },
+            "include": ["../src", "../tests"],
+            "exclude": []
+        }
+      tests/unit/AgoraPoolClient.test.ts: |
+        import { afterEach, describe, expect, test, vi } from "vitest";
+        import { Area } from "../../src/core/domain/index.js";
+        import { AgoraClient } from "../../src/index.js";
+
+        const API_BASE_URL_ENV = "AGORA_AGENTS_API_BASE_URL";
+
+        function createClient(area: Area.US | Area.EU | Area.AP | Area.CN): AgoraClient {
+            return new AgoraClient({
+                area,
+                appId: "test-app-id",
+                appCertificate: "test-app-certificate-01234567890",
+            });
+        }
+
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        describe("AgoraClient configured base URL", () => {
+            test.each([
+                [Area.US, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.EU, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.AP, "https://api-test.agora.io/api/conversational-ai-agent"],
+                [Area.CN, "https://api-test.agora.io/cn/api/conversational-ai-agent"],
+            ] as const)("uses the area-specific API path for area %s", (area, expected) => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io/");
+
+                expect(createClient(area).getCurrentURL()).toBe(expected);
+            });
+
+            test("disables dynamic routing for the client and exposed pool", async () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const client = createClient(Area.US);
+                const expected = "https://api-test.agora.io/api/conversational-ai-agent";
+
+                for (let index = 0; index < 3; index += 1) {
+                    client.nextRegion();
+                    await client.selectBestDomain();
+                    client.pool.nextRegion();
+                    await client.pool.selectBestDomain();
+                    expect(client.getCurrentURL()).toBe(expected);
+                    expect(client.pool.getCurrentURL()).toBe(expected);
+                }
+            });
+
+            test("uses the configured base URL for API requests", async () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+                const client = new AgoraClient({
+                    area: Area.CN,
+                    appId: "test-app-id",
+                    appCertificate: "test-app-certificate-01234567890",
+                    fetch: fetchMock,
+                });
+
+                client.nextRegion();
+                await client.selectBestDomain();
+                await client.agents.stop({ appid: "test-app-id", agentId: "test-agent-id" });
+
+                expect(fetchMock).toHaveBeenCalledOnce();
+                expect(fetchMock.mock.calls[0]?.[0]).toBe(
+                    "https://api-test.agora.io/cn/api/conversational-ai-agent/v2/projects/test-app-id/agents/test-agent-id/leave",
+                );
+            });
+
+            test.each([
+                ["https://staging.example.com/", "https://staging.example.com/api/conversational-ai-agent"],
+                ["http://localhost:8080", "http://localhost:8080/api/conversational-ai-agent"],
+                [
+                    "https://user:password@staging.example.com/gateway?debug=true#section",
+                    "https://user:password@staging.example.com/gateway/api/conversational-ai-agent?debug=true#section",
+                ],
+            ])("joins the API path onto %s", (baseUrl, expected) => {
+                vi.stubEnv(API_BASE_URL_ENV, baseUrl);
+
+                expect(createClient(Area.US).getCurrentURL()).toBe(expected);
+            });
+
+            test("keeps regional routing when the environment variable is empty", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "   ");
+                const client = createClient(Area.US);
+
+                expect(client.getCurrentURL()).toBe("https://api-us-west-1.agora.io/api/conversational-ai-agent");
+                client.nextRegion();
+                expect(client.getCurrentURL()).toBe("https://api-us-east-1.agora.io/api/conversational-ai-agent");
+            });
+
+            test("captures the configured base URL when the client is constructed", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "https://api-test.agora.io");
+                const client = createClient(Area.CN);
+
+                vi.stubEnv(API_BASE_URL_ENV, "https://staging.example.com");
+                client.nextRegion();
+
+                expect(client.getCurrentURL()).toBe("https://api-test.agora.io/cn/api/conversational-ai-agent");
+            });
+
+            test("rejects an invalid base URL", () => {
+                vi.stubEnv(API_BASE_URL_ENV, "://invalid");
+
+                expect(() => createClient(Area.US)).toThrow(`invalid ${API_BASE_URL_ENV}`);
+            });
+        });
+      tsconfig.base.json: |
+        {
+            "compilerOptions": {
+                "extendedDiagnostics": true,
+                "strict": true,
+                "target": "ES6",
+                "module": "nodenext",
+                "moduleResolution": "nodenext",
+                "esModuleInterop": true,
+                "skipLibCheck": true,
+                "declaration": true,
+                "outDir": "dist",
+                "rootDir": "src",
+                "isolatedModules": true,
+                "isolatedDeclarations": true
+            },
+            "include": ["src"],
+            "exclude": []
+        }
+      tsconfig.cjs.json: |
+        {
+            "extends": "./tsconfig.base.json",
+            "compilerOptions": {
+                "outDir": "dist/cjs"
+            },
+            "include": ["src"],
+            "exclude": []
+        }
+      tsconfig.esm.json: |
+        {
+            "extends": "./tsconfig.base.json",
+            "compilerOptions": {
+                "module": "esnext",
+                "moduleResolution": "bundler",
+                "outDir": "dist/esm",
+                "verbatimModuleSyntax": true
+            },
+            "include": ["src"],
+            "exclude": []
+        }
     user_owned: true

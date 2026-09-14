@@ -100,8 +100,17 @@ export type {
     TtsPreset,
 } from "./presets.js";
 export { AgentPresets, normalizePresetInput } from "./presets.js";
-// Preview endpoint: client, providers, and feature gating.
+// Preview endpoint: session routing, providers, and feature gating.
 // Temporary surface — removed when these providers ship on the production gateway.
+export type { PreviewFeature, PreviewRoute } from "./preview/client.js";
+export {
+    createPreviewRoute,
+    PREVIEW_API_BASE_URL,
+    PREVIEW_FEATURE_HEADER,
+    PreviewFeatures,
+    previewRequestHeaders,
+    requiredPreviewFeatures,
+} from "./preview/client.js";
 export type {
     GeminiCleverChatterOptions,
     GeminiPreviewMllmModel,
@@ -109,24 +118,17 @@ export type {
     GeminiPreviewVoice,
     GeminiThinkingLevel,
     GeminiWalkieTalkieOptions,
-    PreviewClientOptions,
-    PreviewFeature,
-} from "./preview/index.js";
+    OpenAIGPTLiveOptions,
+} from "./preview/vendors.js";
 export {
-    AgoraPreviewClient,
-    applyPreviewShape,
-    assertPreviewSupport,
     GEMINI_PREVIEW_MLLM_DEFAULTS,
     GEMINI_PREVIEW_MLLM_URL,
     GeminiCleverChatter,
     GeminiPreviewMllmModels,
     GeminiThinkingLevels,
     GeminiWalkieTalkie,
-    PREVIEW_API_BASE_URL,
-    PREVIEW_FEATURE_HEADER,
-    PreviewFeatures,
-    requiredPreviewFeatures,
-} from "./preview/index.js";
+    OpenAIGPTLive,
+} from "./preview/vendors.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,
@@ -184,12 +186,15 @@ export type {
     FarewellConfig,
     FillerWordsConfig,
     FillerWordsContent,
+    FillerWordsContentGeneratedConfig,
     FillerWordsContentSelectionRule,
     FillerWordsContentStaticConfig,
+    FillerWordsGeneratedLlmProvider,
     FillerWordsTrigger,
     FillerWordsTriggerFixedTimeConfig,
     FishAudioTts,
     FishAudioTtsParams,
+    GeminiAsrParams,
     GenericTts,
     GenericTtsParams,
     GeofenceArea,
@@ -211,6 +216,10 @@ export type {
     LlmGreetingConfigs,
     LlmGreetingConfigsMode,
     LlmStyle,
+    LlmTool,
+    LlmToolExecution,
+    LlmToolFunction,
+    LlmToolServer,
     McpServersItem,
     // TTS vendor-specific types
     MicrosoftTts,
@@ -403,6 +412,8 @@ export type {
     AresSTTOptions,
     AssemblyAISTTOptions,
     DeepgramSTTOptions,
+    GeminiSTTModel,
+    GeminiSTTOptions,
     GoogleSTTOptions,
     MicrosoftSTTOptions,
     OpenAISTTOptions,
@@ -416,6 +427,9 @@ export {
     AresSTT,
     AssemblyAISTT,
     DeepgramSTT,
+    GeminiSTT,
+    GeminiSTTModels,
+    GeminiTranscriptionMode,
     GoogleSTT,
     MicrosoftSTT,
     OpenAISTT,

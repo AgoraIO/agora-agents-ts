@@ -147,6 +147,7 @@ export class OpenAI extends BaseLLM {
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
+            tools: this.tools,
         };
     }
 }
@@ -264,6 +265,7 @@ export class AzureOpenAI extends BaseLLM {
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
+            tools: this.tools,
         };
     }
 }
@@ -368,6 +370,7 @@ export class Anthropic extends BaseLLM {
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
+            tools: this.tools,
         };
     }
 }
@@ -473,6 +476,7 @@ export class Gemini extends BaseLLM {
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
+            tools: this.tools,
         };
     }
 }
@@ -517,6 +521,7 @@ function openAIStyleConfig(options: OpenAIStyleOptions, vendor?: string): LlmCon
         greeting_configs: options.greetingConfigs,
         template_variables: options.templateVariables,
         mcp_servers: options.mcpServers,
+        tools: options.tools,
     };
 }
 
@@ -605,6 +610,7 @@ export class VertexAILLM extends BaseLLM {
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
+            tools: this.tools,
         };
     }
 }
@@ -667,6 +673,7 @@ export class AmazonBedrock extends BaseLLM {
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
+            tools: this.tools,
         };
     }
 }
@@ -718,6 +725,7 @@ export class Dify extends BaseLLM {
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
+            tools: this.tools,
         };
     }
 }

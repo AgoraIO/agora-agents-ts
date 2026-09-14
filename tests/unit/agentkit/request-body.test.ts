@@ -2,7 +2,10 @@ import { describe, expect, test, vi } from "vitest";
 import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
 import { AudioScenario } from "../../../src/agentkit/constants.js";
+import { OpenAIGPTLive } from "../../../src/agentkit/preview/vendors.js";
+import type { SttConfig } from "../../../src/agentkit/types.js";
 import { AnamAvatar } from "../../../src/agentkit/vendors/avatar.js";
+import { BaseSTT } from "../../../src/agentkit/vendors/base.js";
 import { SpatiusAvatar } from "../../../src/agentkit/vendors/cn.js";
 import {
     AmazonBedrock,
@@ -28,6 +31,7 @@ import {
     AresSTT,
     AssemblyAISTT,
     DeepgramSTT,
+    GeminiSTT,
     GoogleSTT,
     MicrosoftSTT,
     OpenAISTT,
@@ -690,6 +694,58 @@ describe("Scenario 8 — MLLM mode", () => {
 // ---------------------------------------------------------------------------
 
 describe("ASR vendor coverage", () => {
+    test("GeminiSTT preserves compatibility options in the production schema", () => {
+        const p = new Agent({ client: TEST_AGENT_CLIENT })
+            .withStt(
+                new GeminiSTT({
+                    apiKey: "gemini-key",
+                    model: "gemini-3.7-transcribe-live",
+                    language: "en-US",
+                    languageHints: ["en-US"],
+                    languageCodes: ["en-US", "es-ES"],
+                    customVocabulary: ["Agora"],
+                    sampleRate: 24_000,
+                    wordTimestamp: false,
+                }),
+            )
+            .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
+
+        expect(p.asr).toMatchObject({
+            vendor: "gemini",
+            params: {
+                api_key: "gemini-key",
+                model: "gemini-3.7-transcribe-live",
+                language: "en-US",
+                language_hints: ["en-US"],
+                custom_vocabulary: ["Agora"],
+                sample_rate: 24_000,
+                word_timestamp: false,
+            },
+        });
+    });
+
+    test("normalizes the legacy Gemini language_codes field before sending", () => {
+        class LegacyGeminiSTT extends BaseSTT {
+            toConfig(): SttConfig {
+                return {
+                    vendor: "gemini",
+                    params: {
+                        api_key: "gemini-key",
+                        model: "gemini-3.5-transcribe-live",
+                        language_codes: ["en-US", "es-ES"],
+                    },
+                };
+            }
+        }
+
+        const p = new Agent({ client: TEST_AGENT_CLIENT })
+            .withStt(new LegacyGeminiSTT())
+            .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
+
+        expect(p.asr?.params).toMatchObject({ language_hints: ["en-US", "es-ES"] });
+        expect(p.asr?.params).not.toHaveProperty("language_codes");
+    });
+
     test("DeepgramSTT BYOK serializes key and model in params", () => {
         const p = new Agent({ client: TEST_AGENT_CLIENT })
             .withStt(new DeepgramSTT({ apiKey: "dg-key", model: "nova-2", language: "en-US" }))
@@ -765,14 +821,22 @@ describe("ASR vendor coverage", () => {
         expect((p.asr?.params as Record<string, unknown>)?.language_code).toBe("en-US");
     });
 
-    test("AssemblyAISTT serializes api_key and language in params", () => {
+    test("AssemblyAISTT serializes api_key, language, and ws_url in params", () => {
         const p = new Agent({ client: TEST_AGENT_CLIENT })
-            .withStt(new AssemblyAISTT({ apiKey: "assembly-key", language: "en-US" }))
+            .withStt(
+                new AssemblyAISTT({
+                    apiKey: "assembly-key",
+                    language: "en-US",
+                    ws_url: "wss://example.test/ws",
+                }),
+            )
             .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
 
         expect(p.asr?.vendor).toBe("assemblyai");
         expect((p.asr?.params as Record<string, unknown>)?.api_key).toBe("assembly-key");
         expect((p.asr?.params as Record<string, unknown>)?.language).toBe("en-US");
+        expect((p.asr?.params as Record<string, unknown>)?.ws_url).toBe("wss://example.test/ws");
+        expect(p.asr?.params).not.toHaveProperty("uri");
     });
 
     test("AresSTT produces no params key", () => {
@@ -789,20 +853,36 @@ describe("ASR vendor coverage", () => {
             .withStt(new AresSTT({ keywords: ["Agora", "Shengwang"], additionalParams: { custom: true } }))
             .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
 
-        expect(p.asr?.params).toMatchObject({
-            custom: true,
+        expect(p.asr).toMatchObject({
+            vendor: "ares",
             keywords: ["Agora", "Shengwang"],
+            params: { custom: true },
         });
+        expect(p.asr?.params).not.toHaveProperty("keywords");
     });
 
-    test("SpeechmaticsSTT serializes api_key and language in params", () => {
+    test("AresSTT rejects keywords inside additionalParams", () => {
+        expect(() => new AresSTT({ additionalParams: { keywords: ["Agora"] } })).toThrow(
+            "use the top-level keywords option",
+        );
+    });
+
+    test("SpeechmaticsSTT normalizes deprecated apiKey to key", () => {
         const p = new Agent({ client: TEST_AGENT_CLIENT })
             .withStt(new SpeechmaticsSTT({ apiKey: "sm-key", language: "en" }))
             .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
 
         expect(p.asr?.vendor).toBe("speechmatics");
-        expect((p.asr?.params as Record<string, unknown>)?.api_key).toBe("sm-key");
+        expect((p.asr?.params as Record<string, unknown>)?.key).toBe("sm-key");
+        expect((p.asr?.params as Record<string, unknown>)?.api_key).toBeUndefined();
         expect((p.asr?.params as Record<string, unknown>)?.language).toBe("en");
+    });
+
+    test("SpeechmaticsSTT supports key and prefers it over deprecated apiKey", () => {
+        const config = new SpeechmaticsSTT({ key: "new-key", apiKey: "legacy-key", language: "en" }).toConfig();
+
+        expect(config.params).toMatchObject({ key: "new-key", language: "en" });
+        expect((config.params as Record<string, unknown>).api_key).toBeUndefined();
     });
 
     test("SarvamSTT serializes api_key in params", () => {
@@ -1316,6 +1396,24 @@ describe("MLLM vendor coverage", () => {
         expect((config as Record<string, unknown>)?.url).toBe("wss://api.openai.com/v1/realtime");
     });
 
+    test("OpenAIGPTLive emits its preview vendor and fixed WebSocket URL", () => {
+        const config = new OpenAIGPTLive({
+            apiKey: "live-key",
+            greeting: "Hello from GPT Live",
+        }).toConfig();
+
+        expect(config).toMatchObject({
+            vendor: "openai_gpt_live",
+            api_key: "live-key",
+            url: "wss://api.openai.com/v1/live/sessions",
+            greeting_message: "Hello from GPT Live",
+        });
+        expect(config.params).toEqual({
+            model: "gpt-live-1-diamond-alpha",
+            alpha_selector: "quicksilver=v3",
+        });
+    });
+
     test("AzureOpenAIRealtime serializes only the supported Azure fields", () => {
         const properties = new Agent({ client: TEST_AGENT_CLIENT })
             .withMllm(
@@ -1596,4 +1694,20 @@ describe("Preset coverage matrix", () => {
         // STUB_STT has apiKey so no ASR preset; STUB_LLM has apiKey so no LLM preset; STUB_TTS is ElevenLabs BYOK so no TTS preset
         expect(request.preset).toBeUndefined();
     });
+});
+
+test("GPT Live keeps MCP on mllm and main parameters outside vendor params", () => {
+    const servers = [{ name: "lookup", endpoint: "https://tools.example/mcp", transport: "streamable_http" }];
+    const silence = { timeout_ms: 15000, action: "think" as const, content: "Offer assistance" };
+    const properties = new Agent({ client: TEST_AGENT_CLIENT })
+        .withMllm(new OpenAIGPTLive({ apiKey: "test", prompt: "Be brief", toolEnabled: true, mcpServers: servers }))
+        .withTools()
+        .withParameters({ silence_config: silence })
+        .toProperties({ ...SESSION_OPTS });
+    expect(properties.llm).toBeUndefined();
+    expect(properties.advanced_features?.enable_tools).toBe(true);
+    expect(properties.parameters?.silence_config).toEqual(silence);
+    expect(properties.mllm).toMatchObject({ enable: true, mcp_servers: servers, params: { prompt: "Be brief" } });
+    expect(properties.mllm?.params).not.toHaveProperty("mcp_servers");
+    expect(properties.mllm?.params).not.toHaveProperty("silence_config");
 });

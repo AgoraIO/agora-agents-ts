@@ -5,71 +5,79 @@
  * vitest. A regression here fails `pnpm build`.
  */
 
+import { AgoraClient } from "../../AgoraPoolClient.js";
 import { Area } from "../../core/domain/index.js";
 import { Agent } from "../Agent.js";
-import { AgoraPreviewClient, GeminiCleverChatter, GeminiWalkieTalkie } from "../preview/index.js";
-import type { MllmConfig } from "../types.js";
+import { GeminiSTT, OpenAIGPTLive } from "../preview/index.js";
+import type { MllmVendor, SttConfig } from "../types.js";
+import { OpenAIRealtime } from "../vendors/mllm.js";
 
-const PREVIEW_CLIENT = new AgoraPreviewClient({
+const CLIENT = new AgoraClient({
     area: Area.US,
     appId: "test-app-id",
     appCertificate: "test-app-certificate-01234567890",
 });
 
+const _gptLiveVendorName: MllmVendor = "openai_gpt_live";
+
 // ============================================
 // ✅ VALID CONFIGURATIONS
 // ============================================
 
-function _validWalkieTalkie(): Agent {
-    return new Agent({ client: PREVIEW_CLIENT }).withMllm(
-        new GeminiWalkieTalkie({ apiKey: "test", voice: "Puck", languageCodes: ["en-US"] }),
+function _validTranscribeStt(): Agent {
+    return new Agent({ client: CLIENT }).withStt(
+        new GeminiSTT({
+            apiKey: "test",
+            model: "gemini-3.5-transcribe-live",
+            languageCodes: ["en-US"],
+            customVocabulary: ["Agora"],
+            sampleRate: 16000,
+            wordTimestamp: false,
+        }),
     );
 }
 
-function _validCleverChatter(): Agent {
-    return new Agent({ client: PREVIEW_CLIENT }).withMllm(
-        new GeminiCleverChatter({ apiKey: "test", voice: "Puck", thinkingLevel: "medium" }),
+function _validOpenAIGPTLive(): Agent {
+    return new Agent({ client: CLIENT }).withMllm(
+        new OpenAIGPTLive({
+            apiKey: "test",
+            greeting: "Hello from GPT Live",
+        }),
     );
 }
 
-/** The preview MLLM shape is part of `MllmConfig`, so hand-written configs type-check too. */
-const _handWrittenMllm: MllmConfig = {
+function _openAIRealtimeCannotSelectGPTLive(): OpenAIRealtime {
+    // @ts-expect-error - GPT Live has a separate preview vendor.
+    return new OpenAIRealtime({ apiKey: "test", mode: "live" });
+}
+
+/** The preview ASR variant is part of `SttConfig`, so hand-written configs type-check too. */
+const _handWrittenAsr: SttConfig = {
     vendor: "gemini",
-    api_key: "test",
-    url: "https://generativelanguage.googleapis.com",
+    language: "en-US",
     params: {
         api_key: "test",
-        model: "walkie-talkie",
-        voice: "Puck",
+        model: "gemini-3.5-transcribe-live",
+        sample_rate: 16000,
         language_codes: ["en-US"],
+        custom_vocabulary: ["Agora"],
+        word_timestamp: false,
     },
-    greeting: "Hello",
 };
 
 // ============================================
 // ❌ INVALID CONFIGURATIONS
 // ============================================
 
-/** `thinkingLevel` is a clever-chatter capability; walkie-talkie must reject it. */
-function _walkieTalkieRejectsThinkingLevel(): GeminiWalkieTalkie {
-    return new GeminiWalkieTalkie({
-        apiKey: "test",
-        // @ts-expect-error - thinkingLevel is not supported by walkie-talkie
-        thinkingLevel: "medium",
-    });
-}
-
-/** `thinking_level` is a closed set. */
-function _cleverChatterRejectsUnknownThinkingLevel(): GeminiCleverChatter {
-    return new GeminiCleverChatter({
-        apiKey: "test",
-        // @ts-expect-error - "extreme" is not a valid thinking level
-        thinkingLevel: "extreme",
-    });
-}
-
 /** The API key is required — it is the only credential these providers accept. */
-function _walkieTalkieRequiresApiKey(): GeminiWalkieTalkie {
+function _transcribeRequiresApiKey(): GeminiSTT {
     // @ts-expect-error - apiKey is required
-    return new GeminiWalkieTalkie({ voice: "Puck" });
+    return new GeminiSTT({ languageCodes: ["en-US"] });
 }
+
+/** ASR params must carry a model; the preview gateway rejects a bare vendor. */
+// @ts-expect-error - params.model is required
+const _asrRequiresModel: SttConfig = {
+    vendor: "gemini",
+    params: { api_key: "test" },
+};

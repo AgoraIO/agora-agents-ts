@@ -10,6 +10,7 @@ import type {
     AvatarConfig,
     LlmConfig,
     LlmGreetingConfigs,
+    LlmTool,
     McpServersItem,
     MllmConfig,
     SttConfig,
@@ -52,8 +53,10 @@ export interface BaseLlmOptions {
      * Omit for standard OpenAI / Anthropic / Gemini endpoints.
      */
     vendor?: string;
-    /** MCP server configurations enabling the agent to call tools from external services */
+    /** MCP server configurations enabling the agent to call tools from external services. Requires `withTools(true)`. */
     mcpServers?: McpServersItem[];
+    /** Inline synchronous REST tools exposed to the LLM for function calling. Requires `withTools(true)`. */
+    tools?: LlmTool[];
 }
 
 type VendorScope = "global" | "cn";
@@ -113,6 +116,7 @@ abstract class ScopedBaseLLM<TScope extends VendorScope> {
     private readonly _templateVariables?: Record<string, string>;
     private readonly _vendor?: string;
     private readonly _mcpServers?: McpServersItem[];
+    private readonly _tools?: LlmTool[];
 
     constructor(areaScope: TScope, options?: BaseLlmOptions) {
         this.areaScope = areaScope;
@@ -122,6 +126,7 @@ abstract class ScopedBaseLLM<TScope extends VendorScope> {
         this._templateVariables = options?.templateVariables;
         this._vendor = options?.vendor;
         this._mcpServers = options?.mcpServers;
+        this._tools = options?.tools;
     }
 
     protected get outputModalities(): string[] | undefined {
@@ -143,6 +148,9 @@ abstract class ScopedBaseLLM<TScope extends VendorScope> {
     protected get mcpServers(): McpServersItem[] | undefined {
         if (!this._mcpServers?.length) return this._mcpServers;
         return this._mcpServers.map((s) => (s.transport ? s : { ...s, transport: "streamable_http" as const }));
+    }
+    protected get tools(): LlmTool[] | undefined {
+        return this._tools;
     }
 
     /**

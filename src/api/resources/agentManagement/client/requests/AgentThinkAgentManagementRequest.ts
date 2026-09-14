@@ -28,18 +28,21 @@ export interface AgentThinkAgentManagementRequest {
      * - `inject`: Inject the custom text instruction into the current turn without interrupting it.
      * - `interrupt`: Immediately interrupt the current flow and initiate a new round of dialogue.
      * - `ignore`: Ignore the request.
+     * - `append`: Do not interrupt the user. Wait for the user's ASR text to be sent to the LLM and for the resulting response to finish, then send the custom text instruction to the LLM.
      */
     on_listening_action?: AgentThinkAgentManagementRequest.OnListeningAction;
     /**
      * The action to take when the agent is in a thinking state:
      * - `interrupt`: Interrupt the current state and start a new conversation turn.
      * - `ignore`: Ignore the request.
+     * - `append`: Do not interrupt the current LLM inference. Allow the current turn to finish generating and playing its response first. After the current turn's LLM output is complete, send the queued custom text instruction to the LLM.
      */
     on_thinking_action?: AgentThinkAgentManagementRequest.OnThinkingAction;
     /**
      * The action to take when the agent is in a speaking state:
      * - `interrupt`: Interrupt the current state and start a new conversation turn.
      * - `ignore`: Ignore the request.
+     * - `append`: Do not interrupt the current TTS playback; the audio stream continues. After the current turn's LLM output is complete, send the custom text instruction directly to the LLM.
      */
     on_speaking_action?: AgentThinkAgentManagementRequest.OnSpeakingAction;
     /**
@@ -58,31 +61,37 @@ export namespace AgentThinkAgentManagementRequest {
      * - `inject`: Inject the custom text instruction into the current turn without interrupting it.
      * - `interrupt`: Immediately interrupt the current flow and initiate a new round of dialogue.
      * - `ignore`: Ignore the request.
+     * - `append`: Do not interrupt the user. Wait for the user's ASR text to be sent to the LLM and for the resulting response to finish, then send the custom text instruction to the LLM.
      */
     export const OnListeningAction = {
         Inject: "inject",
         Interrupt: "interrupt",
         Ignore: "ignore",
+        Append: "append",
     } as const;
     export type OnListeningAction = (typeof OnListeningAction)[keyof typeof OnListeningAction];
     /**
      * The action to take when the agent is in a thinking state:
      * - `interrupt`: Interrupt the current state and start a new conversation turn.
      * - `ignore`: Ignore the request.
+     * - `append`: Do not interrupt the current LLM inference. Allow the current turn to finish generating and playing its response first. After the current turn's LLM output is complete, send the queued custom text instruction to the LLM.
      */
     export const OnThinkingAction = {
         Interrupt: "interrupt",
         Ignore: "ignore",
+        Append: "append",
     } as const;
     export type OnThinkingAction = (typeof OnThinkingAction)[keyof typeof OnThinkingAction];
     /**
      * The action to take when the agent is in a speaking state:
      * - `interrupt`: Interrupt the current state and start a new conversation turn.
      * - `ignore`: Ignore the request.
+     * - `append`: Do not interrupt the current TTS playback; the audio stream continues. After the current turn's LLM output is complete, send the custom text instruction directly to the LLM.
      */
     export const OnSpeakingAction = {
         Interrupt: "interrupt",
         Ignore: "ignore",
+        Append: "append",
     } as const;
     export type OnSpeakingAction = (typeof OnSpeakingAction)[keyof typeof OnSpeakingAction];
 }

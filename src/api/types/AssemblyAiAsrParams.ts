@@ -9,7 +9,7 @@ export interface AssemblyAiAsrParams {
     /** Language code for speech recognition */
     language: string;
     /** WebSocket URL for AssemblyAI's streaming API */
-    uri?: string | null;
+    ws_url?: string | null;
     /** Accepts any additional properties */
     [key: string]: any;
 }

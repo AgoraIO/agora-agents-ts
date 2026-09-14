@@ -1,7 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
+import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
-import { redactHeadersForDebug, redactSecrets } from "../../../src/agentkit/debug.js";
-import { AgoraPreviewClient, GeminiWalkieTalkie } from "../../../src/agentkit/preview/index.js";
+import { REDACTED, redactHeadersForDebug, redactSecrets } from "../../../src/agentkit/debug.js";
+import { Gemini } from "../../../src/agentkit/vendors/llm.js";
+import { GeminiSTT } from "../../../src/agentkit/vendors/stt.js";
+import { GoogleTTS } from "../../../src/agentkit/vendors/tts.js";
 import { Area } from "../../../src/core/domain/index.js";
 
 // A fake key shaped like a real one: this test asserts the value never
@@ -29,6 +32,17 @@ describe("redactSecrets", () => {
                 avatar: { params: { agora_token: "[REDACTED]", agora_uid: "999" } },
             },
         });
+    });
+
+    test("redacts Google TTS credentials and Gemini URL query keys", () => {
+        const redacted = redactSecrets({
+            llm: {
+                url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GOOGLE_KEY}`,
+            },
+            tts: { params: { credentials: GOOGLE_KEY } },
+        });
+
+        expect(JSON.stringify(redacted)).not.toContain(GOOGLE_KEY);
     });
 
     test("redacts AWS and Google credential field names", () => {
@@ -78,11 +92,16 @@ describe("redactHeadersForDebug", () => {
         });
     });
 
-    test("preserves the preview feature gate and SDK headers", () => {
-        expect(redactHeadersForDebug({ "agora-feature": "gemini-live", "x-fern-sdk-name": "agora-agents" })).toEqual({
-            "agora-feature": "gemini-live",
+    test("preserves non-authorization headers", () => {
+        expect(redactHeadersForDebug({ "x-fern-sdk-name": "agora-agents" })).toEqual({
             "x-fern-sdk-name": "agora-agents",
         });
+    });
+
+    test("redacts custom credential headers", () => {
+        expect(
+            redactHeadersForDebug({ "x-api-key": "secret", cookie: "session=secret", "x-trace-id": "trace" }),
+        ).toEqual({ "x-api-key": REDACTED, cookie: REDACTED, "x-trace-id": "trace" });
     });
 });
 
@@ -98,14 +117,22 @@ describe("debug output", () => {
 
         try {
             await new Agent({
-                client: new AgoraPreviewClient({
+                client: new AgoraClient({
                     area: Area.US,
                     appId: "81190c52971d4004b7244bdcd93e2f34",
                     appCertificate: "test-app-certificate-01234567890",
                     fetch: fetchMock,
                 }),
             })
-                .withMllm(new GeminiWalkieTalkie({ apiKey: GOOGLE_KEY }))
+                .withStt(new GeminiSTT({ apiKey: GOOGLE_KEY, model: "gemini-3.7-transcribe-live" }))
+                .withLlm(new Gemini({ apiKey: GOOGLE_KEY, model: "gemini-2.0-flash" }))
+                .withTts(
+                    new GoogleTTS({
+                        key: GOOGLE_KEY,
+                        voiceName: "en-US-Chirp3-HD-Charon",
+                        languageCode: "en-US",
+                    }),
+                )
                 .createSession({ channel: "c", agentUid: "1", remoteUids: ["100"], debug: true })
                 .start();
         } finally {
@@ -115,11 +142,9 @@ describe("debug output", () => {
         const output = logs.join("\n");
         expect(output).not.toContain(GOOGLE_KEY);
         expect(output).not.toContain("81190c52971d4004b7244bdcd93e2f34");
-        // The header that gates preview routing must be visible.
-        expect(output).toContain("agora-feature");
-        expect(output).toContain("gemini-live");
+        expect(output).not.toContain("agora-feature");
         // The request itself still carries the real key.
         const sent = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
-        expect(sent.properties.mllm.params.api_key).toBe(GOOGLE_KEY);
+        expect(sent.properties.asr.params.api_key).toBe(GOOGLE_KEY);
     });
 });

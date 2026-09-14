@@ -10,6 +10,7 @@ export type Asr =
     | Agora.Asr.Deepgram
     | Agora.Asr.Openai
     | Agora.Asr.Google
+    | Agora.Asr.Gemini
     | Agora.Asr.Amazon
     | Agora.Asr.Assemblyai
     | Agora.Asr.Speechmatics
@@ -46,6 +47,10 @@ export namespace Asr {
 
     export interface Google extends Agora.GoogleAsr {
         vendor: "google";
+    }
+
+    export interface Gemini extends Agora.GeminiAsr {
+        vendor: "gemini";
     }
 
     export interface Amazon extends Agora.AmazonAsr {

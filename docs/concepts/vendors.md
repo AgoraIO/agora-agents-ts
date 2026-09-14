@@ -81,16 +81,19 @@ The `sampleRate` is critical when using avatars. See [Avatar Integration](../gui
 
 | Class             | Provider          | Key constructor params                           |
 | ----------------- | ----------------- | ------------------------------------------------ |
-| `SpeechmaticsSTT` | Speechmatics      | `apiKey`, `language`, `uri?`                     |
+| `SpeechmaticsSTT` | Speechmatics      | `key`, `language`, `uri?`; deprecated `apiKey?`  |
 | `DeepgramSTT`     | Deepgram          | `model` for Agora-managed `nova-2`/`nova-3`; `apiKey` for BYOK; `language?`, `smartFormat?`, `keyterm?` |
 | `MicrosoftSTT`    | Azure Speech      | `key`, `region`, `language`                      |
 | `OpenAISTT`       | OpenAI Whisper    | `apiKey`, `model?`, `language?`, `prompt?`       |
 | `GoogleSTT`       | Google Speech     | `projectId`, `location`, `adcCredentialsString`, `language` |
 | `AmazonSTT`       | Amazon Transcribe | `accessKey`, `secretKey`, `region`, `language`   |
-| `AssemblyAISTT`   | AssemblyAI        | `apiKey`, `language`, `uri?`                     |
+| `AssemblyAISTT`   | AssemblyAI        | `apiKey`, `language`, `ws_url?`                  |
 | `AresSTT`         | Agora ARES        | `keywords?`, `additionalParams?`                 |
 | `SarvamSTT`       | Sarvam AI         | `apiKey`, `language`                             |
 | `XAiSTT`          | xAI               | `apiKey`, `language?`, `baseUrl?`, `sampleRate?` |
+| `GeminiSTT`       | Google Gemini     | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp` |
+
+`AresSTT` and `FengmingSTT` serialize `keywords` at the ASR top level (`asr.keywords`), while arbitrary fields passed through `additionalParams` are kept under `asr.params`.
 
 <!-- snippet: executable -->
 
@@ -113,6 +116,7 @@ MLLM (Multimodal LLM) vendors handle audio end-to-end — no separate STT or TTS
 | Class            | Provider                        | Key constructor params                                                                                                                                                                    |
 | ---------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `OpenAIRealtime` | OpenAI Realtime API             | `apiKey`, `model?`, `url?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?`                                                 |
+| `OpenAIGPTLive` (preview) | OpenAI GPT Live | `apiKey`, `greeting?`, `model?`, `voice?`, `prompt?`, `params?` |
 | `AzureOpenAIRealtime` | Azure OpenAI Realtime (global) | `apiKey`, `url`, `turnDetection`, `model?`, `voice?`, `instructions?`, `params?`, `messages?`, `outputModalities?`, `maxHistory?`, `greetingMessage?` |
 | `GeminiLive`     | Google Gemini Live API          | `apiKey`, `model`, `url?`, `voice?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?`                                        |
 | `VertexAI`       | Vertex AI Gemini Live           | `model`, `url?`, `projectId`, `location`, `adcCredentialsString`, `voice?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?` |

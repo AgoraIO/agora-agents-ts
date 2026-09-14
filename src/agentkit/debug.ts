@@ -35,6 +35,7 @@ const SENSITIVE_BODY_KEYS: ReadonlySet<string> = new Set([
     "secretaccesskey",
     "adc_credentials_string",
     "adccredentialsstring",
+    "credentials",
     "subscription_key",
     "subscriptionkey",
     // Agora credentials and account identifiers
@@ -42,6 +43,10 @@ const SENSITIVE_BODY_KEYS: ReadonlySet<string> = new Set([
     "agora_token",
     "agoratoken",
     "authorization",
+    "headers",
+    "x-api-key",
+    "cookie",
+    "set-cookie",
     "appid",
     "app_id",
     "agora_appid",
@@ -54,6 +59,30 @@ const SENSITIVE_BODY_KEYS: ReadonlySet<string> = new Set([
 
 function isSensitiveKey(key: string): boolean {
     return SENSITIVE_BODY_KEYS.has(key.toLowerCase());
+}
+
+function redactQueryKeys(value: string): string {
+    let parsed: URL;
+    try {
+        parsed = new URL(value);
+    } catch {
+        return value;
+    }
+    let changed = false;
+    for (const key of [...parsed.searchParams.keys()]) {
+        if (!isSensitiveKey(key)) {
+            continue;
+        }
+        const current = parsed.searchParams.getAll(key);
+        if (current.some((item) => item.length > 0)) {
+            parsed.searchParams.delete(key);
+            for (const item of current) {
+                parsed.searchParams.append(key, item.length > 0 ? REDACTED : item);
+            }
+            changed = true;
+        }
+    }
+    return changed ? parsed.toString() : value;
 }
 
 /**
@@ -77,6 +106,8 @@ export function redactSecrets(value: unknown): unknown {
     for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
         if (isSensitiveKey(key) && typeof item === "string" && item.length > 0) {
             result[key] = REDACTED;
+        } else if (typeof item === "string") {
+            result[key] = redactQueryKeys(item);
         } else {
             result[key] = redactSecrets(item);
         }
@@ -87,16 +118,24 @@ export function redactSecrets(value: unknown): unknown {
 /**
  * Redacts request headers for debug logging.
  *
- * `agora-feature` and the SDK identification headers are kept — they are what
- * makes a preview request identifiable, and no header carries a secret except
- * the authorization scheme's credential, whose scheme name is preserved so the
- * active auth mode stays visible.
+ * Non-authorization headers are kept. The authorization credential is removed,
+ * while its scheme name stays visible so the active auth mode can be diagnosed.
  */
 export function redactHeadersForDebug(headers: Record<string, string>): Record<string, string> {
     const result: Record<string, string> = {};
     for (const [key, value] of Object.entries(headers)) {
-        if (key.toLowerCase() !== "authorization") {
+        const normalized = key.toLowerCase();
+        const sensitive =
+            isSensitiveKey(normalized) ||
+            ["authorization", "api-key", "api_key", "token", "secret", "credential", "cookie"].some((marker) =>
+                normalized.includes(marker),
+            );
+        if (!sensitive || value.length === 0) {
             result[key] = value;
+            continue;
+        }
+        if (normalized !== "authorization") {
+            result[key] = REDACTED;
             continue;
         }
         const scheme = value.split(/[\s=]/, 1)[0];

@@ -1,19 +1,22 @@
 /**
  * Preview provider surface.
  *
- * Self-contained on purpose: when these providers ship on the production
- * gateway, this directory is deleted and the vendor classes move into
- * `vendors/mllm.ts`.
+ * Preview routing stays here while provider implementations can graduate to
+ * the production vendor modules independently.
  */
 
-export type { PreviewClientOptions, PreviewFeature } from "./client.js";
+// The preview namespace keeps its historical names, but Gemini ASR now uses
+// the production implementation and options behind those names.
+export type { GeminiSTTModel, GeminiSTTOptions } from "../vendors/stt.js";
+export { GeminiSTT, GeminiSTTModels, GeminiTranscriptionMode } from "../vendors/stt.js";
+export type { PreviewFeature, PreviewRoute } from "./client.js";
 export {
-    AgoraPreviewClient,
     applyPreviewShape,
-    assertPreviewSupport,
+    createPreviewRoute,
     PREVIEW_API_BASE_URL,
     PREVIEW_FEATURE_HEADER,
     PreviewFeatures,
+    previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./client.js";
 export type {
@@ -23,6 +26,7 @@ export type {
     GeminiPreviewVoice,
     GeminiThinkingLevel,
     GeminiWalkieTalkieOptions,
+    OpenAIGPTLiveOptions,
 } from "./vendors.js";
 export {
     GEMINI_PREVIEW_MLLM_DEFAULTS,
@@ -31,4 +35,5 @@ export {
     GeminiPreviewMllmModels,
     GeminiThinkingLevels,
     GeminiWalkieTalkie,
+    OpenAIGPTLive,
 } from "./vendors.js";

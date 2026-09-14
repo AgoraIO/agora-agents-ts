@@ -164,7 +164,7 @@ export namespace StartAgentsRequest {
             enable_rtm?: boolean;
             /** Enable Selective Attention Locking (SAL). When enabled, configure the `sal` field to set up speaker recognition or locking modes. */
             enable_sal?: boolean;
-            /** Enable tool invocation. When enabled, the agent can invoke tools provided by the MCP server to implement advanced functionality. */
+            /** Enable invocation for MCP servers and inline REST tools. */
             enable_tools?: boolean;
         }
 
@@ -642,15 +642,29 @@ export namespace StartAgentsRequest {
                 /**
                  * Filler word content mode:
                  * - `static`: Static filler words. Uses a predefined list of filler words.
+                 * - `generated`: LLM-generated filler words based on the last user message.
                  */
-                mode?: "static";
-                /** Static filler word configuration. Used when `mode` is `static`. */
+                mode?: Content.Mode;
+                /** Static filler word configuration. Required when `mode` is `static`. */
                 static_config?: Content.StaticConfig;
+                /** Optional configuration for generated filler words. When omitted, the service uses its default generator settings. */
+                generated_config?: Content.GeneratedConfig;
             }
 
             export namespace Content {
                 /**
-                 * Static filler word configuration. Used when `mode` is `static`.
+                 * Filler word content mode:
+                 * - `static`: Static filler words. Uses a predefined list of filler words.
+                 * - `generated`: LLM-generated filler words based on the last user message.
+                 */
+                export const Mode = {
+                    Static: "static",
+                    Generated: "generated",
+                } as const;
+                export type Mode = (typeof Mode)[keyof typeof Mode];
+
+                /**
+                 * Static filler word configuration. Required when `mode` is `static`.
                  */
                 export interface StaticConfig {
                     /** List of filler word phrases. Maximum 100 filler words, each not exceeding 50 English words. */
@@ -674,6 +688,32 @@ export namespace StartAgentsRequest {
                         RoundRobin: "round_robin",
                     } as const;
                     export type SelectionRule = (typeof SelectionRule)[keyof typeof SelectionRule];
+                }
+
+                /**
+                 * Optional configuration for generated filler words. When omitted, the service uses its default generator settings.
+                 */
+                export interface GeneratedConfig {
+                    /** OpenAI-compatible LLM provider used to generate filler words. Runs in parallel with the main business LLM and only uses the last user message as input. */
+                    llm_provider?: GeneratedConfig.LlmProvider;
+                    /** System prompt used to generate a short filler phrase based on the last user message. The generated text should be conversational and must not answer the user's question. */
+                    prompt?: string;
+                    /** Fallback strategy when generated filler text is not ready, fails, or returns empty text. Phase 1 only supports `static`. */
+                    fallback_strategy?: "static";
+                }
+
+                export namespace GeneratedConfig {
+                    /**
+                     * OpenAI-compatible LLM provider used to generate filler words. Runs in parallel with the main business LLM and only uses the last user message as input.
+                     */
+                    export interface LlmProvider {
+                        /** URL of the OpenAI-compatible chat completions endpoint. If the URL does not end with `/chat/completions`, the engine appends it automatically. */
+                        url: string;
+                        /** API key for authenticating requests to the filler LLM provider. */
+                        api_key: string;
+                        /** Additional request parameters merged into the generated filler LLM request body, such as `model`. */
+                        params?: Record<string, unknown>;
+                    }
                 }
             }
         }

@@ -35,7 +35,13 @@ import {
     type PresetInput,
     resolveSessionPresets,
 } from "./presets.js";
-import { applyPreviewShape, assertPreviewSupport } from "./preview/client.js";
+import {
+    applyPreviewShape,
+    createPreviewRoute,
+    type PreviewFeature,
+    previewRequestHeaders,
+    requiredPreviewFeatures,
+} from "./preview/client.js";
 import { ExpiresIn as ExpiresInHelper, generateConvoAIToken } from "./token.js";
 import type {
     AgentConfigUpdate,
@@ -153,6 +159,10 @@ export class AgentSession {
     private readonly _expiresIn?: number;
     private readonly _debug?: boolean;
     private readonly _authMode: AgoraAuthMode;
+    private _agentsClient: AgentsClient;
+    private _agentManagementClient: AgentManagementClient;
+    private _previewFeatures: readonly PreviewFeature[] = [];
+    private _sessionBaseUrl?: string;
     private _agentId: string | null = null;
     private _status: "idle" | "starting" | "running" | "stopping" | "stopped" | "error" = "idle";
     private _eventHandlers: Map<AgentSessionEvent, Set<AgentSessionEventHandler>> = new Map();
@@ -177,6 +187,14 @@ export class AgentSession {
         this._warn = options.warn ?? ((msg) => console.warn(msg));
         // Read authMode from pool client if available, else fall back to basic
         this._authMode = (options.client as { authMode?: AgoraAuthMode }).authMode ?? "basic";
+        this._agentsClient = options.client.agents;
+        this._agentManagementClient = options.client.agentManagement;
+        this._sessionBaseUrl = this._clientCurrentUrl();
+    }
+
+    private _clientCurrentUrl(): string | undefined {
+        const getCurrentURL = (this._client as unknown as { getCurrentURL?: () => string }).getCurrentURL;
+        return typeof getCurrentURL === "function" ? getCurrentURL.call(this._client) : undefined;
     }
 
     /**
@@ -206,12 +224,15 @@ export class AgentSession {
         return { Authorization: `agora token=${token}` };
     }
 
+    /** Auth plus the route gate, with the gate pinned last. */
+    private _requestHeaders(): Record<string, string> | undefined {
+        const headers = this._convoAIHeaders();
+        return this._previewFeatures.length > 0 ? previewRequestHeaders(this._previewFeatures, headers) : headers;
+    }
+
     /**
      * Client-level default headers, for debug logging only.
      *
-     * These carry the preview `agora-feature` gate, which the generated client
-     * merges in below the SDK's view — so without this the header that decides
-     * whether a request reaches a preview provider is invisible in debug output.
      * Reaches into `_options` the same way `authMode` is read in the constructor;
      * supplier-valued headers are skipped rather than resolved, since debug
      * logging must not trigger side effects.
@@ -227,6 +248,9 @@ export class AgentSession {
             if (typeof value === "string") {
                 result[key] = value;
             }
+        }
+        if (this._previewFeatures.length > 0) {
+            return previewRequestHeaders(this._previewFeatures, result);
         }
         return result;
     }
@@ -279,14 +303,14 @@ export class AgentSession {
      * ```
      */
     get raw(): AgentsClient {
-        return this._client.agents;
+        return this._agentsClient;
     }
 
     /**
      * Direct access to the underlying Fern-generated AgentManagement client.
      */
     get rawAgentManagement(): AgentManagementClient {
-        return this._client.agentManagement;
+        return this._agentManagementClient;
     }
 
     /**
@@ -594,10 +618,18 @@ export class AgentSession {
             });
             const enrichedProperties = this._enrichAvatarParams(resolved.properties, expiresIn);
             this._validateEnrichedAvatarConfig(enrichedProperties);
-            assertPreviewSupport(this._client, enrichedProperties);
-            // Retarget MLLM fields the shared builder wrote with production
-            // spellings, so a preview config follows the preview route's structure.
             applyPreviewShape(enrichedProperties);
+            this._previewFeatures = requiredPreviewFeatures(enrichedProperties);
+            if (this._previewFeatures.length > 0) {
+                const route = createPreviewRoute(this._client, this._previewFeatures);
+                this._agentsClient = route.agents;
+                this._agentManagementClient = route.agentManagement;
+                this._sessionBaseUrl = route.baseUrl;
+            } else {
+                this._agentsClient = this._client.agents;
+                this._agentManagementClient = this._client.agentManagement;
+                this._sessionBaseUrl = this._clientCurrentUrl();
+            }
 
             const request: Agora.StartAgentsRequest = {
                 appid: this._appId,
@@ -607,13 +639,11 @@ export class AgentSession {
                 properties: enrichedProperties,
             };
 
-            const requestHeaders = this._convoAIHeaders();
+            const requestHeaders = this._requestHeaders();
 
             if (this._debug) {
                 console.log("[Agora Debug] Starting agent session...");
-                if ("getCurrentURL" in this._client && typeof this._client.getCurrentURL === "function") {
-                    console.log("[Agora Debug] API Endpoint:", this._client.getCurrentURL());
-                }
+                console.log("[Agora Debug] API Endpoint:", this._sessionBaseUrl);
                 console.log(
                     "[Agora Debug] Headers:",
                     JSON.stringify(
@@ -625,7 +655,7 @@ export class AgentSession {
                 console.log("[Agora Debug] Request:", JSON.stringify(redactSecrets(request), null, 2));
             }
 
-            const response = await this._client.agents.start(request, { headers: requestHeaders });
+            const response = await this._agentsClient.start(request, { headers: requestHeaders });
 
             this._agentId = response.agent_id ?? null;
             this._status = "running";
@@ -657,12 +687,12 @@ export class AgentSession {
         this._status = "stopping";
 
         try {
-            await this._client.agents.stop(
+            await this._agentsClient.stop(
                 {
                     appid: this._appId,
                     agentId: this._agentId,
                 },
-                { headers: this._convoAIHeaders() },
+                { headers: this._requestHeaders() },
             );
 
             this._status = "stopped";
@@ -696,7 +726,7 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
-        await this._client.agents.speak(
+        await this._agentsClient.speak(
             {
                 appid: this._appId,
                 agentId: this._agentId,
@@ -704,7 +734,7 @@ export class AgentSession {
                 priority: options?.priority,
                 interruptable: options?.interruptable,
             },
-            { headers: this._convoAIHeaders() },
+            { headers: this._requestHeaders() },
         );
     }
 
@@ -720,12 +750,12 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
-        await this._client.agents.interrupt(
+        await this._agentsClient.interrupt(
             {
                 appid: this._appId,
                 agentId: this._agentId,
             },
-            { headers: this._convoAIHeaders() },
+            { headers: this._requestHeaders() },
         );
     }
 
@@ -741,7 +771,7 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
-        return this._client.agentManagement.agentThink(
+        return this._agentManagementClient.agentThink(
             {
                 appid: this._appId,
                 agentId: this._agentId,
@@ -752,7 +782,7 @@ export class AgentSession {
                 interruptable: options?.interruptable,
                 metadata: options?.metadata,
             },
-            { headers: this._convoAIHeaders() },
+            { headers: this._requestHeaders() },
         );
     }
 
@@ -770,13 +800,13 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
-        await this._client.agents.update(
+        await this._agentsClient.update(
             {
                 appid: this._appId,
                 agentId: this._agentId,
                 properties: config,
             },
-            { headers: this._convoAIHeaders() },
+            { headers: this._requestHeaders() },
         );
     }
 
@@ -790,12 +820,12 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
-        return this._client.agents.getHistory(
+        return this._agentsClient.getHistory(
             {
                 appid: this._appId,
                 agentId: this._agentId,
             },
-            { headers: this._convoAIHeaders() },
+            { headers: this._requestHeaders() },
         );
     }
 
@@ -809,14 +839,14 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
-        return this._client.agents.getTurns(
+        return this._agentsClient.getTurns(
             {
                 appid: this._appId,
                 agentId: this._agentId,
                 page_index: options?.page_index,
                 page_size: options?.page_size,
             },
-            { headers: this._convoAIHeaders() },
+            { headers: this._requestHeaders() },
         );
     }
 
@@ -877,12 +907,12 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
-        return this._client.agents.get(
+        return this._agentsClient.get(
             {
                 appid: this._appId,
                 agentId: this._agentId,
             },
-            { headers: this._convoAIHeaders() },
+            { headers: this._requestHeaders() },
         );
     }
 

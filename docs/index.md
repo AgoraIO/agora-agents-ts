@@ -47,6 +47,7 @@ npm install agora-agents
 | [Vendors](./concepts/vendors.md) | LLM, TTS, STT, MLLM, and Avatar provider catalog |
 | [Cascading Flow Guide](./guides/cascading-flow.md) | Step-by-step ASR -> LLM -> TTS |
 | [MLLM Flow Guide](./guides/mllm-flow.md) | Global MLLM providers and Chinese mainland Qwen Omni |
+| [Preview Endpoint](./guides/preview-endpoint.md) | OpenAI GPT Live preview routing and compatibility imports |
 | [Avatar Integration](./guides/avatars.md) | LiveAvatar, Generic Avatar, Anam, Akool, SenseTime (CN), and HeyGen integration |
 | [Agent Builder Features](./guides/agent-builder-features.md) | Turn detection, SAL, filler words, and advanced agent options |
 | [Regional Routing](./guides/regional-routing.md) | Area enum, domain pool, failover |

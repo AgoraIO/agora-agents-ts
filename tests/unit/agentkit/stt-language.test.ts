@@ -55,7 +55,7 @@ describe("STT language serialization", () => {
             vendor: "speechmatics",
             language: "en-US",
             params: {
-                api_key: "stt-key",
+                key: "stt-key",
                 language: "en",
             },
         });
@@ -77,7 +77,7 @@ describe("STT language serialization", () => {
             vendor: "speechmatics",
             language: "en-US",
             params: {
-                api_key: "stt-key",
+                key: "stt-key",
                 language: "en",
             },
         });
@@ -259,13 +259,13 @@ describe("STT language serialization", () => {
         const assemblyAiConfig = new AssemblyAISTT({
             apiKey: "assembly-key",
             language: "en-US",
-            uri: "wss://example.test/ws",
+            ws_url: "wss://example.test/ws",
         }).toConfig();
         expect(assemblyAiConfig).not.toHaveProperty("language");
         expect(assemblyAiConfig.params).toMatchObject({
             api_key: "assembly-key",
             language: "en-US",
-            uri: "wss://example.test/ws",
+            ws_url: "wss://example.test/ws",
         });
     });
 
@@ -286,7 +286,13 @@ describe("STT language serialization", () => {
                     baseUrl: "wss://api.elevenlabs.io/v1",
                 }),
             )
-            .withStt(new AssemblyAISTT({ apiKey: "assembly-key", language: "en-US", uri: "wss://example.test/ws" }))
+            .withStt(
+                new AssemblyAISTT({
+                    apiKey: "assembly-key",
+                    language: "en-US",
+                    ws_url: "wss://example.test/ws",
+                }),
+            )
             .toProperties({
                 channel: "channel",
                 token: "token",
@@ -300,7 +306,7 @@ describe("STT language serialization", () => {
             params: {
                 api_key: "assembly-key",
                 language: "en-US",
-                uri: "wss://example.test/ws",
+                ws_url: "wss://example.test/ws",
             },
         });
         expect(properties.turn_detection).toEqual({ language: "fr-FR" });

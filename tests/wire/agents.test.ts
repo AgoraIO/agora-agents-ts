@@ -99,6 +99,51 @@ describe("AgentsClient", () => {
         });
     });
 
+    test("start normalizes deprecated Speechmatics api_key to key", async () => {
+        const server = mockServerPool.createServer();
+        const client = new AgoraClient({
+            maxRetries: 0,
+            username: "test",
+            password: "test",
+            environment: server.baseUrl,
+        });
+        server
+            .mockEndpoint()
+            .post("/v2/projects/appid/join")
+            .jsonBody({
+                name: "speechmatics-agent",
+                properties: {
+                    channel: "channel_name",
+                    token: "token",
+                    agent_rtc_uid: "1001",
+                    remote_rtc_uids: ["1002"],
+                    asr: {
+                        vendor: "speechmatics",
+                        params: { key: "speechmatics-key", language: "en" },
+                    },
+                },
+            })
+            .respondWith()
+            .statusCode(200)
+            .jsonBody({ agent_id: "agent-id", create_ts: 1737111452, status: "RUNNING" })
+            .build();
+
+        await client.agents.start({
+            appid: "appid",
+            name: "speechmatics-agent",
+            properties: {
+                channel: "channel_name",
+                token: "token",
+                agent_rtc_uid: "1001",
+                remote_rtc_uids: ["1002"],
+                asr: {
+                    vendor: "speechmatics",
+                    params: { api_key: "speechmatics-key", language: "en" },
+                },
+            },
+        });
+    });
+
     test("list", async () => {
         const server = mockServerPool.createServer();
         const client = new AgoraClient({

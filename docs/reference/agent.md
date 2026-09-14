@@ -118,7 +118,7 @@ Set advanced features (e.g. `enable_rtm`).
 
 ### `withTools(enabled = true): Agent<TTSSampleRate, TArea>`
 
-Enable or disable MCP tool invocation by setting `advanced_features.enable_tools`.
+Enable or disable MCP and inline REST tool invocation by setting `advanced_features.enable_tools`.
 
 ### `withParameters(parameters: SessionParamsInput): Agent<TTSSampleRate, TArea>`
 
@@ -156,6 +156,12 @@ Set RTC configuration.
 ### `withFillerWords(fillerWords: FillerWordsConfig): Agent<TTSSampleRate, TArea>`
 
 Set filler words configuration (played while waiting for LLM response).
+
+Use `content.mode: 'generated'` with an optional `generated_config` to generate
+short filler phrases through an OpenAI-compatible provider. The provider uses
+`llm_provider.url`, `api_key`, and optional request `params`; `prompt` and
+`fallback_strategy: 'static'` are optional. When generated text is unavailable,
+the service applies its configured fallback behavior.
 
 ## Getter properties
 
@@ -221,7 +227,7 @@ const session = agent.createSession({
 | `enableStringUid` | `boolean` | No | Use string UIDs instead of numeric |
 | `preset` | `PresetInput` | No | Advanced project-specific presets. Use only when Agora provides a specific preset ID for your project. |
 | `pipelineId` | `string` | No | Published AI Studio pipeline ID to use as this session's base configuration. Overrides `agent.pipelineId`. |
-| `debug` | `boolean` | No | Log the API endpoint, headers, and request body to the console. Credentials (vendor API keys, RTC token, App ID) are replaced with `[REDACTED]` first — see [Preview Endpoint](../guides/preview-endpoint.md#debug-output) |
+| `debug` | `boolean` | No | Log the API endpoint, headers, and request body to the console. Credentials (vendor API keys, RTC token, App ID) are replaced with `[REDACTED]`. |
 | `warn` | `(message: string) => void` | No | Custom warning logger; pass a no-op to silence warnings |
 
 `PresetInput` is `AgentPreset | readonly AgentPreset[] | string`.

@@ -19,7 +19,7 @@ function requireString(value: unknown, field: string, vendor: string): asserts v
     }
 }
 
-function requireRecord(value: unknown, field: string, vendor: string): asserts value is Record<string, string> {
+function _requireRecord(value: unknown, field: string, vendor: string): asserts value is Record<string, string> {
     if (value == null || typeof value !== "object" || Array.isArray(value)) {
         throw new Error(`${vendor} requires ${field}`);
     }

@@ -3,9 +3,4 @@
 /**
  * Agora Fengming ASR configuration parameters.
  */
-export interface FengmingAsrParams {
-    /** A list of hotwords to improve ASR accuracy. */
-    keywords?: string[];
-    /** Accepts any additional properties */
-    [key: string]: any;
-}
+export type FengmingAsrParams = Record<string, unknown>;

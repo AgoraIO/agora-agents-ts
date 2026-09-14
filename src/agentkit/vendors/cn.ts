@@ -15,24 +15,27 @@ export interface FengmingSTTOptions {
 }
 
 export class FengmingSTT extends BaseCNSTT {
-    constructor(private readonly options: FengmingSTTOptions = {}) {
+    private readonly options: FengmingSTTOptions;
+
+    constructor(options: FengmingSTTOptions = {}) {
         super();
+        if (Object.keys(options.additionalParams ?? {}).includes("keywords")) {
+            throw new Error(
+                "FengmingSTT additionalParams must not contain keywords; use the top-level keywords option",
+            );
+        }
+        this.options = options;
     }
 
     toConfig(): SttConfig {
         const { keywords, additionalParams } = this.options;
-        const hasParams =
-            keywords !== undefined || (additionalParams !== undefined && Object.keys(additionalParams).length > 0);
+        const hasParams = additionalParams !== undefined && Object.keys(additionalParams).length > 0;
 
         return {
             vendor: "fengming",
-            ...(hasParams && {
-                params: {
-                    ...additionalParams,
-                    ...(keywords !== undefined && { keywords }),
-                },
-            }),
-        } as unknown as SttConfig;
+            ...(keywords !== undefined && { keywords }),
+            ...(hasParams && { params: { ...additionalParams } }),
+        };
     }
 }
 
@@ -566,6 +569,7 @@ function cnLlmConfig(options: CNLlmCommonOptions, vendor: string): LlmConfig {
         greeting_configs: options.greetingConfigs,
         template_variables: options.templateVariables,
         mcp_servers: options.mcpServers,
+        tools: options.tools,
     };
 }
 
