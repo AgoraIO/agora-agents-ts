@@ -7,8 +7,8 @@
  * preview endpoint automatically.
  */
 
-import type { McpServersItem, MllmConfig, MllmTurnDetectionConfig } from "../types.js";
-import { BaseMLLM } from "../vendors/base.js";
+import type { MllmConfig, MllmTurnDetectionConfig } from "../types.js";
+import { BaseMLLM, type BaseMllmOptions } from "../vendors/base.js";
 
 // =============================================================================
 // OpenAI GPT Live (MLLM)
@@ -20,12 +20,8 @@ export function isOpenAIGPTLiveConfig(config: unknown): boolean {
     return (config as { vendor?: unknown } | null | undefined)?.vendor === OPENAI_GPT_LIVE_VENDOR;
 }
 
-function normalizeMcpServers(servers: McpServersItem[]): McpServersItem[] {
-    return servers.map((server) => ({ transport: "streamable_http", ...server }));
-}
-
 /** GPT Live v3 alpha options. Not for production traffic. */
-export interface OpenAIGPTLiveOptions {
+export interface OpenAIGPTLiveOptions extends BaseMllmOptions {
     apiKey: string;
     /** Full WebSocket URL, used verbatim except OpenAI's legacy /v1/live route. */
     url?: string;
@@ -36,8 +32,6 @@ export interface OpenAIGPTLiveOptions {
     inputModalities?: string[];
     outputModalities?: string[];
     messages?: Record<string, unknown>[];
-    /** MCP servers exposed to GPT Live. Requires Agent.withTools(). */
-    mcpServers?: McpServersItem[];
     /** Additional provider fields; explicit options take precedence. */
     params?: Record<string, unknown>;
     /** @deprecated Unsupported in v3; setting this raises an error. */
@@ -84,7 +78,7 @@ export interface OpenAIGPTLiveOptions {
 
 export class OpenAIGPTLive extends BaseMLLM {
     constructor(private readonly options: OpenAIGPTLiveOptions) {
-        super();
+        super(options);
         if (!options.apiKey) throw new Error("OpenAIGPTLive requires apiKey");
     }
 
@@ -170,7 +164,8 @@ export class OpenAIGPTLive extends BaseMLLM {
             ...(o.inputModalities !== undefined && { input_modalities: o.inputModalities }),
             ...(o.outputModalities !== undefined && { output_modalities: o.outputModalities }),
             ...(o.messages !== undefined && { messages: o.messages }),
-            ...(o.mcpServers !== undefined && { mcp_servers: normalizeMcpServers(o.mcpServers) }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }

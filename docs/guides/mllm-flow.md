@@ -20,6 +20,8 @@ Call `agent.withMllm(vendor)` — that's it. MLLM mode is enabled automatically 
 
 `AzureOpenAIRealtime` is a global MLLM (`GlobalMllmVendor`). `QwenOmni` is a Chinese mainland MLLM (`CNMllmVendor`). As with the other explicit vendor helpers, `client.area` controls Agora REST routing but does not prevent you from selecting a provider explicitly.
 
+All MLLM helpers accept inline REST `tools` and `mcpServers`: OpenAI Realtime, Azure OpenAI Realtime, Gemini Live, Vertex AI, xAI Grok, preview GPT Live, and CN Qwen Omni. Call `.withTools()` on the agent whenever either option is configured.
+
 ## Limitations
 
 Avatars are not supported with MLLM at this time. The avatar publisher requires the cascading ASR + LLM + TTS pipeline, so combining `withMllm()` with `withAvatar()` throws at `Agent.toProperties()` and `AgentSession.start()`:
@@ -172,6 +174,57 @@ const agent = new Agent({ client }).withMllm(new QwenOmni({
   greetingMessage: 'Hello, Qwen Omni is ready.',
 }));
 ```
+
+## REST tools and MCP servers
+
+Tool definitions are placed at the top level of `mllm`, not inside provider `params`. Inline REST tools currently use synchronous `GET` or `POST` execution. MCP server transport defaults to `streamable_http` when omitted.
+
+```typescript
+import { AgoraClient, Area, Agent, OpenAIRealtime, type LlmTool, type McpServer } from 'agora-agents';
+
+const client = new AgoraClient({
+  area: Area.US,
+  appId: 'your-app-id',
+  appCertificate: 'your-app-certificate',
+});
+
+const lookupOrder: LlmTool = {
+  type: 'function',
+  function: {
+    name: 'lookup_order',
+    description: 'Look up an order by ID.',
+    parameters: {
+      type: 'object',
+      properties: { orderId: { type: 'string' } },
+      required: ['orderId'],
+    },
+  },
+  server: {
+    method: 'GET',
+    url: 'https://api.example.com/orders/{{args.orderId}}',
+    headers: { Authorization: 'Bearer {{template_variables.order_token}}' },
+  },
+};
+
+const supportMcp: McpServer = {
+  name: 'support',
+  endpoint: 'https://api.example.com/mcp',
+  headers: { Authorization: 'Bearer your-mcp-token' },
+  allowed_tools: ['search_knowledge_base'],
+  timeout_ms: 10000,
+};
+
+const agent = new Agent({ client })
+  .withMllm(new OpenAIRealtime({
+    apiKey: 'your-openai-key',
+    model: 'gpt-4o-realtime-preview',
+    tools: [lookupOrder],
+    mcpServers: [supportMcp],
+  }))
+  .withTools();
+```
+
+The same `tools` and `mcpServers` options can be passed unchanged to `QwenOmni` for an Alibaba Cloud CN MLLM session. For the cascading Alibaba Cloud flow, `AliyunLLM` accepts the same options and emits them under top-level `llm`. Template placeholders are evaluated by the service. Inline tool headers allow `{{template_variables.<name>}}` and `{{tool_call_id}}`, but not `{{args.*}}`.
 
 ## Turn detection in MLLM mode
 

@@ -520,7 +520,9 @@ function openAIStyleConfig(options: OpenAIStyleOptions, vendor?: string): LlmCon
         vendor: options.vendor ?? vendor,
         greeting_configs: options.greetingConfigs,
         template_variables: options.templateVariables,
-        mcp_servers: options.mcpServers,
+        mcp_servers: options.mcpServers?.map((server) =>
+            server.transport ? server : { ...server, transport: "streamable_http" as const },
+        ),
         tools: options.tools,
     };
 }

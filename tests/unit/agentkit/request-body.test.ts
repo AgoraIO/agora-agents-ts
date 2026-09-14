@@ -188,6 +188,28 @@ describe("Session parameters defaults", () => {
     });
 });
 
+describe("Filler words request body", () => {
+    test("preserves generated filler context limits", () => {
+        const properties = new Agent({ client: TEST_AGENT_CLIENT })
+            .withFillerWords({
+                enable: true,
+                content: {
+                    mode: "generated",
+                    generated_config: {
+                        context_message_limit: 6,
+                        history_character_limit: 4096,
+                    },
+                },
+            })
+            .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
+
+        expect(properties.filler_words?.content?.generated_config).toMatchObject({
+            context_message_limit: 6,
+            history_character_limit: 4096,
+        });
+    });
+});
+
 describe("New OpenAPI high-level adapters", () => {
     test("XAiSTT serializes vendor-specific params into asr", () => {
         const properties = new Agent({ client: TEST_AGENT_CLIENT })
@@ -1362,6 +1384,69 @@ describe("TTS vendor coverage", () => {
 // ---------------------------------------------------------------------------
 
 describe("MLLM vendor coverage", () => {
+    const tool = {
+        type: "function" as const,
+        function: {
+            name: "lookup_order",
+            parameters: { type: "object" as const, properties: { orderId: { type: "string" } } },
+        },
+        server: {
+            method: "GET" as const,
+            url: "https://example.com/orders/{{args.orderId}}",
+        },
+    };
+    const mcpServer = {
+        name: "orders",
+        endpoint: "https://example.com/mcp",
+        headers: { Authorization: "Bearer token" },
+    };
+
+    test.each([
+        ["OpenAI Realtime (global)", new OpenAIRealtime({ apiKey: "key", tools: [tool], mcpServers: [mcpServer] })],
+        [
+            "Azure OpenAI Realtime (global)",
+            new AzureOpenAIRealtime({
+                apiKey: "key",
+                url: "wss://example.openai.azure.com/openai/realtime",
+                turnDetection: { mode: "server_vad" },
+                tools: [tool],
+                mcpServers: [mcpServer],
+            }),
+        ],
+        [
+            "Gemini Live (global)",
+            new GeminiLive({ apiKey: "key", model: "gemini-live", tools: [tool], mcpServers: [mcpServer] }),
+        ],
+        [
+            "Vertex AI (global)",
+            new VertexAI({
+                model: "gemini-live",
+                projectId: "project",
+                location: "us-central1",
+                adcCredentialsString: "{}",
+                tools: [tool],
+                mcpServers: [mcpServer],
+            }),
+        ],
+        ["xAI Grok (global)", new XaiGrok({ apiKey: "key", tools: [tool], mcpServers: [mcpServer] })],
+        ["GPT Live preview (global)", new OpenAIGPTLive({ apiKey: "key", tools: [tool], mcpServers: [mcpServer] })],
+        [
+            "Qwen Omni (CN)",
+            new QwenOmni({
+                apiKey: "key",
+                model: "qwen3.5-omni-plus-realtime",
+                url: "wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
+                tools: [tool],
+                mcpServers: [mcpServer],
+            }),
+        ],
+    ])("places REST tools and normalized MCP servers on %s", (_name, vendor) => {
+        const config = vendor.toConfig();
+
+        expect(config.tools).toEqual([tool]);
+        expect(config.mcp_servers).toEqual([{ ...mcpServer, transport: "streamable_http" }]);
+    });
+
     test("OpenAIRealtime toConfig has vendor=openai, api_key, and default url", () => {
         const config = new OpenAIRealtime({
             apiKey: "rt-key",

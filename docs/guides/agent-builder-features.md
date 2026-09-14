@@ -168,6 +168,8 @@ const agent = new Agent({ client })
         },
         prompt: 'Reply with a brief conversational filler phrase. Do not answer the user.',
         fallback_strategy: 'static',
+        context_message_limit: 6,
+        history_character_limit: 4096,
       },
     },
   });
@@ -175,6 +177,8 @@ const agent = new Agent({ client })
 
 `llm_provider.url` may omit the `/chat/completions` suffix; the engine appends
 it when needed. `params` is merged into the generated filler request body.
+`context_message_limit` bounds the number of recent messages considered, while
+`history_character_limit` bounds their total character count.
 
 ## Geofence
 

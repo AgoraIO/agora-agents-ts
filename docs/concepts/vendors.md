@@ -56,6 +56,7 @@ const llm = new OpenAI({
 | `GenericTTS`    | Generic OpenAI-compatible HTTP TTS | Configurable                  |
 | `SarvamTTS`     | Sarvam AI        | Configurable                            |
 | `XAiTTS`        | xAI              | Configurable                            |
+| `SmallestAITTS` | Smallest AI (global) | Configurable                         |
 
 AgentKit exposes generic synthesis through `GenericTTS`. The current implementation accepts HTTP(S) endpoints and emits the generated `generic_http` wire vendor. WebSocket endpoints are not yet supported.
 
@@ -92,6 +93,7 @@ The `sampleRate` is critical when using avatars. See [Avatar Integration](../gui
 | `SarvamSTT`       | Sarvam AI         | `apiKey`, `language`                             |
 | `XAiSTT`          | xAI               | `apiKey`, `language?`, `baseUrl?`, `sampleRate?` |
 | `GeminiSTT`       | Google Gemini     | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp` |
+| `SmallestAISTT`   | Smallest AI (global) | `apiKey`; optional `language`, `url`, `sampleRate`, timestamps, endpointing, formatting, and redaction options |
 
 `AresSTT` and `FengmingSTT` serialize `keywords` at the ASR top level (`asr.keywords`), while arbitrary fields passed through `additionalParams` are kept under `asr.params`.
 
@@ -120,6 +122,10 @@ MLLM (Multimodal LLM) vendors handle audio end-to-end — no separate STT or TTS
 | `VertexAI`       | Vertex AI Gemini Live           | `model`, `url?`, `projectId`, `location`, `adcCredentialsString`, `voice?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?` |
 | `XaiGrok`        | xAI Grok (`mllm.vendor`: `xai`) | `apiKey`, `url?`, `voice?`, `language?`, `sampleRate?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?`                     |
 | `QwenOmni`       | Alibaba Cloud Qwen Omni (CN)    | `apiKey`, `model`, `url`, `voice?`, `greetingMessage?`, `failureMessage?`, `turnDetection?` |
+
+Every MLLM helper accepts the common `tools?: LlmTool[]` and `mcpServers?: McpServer[]` options, including preview `OpenAIGPTLive` and CN `QwenOmni`. These serialize as top-level `mllm.tools` and `mllm.mcp_servers`; they are not provider `params`. Call `agent.withTools()` to enable invocation. When an MCP server omits `transport`, AgentKit supplies `streamable_http`.
+
+For Alibaba Cloud, use `QwenOmni` for the realtime MLLM flow. The cascading `AliyunLLM` helper supports the same `tools` and `mcpServers` options under top-level `llm.tools` and `llm.mcp_servers`.
 
 `XAiSTT` and `XAiTTS` are the cascading-pipeline xAI wrappers. `XaiGrok` is the realtime MLLM wrapper.
 

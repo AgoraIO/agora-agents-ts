@@ -7,7 +7,7 @@
  */
 
 import type { MllmConfig, MllmTurnDetectionConfig } from "../types.js";
-import { BaseCNMLLM, BaseMLLM } from "./base.js";
+import { BaseCNMLLM, BaseMLLM, type BaseMllmOptions } from "./base.js";
 
 function requireString(value: unknown, field: string, vendor: string): asserts value is string {
     if (typeof value !== "string" || value.length === 0) {
@@ -24,7 +24,7 @@ function requireObject(value: unknown, field: string, vendor: string): asserts v
 /**
  * Constructor options for OpenAI Realtime API.
  */
-export interface OpenAIRealtimeOptions {
+export interface OpenAIRealtimeOptions extends BaseMllmOptions {
     /** OpenAI API key */
     apiKey: string;
     /** Model name (e.g., 'gpt-4o-realtime-preview') */
@@ -70,7 +70,7 @@ export class OpenAIRealtime extends BaseMLLM {
     private readonly options: OpenAIRealtimeOptions;
 
     constructor(options: OpenAIRealtimeOptions) {
-        super();
+        super(options);
         this.options = options;
     }
 
@@ -119,6 +119,8 @@ export class OpenAIRealtime extends BaseMLLM {
             ...(messages && { messages }),
             ...(this.options.failureMessage && { failure_message: this.options.failureMessage }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
@@ -134,7 +136,7 @@ export interface AzureOpenAIRealtimeParams {
 }
 
 /** Constructor options for Azure OpenAI Realtime API. */
-export interface AzureOpenAIRealtimeOptions {
+export interface AzureOpenAIRealtimeOptions extends BaseMllmOptions {
     /** Azure OpenAI API key */
     apiKey: string;
     /** Azure OpenAI Realtime WebSocket URL, including deployment routing when required */
@@ -177,7 +179,7 @@ export class AzureOpenAIRealtime extends BaseMLLM {
     private readonly options: AzureOpenAIRealtimeOptions;
 
     constructor(options: AzureOpenAIRealtimeOptions) {
-        super();
+        super(options);
         requireString(options.apiKey, "apiKey", "AzureOpenAIRealtime");
         requireString(options.url, "url", "AzureOpenAIRealtime");
         requireObject(options.turnDetection, "turnDetection", "AzureOpenAIRealtime");
@@ -218,6 +220,8 @@ export class AzureOpenAIRealtime extends BaseMLLM {
             ...(outputModalities && { output_modalities: outputModalities }),
             ...(messages && { messages }),
             turn_detection: turnDetection,
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
@@ -225,7 +229,7 @@ export class AzureOpenAIRealtime extends BaseMLLM {
 /**
  * Constructor options for Google Gemini Live (direct API, non-Vertex AI).
  */
-export interface GeminiLiveOptions {
+export interface GeminiLiveOptions extends BaseMllmOptions {
     /** Google API key */
     apiKey: string;
     /** Model name (e.g., 'gemini-live-2.5-flash') */
@@ -277,7 +281,7 @@ export class GeminiLive extends BaseMLLM {
     private readonly options: GeminiLiveOptions;
 
     constructor(options: GeminiLiveOptions) {
-        super();
+        super(options);
         this.options = options;
     }
 
@@ -323,6 +327,8 @@ export class GeminiLive extends BaseMLLM {
             ...(outputModalities && { output_modalities: outputModalities }),
             ...(this.options.failureMessage && { failure_message: this.options.failureMessage }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
@@ -330,7 +336,7 @@ export class GeminiLive extends BaseMLLM {
 /**
  * Constructor options for Google Gemini Live (Vertex AI).
  */
-export interface VertexAIOptions {
+export interface VertexAIOptions extends BaseMllmOptions {
     /** Model name (e.g., 'gemini-live-2.5-flash-preview-native-audio-09-2025') */
     model: string;
     /** WebSocket URL for real-time communication */
@@ -388,7 +394,7 @@ export class VertexAI extends BaseMLLM {
     private readonly options: VertexAIOptions;
 
     constructor(options: VertexAIOptions) {
-        super();
+        super(options);
         this.options = options;
     }
 
@@ -438,6 +444,8 @@ export class VertexAI extends BaseMLLM {
             ...(outputModalities && { output_modalities: outputModalities }),
             ...(this.options.failureMessage && { failure_message: this.options.failureMessage }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
@@ -445,7 +453,7 @@ export class VertexAI extends BaseMLLM {
 /**
  * Constructor options for xAI Grok Realtime API.
  */
-export interface XaiGrokOptions {
+export interface XaiGrokOptions extends BaseMllmOptions {
     /** xAI API key */
     apiKey: string;
     /** WebSocket URL for real-time communication (defaults to xAI Realtime API) */
@@ -495,7 +503,7 @@ export class XaiGrok extends BaseMLLM {
     private readonly options: XaiGrokOptions;
 
     constructor(options: XaiGrokOptions) {
-        super();
+        super(options);
         this.options = options;
 
         if (!options.apiKey) {
@@ -535,12 +543,14 @@ export class XaiGrok extends BaseMLLM {
             ...(greetingMessage && { greeting_message: greetingMessage }),
             ...(failureMessage && { failure_message: failureMessage }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
 
 /** Constructor options for Alibaba Cloud Qwen Omni Realtime. */
-export interface QwenOmniOptions {
+export interface QwenOmniOptions extends BaseMllmOptions {
     /** Alibaba Cloud DashScope API key */
     apiKey: string;
     /** Qwen Omni model identifier */
@@ -584,7 +594,7 @@ export class QwenOmni extends BaseCNMLLM {
     private readonly options: QwenOmniOptions;
 
     constructor(options: QwenOmniOptions) {
-        super();
+        super(options);
         requireString(options.apiKey, "apiKey", "QwenOmni");
         requireString(options.model, "model", "QwenOmni");
         requireString(options.url, "url", "QwenOmni");
@@ -623,6 +633,8 @@ export class QwenOmni extends BaseCNMLLM {
             ...(outputModalities && { output_modalities: outputModalities }),
             ...(messages && { messages }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }

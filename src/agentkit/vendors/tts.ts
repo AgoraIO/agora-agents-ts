@@ -1177,3 +1177,58 @@ export class XAiTTS extends BaseTTS {
         } as TtsConfig;
     }
 }
+
+/** Constructor options for Smallest AI TTS. */
+export interface SmallestAITTSOptions {
+    /** Smallest AI API key. */
+    apiKey: string;
+    /** HTTP endpoint for the Smallest AI streaming TTS API. */
+    url?: string;
+    model?: string;
+    voiceId?: string;
+    sampleRate?: number;
+    speed?: number;
+    language?: string;
+    numberPronunciationLanguage?: string;
+    mathNotation?: boolean;
+    pronunciationDicts?: string[];
+    sessionId?: string;
+    requestId?: string;
+    /** Additional Smallest AI parameters. Explicit options take precedence. */
+    additionalParams?: Partial<import("../types.js").SmallestAiTtsParams>;
+    /** Skip patterns for bracketed content. */
+    skipPatterns?: number[];
+}
+
+/** Smallest AI streaming TTS vendor. */
+export class SmallestAITTS extends BaseTTS {
+    constructor(private readonly options: SmallestAITTSOptions) {
+        super();
+        requireString(options.apiKey, "apiKey", "SmallestAITTS");
+    }
+
+    toConfig(): TtsConfig {
+        const o = this.options;
+        return {
+            vendor: "smallestai",
+            params: {
+                ...o.additionalParams,
+                api_key: o.apiKey,
+                ...(o.url !== undefined && { url: o.url }),
+                ...(o.model !== undefined && { model: o.model }),
+                ...(o.voiceId !== undefined && { voice_id: o.voiceId }),
+                ...(o.sampleRate !== undefined && { sample_rate: o.sampleRate }),
+                ...(o.speed !== undefined && { speed: o.speed }),
+                ...(o.language !== undefined && { language: o.language }),
+                ...(o.numberPronunciationLanguage !== undefined && {
+                    number_pronunciation_language: o.numberPronunciationLanguage,
+                }),
+                ...(o.mathNotation !== undefined && { math_notation: o.mathNotation }),
+                ...(o.pronunciationDicts !== undefined && { pronunciation_dicts: o.pronunciationDicts }),
+                ...(o.sessionId !== undefined && { session_id: o.sessionId }),
+                ...(o.requestId !== undefined && { request_id: o.requestId }),
+            },
+            ...(o.skipPatterns !== undefined && { skip_patterns: o.skipPatterns }),
+        };
+    }
+}

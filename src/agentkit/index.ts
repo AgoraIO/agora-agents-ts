@@ -204,6 +204,7 @@ export type {
     LlmToolExecution,
     LlmToolFunction,
     LlmToolServer,
+    McpServer,
     McpServersItem,
     // TTS vendor-specific types
     MicrosoftTts,
@@ -241,6 +242,10 @@ export type {
     SessionSummary,
     SilenceAction,
     SilenceConfig,
+    SmallestAiAsr,
+    SmallestAiAsrParams,
+    SmallestAiTts,
+    SmallestAiTtsParams,
     SpatiusAvatarParams,
     SpeakPriority,
     StartOfSpeechConfig,
@@ -303,6 +308,7 @@ export {
     BaseLLM,
     type BaseLlmOptions,
     BaseMLLM,
+    type BaseMllmOptions,
     BaseSTT,
     BaseTTS,
     type GoogleTTSSampleRate,
@@ -402,6 +408,7 @@ export type {
     MicrosoftSTTOptions,
     OpenAISTTOptions,
     SarvamSTTOptions,
+    SmallestAISTTOptions,
     SpeechmaticsSTTOptions,
     XAiSTTOptions,
 } from "./vendors/stt.js";
@@ -418,6 +425,7 @@ export {
     MicrosoftSTT,
     OpenAISTT,
     SarvamSTT,
+    SmallestAISTT,
     SpeechmaticsSTT,
     XAiSTT,
 } from "./vendors/stt.js";
@@ -438,6 +446,7 @@ export type {
     OpenAITTSOptions,
     RimeTTSOptions,
     SarvamTTSOptions,
+    SmallestAITTSOptions,
     TypecastTTSOptions,
     XAiTTSOptions,
 } from "./vendors/tts.js";
@@ -459,6 +468,7 @@ export {
     OpenAITTS,
     RimeTTS,
     SarvamTTS,
+    SmallestAITTS,
     TypecastTTS,
     XAiTTS,
 } from "./vendors/tts.js";
