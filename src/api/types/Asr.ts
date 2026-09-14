@@ -18,7 +18,8 @@ export type Asr =
     | Agora.Asr.Xai
     | Agora.Asr.Xfyun
     | Agora.Asr.XfyunBigmodel
-    | Agora.Asr.XfyunDialect;
+    | Agora.Asr.XfyunDialect
+    | Agora.Asr.Smallestai;
 
 export namespace Asr {
     export interface Ares extends Agora.AresAsr {
@@ -83,5 +84,9 @@ export namespace Asr {
 
     export interface XfyunDialect extends Agora.XfyunDialectAsr {
         vendor: "xfyun_dialect";
+    }
+
+    export interface Smallestai extends Agora.SmallestAiAsr {
+        vendor: "smallestai";
     }
 }
