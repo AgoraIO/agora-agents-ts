@@ -164,7 +164,7 @@ export namespace StartAgentsRequest {
             enable_rtm?: boolean;
             /** Enable Selective Attention Locking (SAL). When enabled, configure the `sal` field to set up speaker recognition or locking modes. */
             enable_sal?: boolean;
-            /** Enable invocation for MCP servers and inline REST tools. */
+            /** Enable tool invocation. When enabled, the agent can invoke tools provided by the MCP server to implement advanced functionality. */
             enable_tools?: boolean;
         }
 
@@ -642,7 +642,7 @@ export namespace StartAgentsRequest {
                 /**
                  * Filler word content mode:
                  * - `static`: Static filler words. Uses a predefined list of filler words.
-                 * - `generated`: LLM-generated filler words based on the last user message.
+                 * - `generated`: LLM-generated filler words based on recent conversation context.
                  */
                 mode?: Content.Mode;
                 /** Static filler word configuration. Required when `mode` is `static`. */
@@ -655,7 +655,7 @@ export namespace StartAgentsRequest {
                 /**
                  * Filler word content mode:
                  * - `static`: Static filler words. Uses a predefined list of filler words.
-                 * - `generated`: LLM-generated filler words based on the last user message.
+                 * - `generated`: LLM-generated filler words based on recent conversation context.
                  */
                 export const Mode = {
                     Static: "static",
@@ -694,17 +694,21 @@ export namespace StartAgentsRequest {
                  * Optional configuration for generated filler words. When omitted, the service uses its default generator settings.
                  */
                 export interface GeneratedConfig {
-                    /** OpenAI-compatible LLM provider used to generate filler words. Runs in parallel with the main business LLM and only uses the last user message as input. */
+                    /** OpenAI-compatible LLM provider used to generate filler words. Runs in parallel with the main business LLM. */
                     llm_provider?: GeneratedConfig.LlmProvider;
-                    /** System prompt used to generate a short filler phrase based on the last user message. The generated text should be conversational and must not answer the user's question. */
+                    /** System prompt used to generate a short filler phrase based on recent conversation context. The generated text should be conversational and must not answer the user's question. */
                     prompt?: string;
                     /** Fallback strategy when generated filler text is not ready, fails, or returns empty text. Phase 1 only supports `static`. */
                     fallback_strategy?: "static";
+                    /** Maximum number of recent conversation messages used to generate a filler word. */
+                    context_message_limit?: number;
+                    /** Maximum number of characters from conversation history used to generate a filler word. */
+                    history_character_limit?: number;
                 }
 
                 export namespace GeneratedConfig {
                     /**
-                     * OpenAI-compatible LLM provider used to generate filler words. Runs in parallel with the main business LLM and only uses the last user message as input.
+                     * OpenAI-compatible LLM provider used to generate filler words. Runs in parallel with the main business LLM.
                      */
                     export interface LlmProvider {
                         /** URL of the OpenAI-compatible chat completions endpoint. If the URL does not end with `/chat/completions`, the engine appends it automatically. */
