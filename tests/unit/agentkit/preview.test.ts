@@ -335,6 +335,36 @@ test("GPT Live v3 routes the full session to preview with the live-models gate",
     });
 });
 
+test("Gemini MLLM routes its full session with the gemini-live gate", async () => {
+    const fetchMock = vi
+        .fn<typeof fetch>()
+        .mockImplementation(
+            async () => new Response(JSON.stringify({ agent_id: "agent-1", data: { list: [] } }), { status: 200 }),
+        );
+    const session = new Agent({ client: createClient(fetchMock, { "agora-feature": "wrong" }) })
+        .withMllm(new GeminiCleverChatter({ apiKey: API_KEY, thinkingLevel: "medium" }))
+        .withGreeting("Hello")
+        .createSession(sessionOptions());
+    await session.start();
+    await session.say("hello");
+    await session.interrupt();
+    await session.getHistory();
+    await session.stop();
+
+    expect(fetchMock.mock.calls).toHaveLength(5);
+    for (const [url, init] of fetchMock.mock.calls) {
+        expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(true);
+        expect(new Headers(init?.headers).get("agora-feature")).toBe("gemini-live");
+    }
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(body.properties.mllm).toMatchObject({
+        vendor: "gemini",
+        greeting: "Hello",
+        params: { model: "clever-chatter", thinking_level: "medium" },
+    });
+    expect(body.properties.mllm.greeting_message).toBeUndefined();
+});
+
 test("GPT Live v3 warns and drops agent-level turn detection", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
