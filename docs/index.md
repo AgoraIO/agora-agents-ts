@@ -47,6 +47,7 @@ npm install agora-agents
 | [Vendors](./concepts/vendors.md) | LLM, TTS, STT, MLLM, and Avatar provider catalog |
 | [Cascading Flow Guide](./guides/cascading-flow.md) | Step-by-step ASR -> LLM -> TTS |
 | [MLLM Flow Guide](./guides/mllm-flow.md) | Global MLLM providers and Chinese mainland Qwen Omni |
+| [Preview Endpoint](./guides/preview-endpoint.md) | OpenAI GPT Live preview routing and compatibility imports |
 | [Avatar Integration](./guides/avatars.md) | LiveAvatar, Generic Avatar, Anam, Akool, SenseTime (CN), and HeyGen integration |
 | [Agent Builder Features](./guides/agent-builder-features.md) | Turn detection, SAL, filler words, and advanced agent options |
 | [Regional Routing](./guides/regional-routing.md) | Area enum, domain pool, failover |
@@ -55,7 +56,6 @@ npm install agora-agents
 | [Pagination](./guides/pagination.md) | Iterate over paginated list endpoints |
 | [Advanced](./guides/advanced.md) | Headers, retries, timeouts, logging, custom fetcher |
 | [Low-Level API](./guides/low-level-api.md) | Generated REST APIs |
-| [Preview Endpoint](./guides/preview-endpoint.md) | Session-scoped routing and the `agora-feature` gate header |
 | [AgoraClient Reference](./reference/client.md) | Constructor options, public methods |
 | [Agent Reference](./reference/agent.md) | Full builder API with TypeScript signatures |
 | [AgentSession Reference](./reference/session.md) | All methods, events, and payload types |
