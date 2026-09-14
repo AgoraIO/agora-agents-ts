@@ -5,9 +5,9 @@
  * Does not use top-level `parameters`, `path_params`, standalone `query`,
  * `response`, `json_path`, or `max_chars`.
  */
-export interface LlmToolServer {
+export interface RestToolServer {
     /** HTTP method. Must be `GET` or `POST`. */
-    method: LlmToolServer.Method;
+    method: RestToolServer.Method;
     /**
      * Full request URL. Write path and query templates directly in the URL.
      * Placeholders allowed: `{{args.<name>}}`, `{{template_variables.<name>}}`,
@@ -35,7 +35,7 @@ export interface LlmToolServer {
     [key: string]: any;
 }
 
-export namespace LlmToolServer {
+export namespace RestToolServer {
     /** HTTP method. Must be `GET` or `POST`. */
     export const Method = {
         Get: "GET",

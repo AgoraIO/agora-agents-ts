@@ -44,7 +44,7 @@ export interface Llm {
     /** Template parameter configuration. */
     template_variables?: Record<string, string>;
     /** MCP server configuration. */
-    mcp_servers?: Record<string, unknown>[];
+    mcp_servers?: Agora.McpServer[];
     /**
      * Inline REST (pass-through sync) tool definitions for standard text LLM function calling.
      * Required fields per tool: `type`, `function.name`, `function.parameters`
@@ -56,7 +56,7 @@ export interface Llm {
      * - `{{args.<name>}}`: `server.url` and `server.body` only; not allowed in headers.
      * - `{{template_variables.<name>}}` and `{{tool_call_id}}`: `server.url`, `server.headers`, and `server.body`.
      */
-    tools?: Agora.LlmTool[];
+    tools?: Agora.RestTool[];
     /** Custom headers to include in requests to the LLM. */
     headers?: Record<string, string>;
     /** Accepts any additional properties */

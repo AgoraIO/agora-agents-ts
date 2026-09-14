@@ -3,18 +3,18 @@
 /**
  * Tool interface exposed to the model. `parameters` defines LLM arguments, not the HTTP request shape.
  */
-export interface LlmToolFunction {
+export interface RestToolFunction {
     /** Function name visible to the model. Used as the REST tool index key (ASCII case-insensitive). */
     name: string;
     /** Function description visible to the model. */
     description?: string;
     /** JSON Schema defining the LLM tool-call arguments (`args`). Must be an object schema with `type: object` and `properties`. */
-    parameters: LlmToolFunction.Parameters;
+    parameters: RestToolFunction.Parameters;
     /** Accepts any additional properties */
     [key: string]: any;
 }
 
-export namespace LlmToolFunction {
+export namespace RestToolFunction {
     /**
      * JSON Schema defining the LLM tool-call arguments (`args`). Must be an object schema with `type: object` and `properties`.
      */

@@ -3,7 +3,7 @@
 /**
  * Tool execution configuration. Defaults to `{"mode": "sync"}`. Phase 1a only allows `sync`.
  */
-export interface LlmToolExecution {
+export interface RestToolExecution {
     /** Execution mode. Phase 1a only accepts `sync`. */
     mode?: "sync";
     /** Accepts any additional properties */
