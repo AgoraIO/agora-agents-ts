@@ -25,7 +25,7 @@ export interface SmallestAiAsrParams {
     /** Whether to enable endpoint detection. */
     endpointing?: string;
     /** End-of-utterance timeout in milliseconds. */
-    eou_timeout_ms?: string;
+    eou_timeout_ms?: number;
     /** Whether to format the transcript. */
     format?: string;
     /** Whether to finalize results based on recognized words. */
