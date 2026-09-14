@@ -60,14 +60,20 @@ generations:
     cli_version: unknown
     generator_versions:
       fernapi/fern-typescript-node-sdk: 3.31.1
-current_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+  - commit_sha: c19864f176e1c3d19246216d4da38d180fb199b0
+    tree_hash: abf0624ae1e9f50f21e737a7cdcf574f45175e8f
+    timestamp: 2026-09-14T10:25:35.370Z
+    cli_version: unknown
+    generator_versions:
+      fernapi/fern-typescript-node-sdk: 3.31.1
+current_generation: c19864f176e1c3d19246216d4da38d180fb199b0
 patches:
   - id: patch-fee3d812
     content_hash: sha256:a682f317c80be32b9fa689ae5d3584b7c9b1b2ada52a1560dcf51b0f3f82fbb7
     original_commit: fee3d8126a03bf95cb09c6b33ab2c32911ce8cf2
     original_message: "fix: update Anam avatar configuration to require avatar_id instead of persona_id"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    base_generation: c19864f176e1c3d19246216d4da38d180fb199b0
     files:
       - pnpm-workspace.yaml
     patch_content: |
@@ -94,7 +100,7 @@ patches:
     original_commit: 8078c202c81fd5caf258ed5af174dc15d255ccdc
     original_message: "feat: implement internal fixed base URL support in AgoraClient"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    base_generation: c19864f176e1c3d19246216d4da38d180fb199b0
     files:
       - tests/unit/AgoraPoolClient.test.ts
     patch_content: |
@@ -318,7 +324,7 @@ patches:
     original_commit: bf6e10d79516d17968d12c7aef0da2e40602a51f
     original_message: "refactor: update AgoraClient to use configurable API base URL"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    base_generation: c19864f176e1c3d19246216d4da38d180fb199b0
     files:
       - tests/unit/AgoraPoolClient.test.ts
     patch_content: |
@@ -542,7 +548,7 @@ patches:
     original_commit: d83a891bf5068e57afc8b3bcfb7e1ed8d15e8d6f
     original_message: "fix(vendors): send Speechmatics STT key instead of api_key"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    base_generation: c19864f176e1c3d19246216d4da38d180fb199b0
     files:
       - src/api/resources/agents/client/Client.ts
       - src/api/types/SpeechmaticsAsrParams.ts
@@ -1549,11 +1555,11 @@ patches:
             );
     user_owned: true
   - id: patch-1c1e48ba
-    content_hash: sha256:af94b2d861fc305debed4a5480c2f00740d349c0c487ae8e59a16900a4fb980f
+    content_hash: sha256:8c31c499e418f0ceaa55a60b761e6ba0f8e18519ed4e53356dc18b6ed2899c9c
     original_commit: 1c1e48ba9d7d8d45ed083dc87de9fa8cf6dcea65
     original_message: "feat(asr): add GeminiTranscribe STT"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 80f3d0a13ee39bd74ff23acd0361c4dc26dfc18f
+    base_generation: c19864f176e1c3d19246216d4da38d180fb199b0
     files:
       - tests/tsconfig.json
       - tests/unit/AgoraPoolClient.test.ts
@@ -1703,10 +1709,10 @@ patches:
                "isolatedDeclarations": true
            },
       diff --git a/tsconfig.cjs.json b/tsconfig.cjs.json
-      index 5c11446..275f211 100644
+      index 5c11446..55b83c1 100644
       --- a/tsconfig.cjs.json
       +++ b/tsconfig.cjs.json
-      @@ -1,7 +1,6 @@
+      @@ -1,9 +1,8 @@
        {
            "extends": "./tsconfig.base.json",
            "compilerOptions": {
@@ -1714,11 +1720,14 @@ patches:
                "outDir": "dist/cjs"
            },
            "include": ["src"],
+      -    "exclude": []
+      +    "exclude": ["src/**/__tests__/**"]
+       }
       diff --git a/tsconfig.esm.json b/tsconfig.esm.json
-      index 6ce9097..021e74d 100644
+      index 6ce9097..ddb13dd 100644
       --- a/tsconfig.esm.json
       +++ b/tsconfig.esm.json
-      @@ -2,6 +2,7 @@
+      @@ -2,9 +2,10 @@
            "extends": "./tsconfig.base.json",
            "compilerOptions": {
                "module": "esnext",
@@ -1726,6 +1735,10 @@ patches:
                "outDir": "dist/esm",
                "verbatimModuleSyntax": true
            },
+           "include": ["src"],
+      -    "exclude": []
+      +    "exclude": ["src/**/__tests__/**"]
+       }
     theirs_snapshot:
       tests/tsconfig.json: |
         {
@@ -1868,7 +1881,7 @@ patches:
                 "outDir": "dist/cjs"
             },
             "include": ["src"],
-            "exclude": []
+            "exclude": ["src/**/__tests__/**"]
         }
       tsconfig.esm.json: |
         {
@@ -1880,6 +1893,1044 @@ patches:
                 "verbatimModuleSyntax": true
             },
             "include": ["src"],
-            "exclude": []
+            "exclude": ["src/**/__tests__/**"]
         }
     user_owned: true
+  - id: patch-d7de22fa
+    content_hash: sha256:1a6c590c0b1515065b544ab6f245e374fde3c04e2d171fb8ca4eae98f365e2aa
+    original_commit: d7de22fa6a20444593c9bc750df26332beed090d
+    original_message: "fix: address v2.8.0 release review findings"
+    original_author: digitallysavvy <hermes.frangoudis@gmail.com>
+    base_generation: c19864f176e1c3d19246216d4da38d180fb199b0
+    files:
+      - src/api/resources/agents/client/requests/StartAgentsRequest.ts
+    patch_content: |+
+      diff --git a/src/api/resources/agents/client/requests/StartAgentsRequest.ts b/src/api/resources/agents/client/requests/StartAgentsRequest.ts
+      index f67407a..23c2a64 100644
+      --- a/src/api/resources/agents/client/requests/StartAgentsRequest.ts
+      +++ b/src/api/resources/agents/client/requests/StartAgentsRequest.ts
+      @@ -164,7 +164,7 @@ export namespace StartAgentsRequest {
+                   enable_rtm?: boolean;
+                   /** Enable Selective Attention Locking (SAL). When enabled, configure the `sal` field to set up speaker recognition or locking modes. */
+                   enable_sal?: boolean;
+      -            /** Enable tool invocation. When enabled, the agent can invoke tools provided by the MCP server to implement advanced functionality. */
+      +            /** Enable invocation for MCP servers and inline REST tools. */
+                   enable_tools?: boolean;
+               }
+       
+    theirs_snapshot:
+      src/api/resources/agents/client/requests/StartAgentsRequest.ts: |
+        // This file was auto-generated by Fern from our API Definition.
+
+        import type * as Agora from "../../../../index.js";
+
+        /**
+         * @example
+         *     {
+         *         appid: "appid",
+         *         name: "unique_name",
+         *         properties: {
+         *             channel: "channel_name",
+         *             token: "token",
+         *             agent_rtc_uid: "1001",
+         *             remote_rtc_uids: ["1002"],
+         *             idle_timeout: 120,
+         *             asr: {
+         *                 vendor: "ares",
+         *                 vendor: "ares"
+         *             },
+         *             tts: {
+         *                 vendor: "microsoft",
+         *                 params: {
+         *                     key: "key",
+         *                     region: "region",
+         *                     voice_name: "voice_name"
+         *                 }
+         *             },
+         *             llm: {
+         *                 url: "https://api.openai.com/v1/chat/completions",
+         *                 api_key: "<your_llm_key>",
+         *                 system_messages: [{
+         *                         "role": "system",
+         *                         "content": "You are a helpful chatbot."
+         *                     }],
+         *                 params: {
+         *                     model: "gpt-4o-mini"
+         *                 },
+         *                 max_history: 32,
+         *                 greeting_message: "Hello, how can I assist you today?",
+         *                 failure_message: "Please hold on a second."
+         *             },
+         *             turn_detection: {
+         *                 mode: "default",
+         *                 config: {
+         *                     end_of_speech: {
+         *                         mode: "semantic"
+         *                     }
+         *                 }
+         *             }
+         *         }
+         *     }
+         */
+        export interface StartAgentsRequest {
+            /** The App ID of the project. */
+            appid: string;
+            /** The unique identifier of the agent. The same identifier cannot be used repeatedly. */
+            name: string;
+            /**
+             * A comma-separated string of one or more presets. Each preset provides a predefined configuration for ASR, LLM, and TTS. You can specify a preset for any or all of ASR, LLM, and TTS. When a preset is specified, you do not need to provide the endpoint URL, API key, or model for the preset providers. Use the `asr`, `llm`, and `tts` fields to configure additional settings.
+             *
+             * Available presets:
+             * - ASR: `deepgram_nova_2`, `deepgram_nova_3`
+             * - LLM: `openai_gpt_4o_mini`, `openai_gpt_4_1_mini`, `openai_gpt_5_nano`, `openai_gpt_5_mini`
+             * - TTS: `minimax_speech_2_6_turbo`, `minimax_speech_2_8_turbo`, `openai_tts_1`
+             */
+            preset?: string;
+            /** The unique ID of a published agent in AI Studio. When provided, the saved agent configuration is used as the base configuration. Any fields specified in `properties` override the corresponding agent settings. When you specify a `pipeline_id`, the `asr`, `tts`, and `llm` fields in `properties` are optional. */
+            pipeline_id?: string;
+            /** Configuration details of the agent. */
+            properties: StartAgentsRequest.Properties;
+        }
+
+        export namespace StartAgentsRequest {
+            /**
+             * Configuration details of the agent.
+             */
+            export interface Properties {
+                /** The name of the channel to join. */
+                channel: string;
+                /** The authentication token used by the agent to join the channel. */
+                token: string;
+                /** The user ID of the agent in the channel. All UIDs within an RTC channel must be unique. Ensure no other user or service bot is using this UID. A value of `0` means that a unique random UID is generated and assigned. Set the `token` accordingly. */
+                agent_rtc_uid: string;
+                /** A list of user IDs that the agent subscribes to in the channel. Only subscribed users can interact with the agent. Currently, only one user ID is supported. */
+                remote_rtc_uids: string[];
+                /**
+                 * Whether to enable String uid:
+                 * - `true`: Both agent and subscriber user IDs use strings.
+                 * - `false`: Both agent and subscriber user IDs must be integers.
+                 */
+                enable_string_uid?: boolean;
+                /** Sets the timeout after all the users specified in `remote_rtc_uids` are detected to have left the channel. When the timeout value is exceeded, the agent automatically stops and exits the channel. A value of `0` disables exit due to channel idle timeout only; it does not allow the agent to run indefinitely. Regardless of this value, the maximum runtime of a single task is 72 hours, after which the agent automatically exits. */
+                idle_timeout?: number;
+                /** Regional access restriction configuration. Use this to limit which Agora servers the Conversational AI Engine can access based on geographic regions. */
+                geofence?: Properties.Geofence;
+                /** Advanced features configuration. */
+                advanced_features?: Properties.AdvancedFeatures;
+                /** Automatic Speech Recognition (ASR) configuration. */
+                asr?: Agora.Asr;
+                /** Text-to-speech (TTS) module configuration. */
+                tts?: Agora.Tts;
+                /** Large language model (LLM) configuration. */
+                llm?: Agora.Llm;
+                /** Multimodal Large Language Model (MLLM) configuration for real-time audio and text processing. `mllm` is an exclusive alternative to the standard `asr` + `llm` + `tts` pipeline. */
+                mllm?: Agora.Mllm;
+                /** Avatar configuration. */
+                avatar?: Properties.Avatar;
+                /** Conversation turn detection settings. Controls the logic for voice activity detection and conversation turn determination. This object has no effect when `mllm.enable` is true; use `mllm.turn_detection` instead. */
+                turn_detection?: Properties.TurnDetection;
+                /** Interruption control configuration. Provides unified management of the agent's behavior when interrupted by the user. */
+                interruption?: Properties.Interruption;
+                /** Selective Attention Locking (SAL) configuration. */
+                sal?: Properties.Sal;
+                /** Custom labels in key-value pair format, where the key is the label name and the value is the label value. Enables agents to carry custom business information. These labels are bound to the agent and returned in the `payload` field of all message notification callbacks from the conversational AI engine. */
+                labels?: Record<string, string>;
+                /** RTC media encryption configuration. */
+                rtc?: Properties.Rtc;
+                /** Filler word configuration. Plays filler words while waiting for LLM responses to reduce user anxiety and improve conversation flow. */
+                filler_words?: Properties.FillerWords;
+                /** Agent configuration parameters. */
+                parameters?: Properties.Parameters;
+            }
+
+            export namespace Properties {
+                /**
+                 * Regional access restriction configuration. Use this to limit which Agora servers the Conversational AI Engine can access based on geographic regions.
+                 */
+                export interface Geofence {
+                    /** The allowed region for server access. */
+                    area: Geofence.Area;
+                    /** The excluded region. Only available when `area` is set to `GLOBAL`. */
+                    exclude_area?: Geofence.ExcludeArea;
+                }
+
+                export namespace Geofence {
+                    /** The allowed region for server access. */
+                    export const Area = {
+                        Global: "GLOBAL",
+                        NorthAmerica: "NORTH_AMERICA",
+                        Europe: "EUROPE",
+                        Asia: "ASIA",
+                        India: "INDIA",
+                        Japan: "JAPAN",
+                    } as const;
+                    export type Area = (typeof Area)[keyof typeof Area];
+                    /** The excluded region. Only available when `area` is set to `GLOBAL`. */
+                    export const ExcludeArea = {
+                        NorthAmerica: "NORTH_AMERICA",
+                        Europe: "EUROPE",
+                        Asia: "ASIA",
+                        India: "INDIA",
+                        Japan: "JAPAN",
+                    } as const;
+                    export type ExcludeArea = (typeof ExcludeArea)[keyof typeof ExcludeArea];
+                }
+
+                /**
+                 * Advanced features configuration.
+                 */
+                export interface AdvancedFeatures {
+                    /** Use `mllm.enable` instead. Enable Multimodal Large Language Model for voice-to-voice processing. Enabling MLLM automatically disables ASR, LLM, and TTS since the MLLM handles end-to-end voice processing directly. See `turn_detection.type` for turn detection options available with MLLM. */
+                    enable_mllm?: boolean;
+                    /** Whether to enable the Signaling (RTM) service. When enabled, the agent can combine the capabilities provided by Signaling to implement advanced functions, such as delivering custom information. Before enabling the Signaling service, make sure the token includes both RTC and RTM privileges. */
+                    enable_rtm?: boolean;
+                    /** Enable Selective Attention Locking (SAL). When enabled, configure the `sal` field to set up speaker recognition or locking modes. */
+                    enable_sal?: boolean;
+                    /** Enable invocation for MCP servers and inline REST tools. */
+                    enable_tools?: boolean;
+                }
+
+                /**
+                 * Avatar configuration.
+                 */
+                export interface Avatar {
+                    /** Whether to enable the avatar function for the agent. To enable, set to `true` and configure the `vendor` and `params` fields. */
+                    enable?: boolean;
+                    /**
+                     * Avatar vendor. Supports the following values:
+                     * - `akool`: Akool (Beta)
+                     * - `liveavatar`: LiveAvatar (Beta)
+                     * - `anam`: Anam (Beta)
+                     * - `generic`: Generic (Beta)
+                     * - `sensetime`: SenseTime Avatar
+                     * - `spatius`: Spatius Avatar
+                     */
+                    vendor?: Avatar.Vendor;
+                    /** The configuration parameters for the avatar vendor. See [AI Avatar Overview](https://docs.agora.io/en/conversational-ai/models/avatar/overview) for details. */
+                    params?: Record<string, unknown>;
+                }
+
+                export namespace Avatar {
+                    /**
+                     * Avatar vendor. Supports the following values:
+                     * - `akool`: Akool (Beta)
+                     * - `liveavatar`: LiveAvatar (Beta)
+                     * - `anam`: Anam (Beta)
+                     * - `generic`: Generic (Beta)
+                     * - `sensetime`: SenseTime Avatar
+                     * - `spatius`: Spatius Avatar
+                     */
+                    export const Vendor = {
+                        Akool: "akool",
+                        /**
+                         * LiveAvatar (Beta) — formerly HeyGen */
+                        Liveavatar: "liveavatar",
+                        Anam: "anam",
+                        /**
+                         * Generic avatar (Beta) */
+                        Generic: "generic",
+                        /**
+                         * SenseTime Avatar */
+                        Sensetime: "sensetime",
+                        /**
+                         * Spatius Avatar */
+                        Spatius: "spatius",
+                        /**
+                         * Deprecated: HeyGen has renamed to LiveAvatar. Use `liveavatar` instead. */
+                        Heygen: "heygen",
+                    } as const;
+                    export type Vendor = (typeof Vendor)[keyof typeof Vendor];
+                }
+
+                /**
+                 * Conversation turn detection settings. Controls the logic for voice activity detection and conversation turn determination. This object has no effect when `mllm.enable` is true; use `mllm.turn_detection` instead.
+                 */
+                export interface TurnDetection {
+                    /**
+                     * Conversation turn detection mode:
+                     * - `default`: Uses standard conversation turn detection configuration.
+                     */
+                    mode?: "default";
+                    /** Detailed configuration for conversation turn detection. */
+                    config?: TurnDetection.Config;
+                    /**
+                     * Deprecated. Use `turn_detection.mode` and `turn_detection.config` instead.
+                     * Turn detection mechanism:
+                     * - `agora_vad`: Agora VAD
+                     * - `server_vad`: The model detects the start and end of speech based on audio volume. Only available when `mllm` is enabled and OpenAI is selected.
+                     * - `semantic_vad`: Uses a turn detection model with VAD to semantically estimate whether the user has finished speaking. Only available when `mllm` is enabled and OpenAI is selected.
+                     */
+                    type?: TurnDetection.Type;
+                    /**
+                     * Deprecated. Use `turn_detection.config.start_of_speech` instead.
+                     * Sets the agent's behavior when human voice interrupts the agent while it is interacting (speaking or thinking):
+                     * - `interrupt`: The agent immediately stops the current interaction and processes the human voice input.
+                     * - `append`: The agent completes the current interaction, then processes the human voice input.
+                     * - `ignore`: The agent discards the human voice input without processing or storing it in the context.
+                     * - `keyword`: The agent stops its current interaction after detecting any of the keywords specified in `interrupt_keywords`.
+                     * - `adaptive`: The agent dynamically increases the voice continuity threshold while speaking to reduce accidental interruptions.
+                     */
+                    interrupt_mode?: TurnDetection.InterruptMode;
+                    /** Deprecated. Use `turn_detection.config.start_of_speech.vad_config.interrupt_duration_ms` instead. The amount of time in milliseconds that the user's voice must exceed the VAD threshold before an interruption is triggered. */
+                    interrupt_duration_ms?: number;
+                    /** Deprecated. Use `turn_detection.config.start_of_speech.keywords_config.triggered_keywords` instead. Specifies the list of keywords that trigger an interruption when `interrupt_mode` is set to `keyword`. You can configure up to 128 keywords. */
+                    interrupt_keywords?: string[];
+                    /** Deprecated. Use `turn_detection.config.start_of_speech.vad_config.prefix_padding_ms` instead. The extra forward padding time in milliseconds before the processing system starts to process the speech input. */
+                    prefix_padding_ms?: number;
+                    /** Deprecated. Use `turn_detection.config.end_of_speech.vad_config.silence_duration_ms` instead. The duration of audio silence in milliseconds. If no voice activity is detected during this period, the agent assumes that the user has stopped speaking. */
+                    silence_duration_ms?: number;
+                    /** Deprecated. Use `turn_detection.config.speech_threshold` instead. Identification sensitivity determines the level of sound in the audio signal that is considered voice activity. */
+                    threshold?: number;
+                    /** Whether to automatically generate a response when a VAD stop event occurs. Only available in `server_vad` and `semantic_vad` modes when using OpenAI Realtime API. */
+                    create_response?: boolean;
+                    /** Whether to automatically interrupt any ongoing response when a VAD start event occurs. Only available in `server_vad` and `semantic_vad` modes when using OpenAI Realtime API. */
+                    interrupt_response?: boolean;
+                    /**
+                     * Deprecated. Only available in `semantic_vad` mode when using OpenAI Realtime API.
+                     * The eagerness of the model to respond:
+                     * - `auto`: Equivalent to medium
+                     * - `low`: Wait longer for the user to continue speaking
+                     * - `high`: Respond more quickly
+                     */
+                    eagerness?: TurnDetection.Eagerness;
+                }
+
+                export namespace TurnDetection {
+                    /**
+                     * Detailed configuration for conversation turn detection.
+                     */
+                    export interface Config {
+                        /** Voice activity detection sensitivity. Determines the sound level in the audio signal that is considered voice activity. Lower values make it easier for the agent to detect speech, and higher values ignore weak sounds. */
+                        speech_threshold?: number;
+                        /** Start of Speech (SoS) detection configuration. Determines when a user begins speaking. */
+                        start_of_speech?: Config.StartOfSpeech;
+                        /** End of Speech (EoS) detection configuration. Determines when a user ends their speech. */
+                        end_of_speech?: Config.EndOfSpeech;
+                    }
+
+                    export namespace Config {
+                        /**
+                         * Start of Speech (SoS) detection configuration. Determines when a user begins speaking.
+                         */
+                        export interface StartOfSpeech {
+                            /**
+                             * Start of speech detection mode:
+                             * - `vad`: Based on VAD (Voice Activity Detection). Uses audio signal detection.
+                             * - `keywords`: Deprecated. Use `interruption.mode = "keywords"` instead.
+                             * - `disabled`: Deprecated. Use `interruption.enable = false` with `interruption.disabled_config.strategy` to configure the handling strategy.
+                             * - `manual`: The client explicitly submits the start of the user turn through signaling.
+                             */
+                            mode: StartOfSpeech.Mode;
+                            /** VAD configuration. Used when `mode` is `vad`. */
+                            vad_config?: StartOfSpeech.VadConfig;
+                            /** Keywords configuration. Used when `mode` is `keywords`. */
+                            keywords_config?: StartOfSpeech.KeywordsConfig;
+                            /** Disabled mode configuration. Used when `mode` is `disabled`. */
+                            disabled_config?: StartOfSpeech.DisabledConfig;
+                        }
+
+                        export namespace StartOfSpeech {
+                            /**
+                             * Start of speech detection mode:
+                             * - `vad`: Based on VAD (Voice Activity Detection). Uses audio signal detection.
+                             * - `keywords`: Deprecated. Use `interruption.mode = "keywords"` instead.
+                             * - `disabled`: Deprecated. Use `interruption.enable = false` with `interruption.disabled_config.strategy` to configure the handling strategy.
+                             * - `manual`: The client explicitly submits the start of the user turn through signaling.
+                             */
+                            export const Mode = {
+                                Vad: "vad",
+                                Keywords: "keywords",
+                                Disabled: "disabled",
+                                Manual: "manual",
+                            } as const;
+                            export type Mode = (typeof Mode)[keyof typeof Mode];
+
+                            /**
+                             * VAD configuration. Used when `mode` is `vad`.
+                             */
+                            export interface VadConfig {
+                                interrupt_duration_ms?: number;
+                                speaking_interrupt_duration_ms?: number;
+                                prefix_padding_ms?: number;
+                            }
+
+                            /**
+                             * Keywords configuration. Used when `mode` is `keywords`.
+                             */
+                            export interface KeywordsConfig {
+                                interrupt_duration_ms?: number;
+                                prefix_padding_ms?: number;
+                                triggered_keywords?: string[];
+                            }
+
+                            /**
+                             * Disabled mode configuration. Used when `mode` is `disabled`.
+                             */
+                            export interface DisabledConfig {
+                                /**
+                                 * Voice processing strategy when the agent is interacting:
+                                 * - `append`: Human voice does not interrupt the agent. The agent processes the human voice input after the current interaction ends.
+                                 * - `ignore`: The agent ignores human voice input and discards it without storing in context.
+                                 */
+                                strategy?: DisabledConfig.Strategy;
+                            }
+
+                            export namespace DisabledConfig {
+                                /**
+                                 * Voice processing strategy when the agent is interacting:
+                                 * - `append`: Human voice does not interrupt the agent. The agent processes the human voice input after the current interaction ends.
+                                 * - `ignore`: The agent ignores human voice input and discards it without storing in context.
+                                 */
+                                export const Strategy = {
+                                    Append: "append",
+                                    Ignore: "ignore",
+                                } as const;
+                                export type Strategy = (typeof Strategy)[keyof typeof Strategy];
+                            }
+                        }
+
+                        /**
+                         * End of Speech (EoS) detection configuration. Determines when a user ends their speech.
+                         */
+                        export interface EndOfSpeech {
+                            /**
+                             * End of speech detection mode:
+                             * - `vad`: Based on VAD (Voice Activity Detection). Detects silence duration.
+                             * - `semantic`: Based on semantic triggering. Uses semantic understanding to determine when conversation ends.
+                             * - `manual`: The client explicitly submits the end of the user turn through signaling.
+                             */
+                            mode?: EndOfSpeech.Mode;
+                            /** VAD configuration. Used when `mode` is `vad`. */
+                            vad_config?: EndOfSpeech.VadConfig;
+                            /** Semantic configuration. Used when `mode` is `semantic`. */
+                            semantic_config?: EndOfSpeech.SemanticConfig;
+                        }
+
+                        export namespace EndOfSpeech {
+                            /**
+                             * End of speech detection mode:
+                             * - `vad`: Based on VAD (Voice Activity Detection). Detects silence duration.
+                             * - `semantic`: Based on semantic triggering. Uses semantic understanding to determine when conversation ends.
+                             * - `manual`: The client explicitly submits the end of the user turn through signaling.
+                             */
+                            export const Mode = {
+                                Vad: "vad",
+                                Semantic: "semantic",
+                                Manual: "manual",
+                            } as const;
+                            export type Mode = (typeof Mode)[keyof typeof Mode];
+
+                            /**
+                             * VAD configuration. Used when `mode` is `vad`.
+                             */
+                            export interface VadConfig {
+                                silence_duration_ms?: number;
+                            }
+
+                            /**
+                             * Semantic configuration. Used when `mode` is `semantic`.
+                             */
+                            export interface SemanticConfig {
+                                silence_duration_ms?: number;
+                                /** Maximum wait time in milliseconds. Use `-1` for no timeout. The maximum time to wait for semantic determination. After timeout, the conversation end is determined based on the current state. */
+                                max_wait_ms?: number;
+                                /**
+                                 * Whether to detect user intent to pause the conversation:
+                                 * - `true`: The agent uses semantic understanding to determine if the user intends to pause the conversation. For example, when the user's input ends with phrases such as "hold on" or "just a moment", the agent waits for further input rather than treating the utterance as complete and sending it to the LLM.
+                                 * - `false`: The agent does not detect intent to pause the conversation.
+                                 */
+                                pause_state_enabled?: boolean;
+                            }
+                        }
+                    }
+
+                    /**
+                     * Deprecated. Use `turn_detection.mode` and `turn_detection.config` instead.
+                     * Turn detection mechanism:
+                     * - `agora_vad`: Agora VAD
+                     * - `server_vad`: The model detects the start and end of speech based on audio volume. Only available when `mllm` is enabled and OpenAI is selected.
+                     * - `semantic_vad`: Uses a turn detection model with VAD to semantically estimate whether the user has finished speaking. Only available when `mllm` is enabled and OpenAI is selected.
+                     */
+                    export const Type = {
+                        AgoraVad: "agora_vad",
+                        ServerVad: "server_vad",
+                        SemanticVad: "semantic_vad",
+                    } as const;
+                    export type Type = (typeof Type)[keyof typeof Type];
+                    /**
+                     * Deprecated. Use `turn_detection.config.start_of_speech` instead.
+                     * Sets the agent's behavior when human voice interrupts the agent while it is interacting (speaking or thinking):
+                     * - `interrupt`: The agent immediately stops the current interaction and processes the human voice input.
+                     * - `append`: The agent completes the current interaction, then processes the human voice input.
+                     * - `ignore`: The agent discards the human voice input without processing or storing it in the context.
+                     * - `keyword`: The agent stops its current interaction after detecting any of the keywords specified in `interrupt_keywords`.
+                     * - `adaptive`: The agent dynamically increases the voice continuity threshold while speaking to reduce accidental interruptions.
+                     */
+                    export const InterruptMode = {
+                        Interrupt: "interrupt",
+                        Append: "append",
+                        Ignore: "ignore",
+                        Keyword: "keyword",
+                        Adaptive: "adaptive",
+                    } as const;
+                    export type InterruptMode = (typeof InterruptMode)[keyof typeof InterruptMode];
+                    /**
+                     * Deprecated. Only available in `semantic_vad` mode when using OpenAI Realtime API.
+                     * The eagerness of the model to respond:
+                     * - `auto`: Equivalent to medium
+                     * - `low`: Wait longer for the user to continue speaking
+                     * - `high`: Respond more quickly
+                     */
+                    export const Eagerness = {
+                        Auto: "auto",
+                        Low: "low",
+                        High: "high",
+                    } as const;
+                    export type Eagerness = (typeof Eagerness)[keyof typeof Eagerness];
+                }
+
+                /**
+                 * Interruption control configuration. Provides unified management of the agent's behavior when interrupted by the user.
+                 */
+                export interface Interruption {
+                    /**
+                     * Whether to enable agent interruption:
+                     * - `true`: Enable interruption.
+                     * - `false`: Disable interruption. When disabled, the agent cannot be interrupted mid-response.
+                     */
+                    enable?: boolean;
+                    /**
+                     * The interruption trigger mode:
+                     * - `start_of_speech`: Trigger interruption when the user starts speaking.
+                     * - `keywords`: Trigger interruption when the user speaks a specified keyword. Configure the trigger keywords in `keywords_config`.
+                     */
+                    mode?: Interruption.Mode;
+                    /** Configuration for keyword-based interruption triggering. Applicable only when `mode` is `keywords`. */
+                    keywords_config?: Interruption.KeywordsConfig;
+                    /** Configuration for agent behavior when interruption is disabled. Applicable only when `interruption.enable` is `false`. */
+                    disabled_config?: Interruption.DisabledConfig;
+                }
+
+                export namespace Interruption {
+                    /**
+                     * The interruption trigger mode:
+                     * - `start_of_speech`: Trigger interruption when the user starts speaking.
+                     * - `keywords`: Trigger interruption when the user speaks a specified keyword. Configure the trigger keywords in `keywords_config`.
+                     */
+                    export const Mode = {
+                        StartOfSpeech: "start_of_speech",
+                        Keywords: "keywords",
+                    } as const;
+                    export type Mode = (typeof Mode)[keyof typeof Mode];
+
+                    /**
+                     * Configuration for keyword-based interruption triggering. Applicable only when `mode` is `keywords`.
+                     */
+                    export interface KeywordsConfig {
+                        /** The list of keywords that trigger an interruption. A maximum of 128 keywords is supported. */
+                        trigger_keywords?: string[];
+                    }
+
+                    /**
+                     * Configuration for agent behavior when interruption is disabled. Applicable only when `interruption.enable` is `false`.
+                     */
+                    export interface DisabledConfig {
+                        /**
+                         * The processing strategy when interruption is disabled:
+                         * - `append`: User speech does not interrupt the agent. The agent processes the user's input after the current interaction ends.
+                         * - `ignore`: The agent ignores user speech. If the agent receives user speech while speaking or thinking, it discards the input without storing it in context.
+                         */
+                        strategy?: DisabledConfig.Strategy;
+                    }
+
+                    export namespace DisabledConfig {
+                        /**
+                         * The processing strategy when interruption is disabled:
+                         * - `append`: User speech does not interrupt the agent. The agent processes the user's input after the current interaction ends.
+                         * - `ignore`: The agent ignores user speech. If the agent receives user speech while speaking or thinking, it discards the input without storing it in context.
+                         */
+                        export const Strategy = {
+                            Append: "append",
+                            Ignore: "ignore",
+                        } as const;
+                        export type Strategy = (typeof Strategy)[keyof typeof Strategy];
+                    }
+                }
+
+                /**
+                 * Selective Attention Locking (SAL) configuration.
+                 */
+                export interface Sal {
+                    /**
+                     * Selective attention lock mode:
+                     * - `locking`: Speaker Lock Mode. The agent locks onto the speaker, blocking 95% of ambient human voices and noise. You can enable this mode in two ways:
+                     *   - Seamless mode: When a user speaks loudly and clearly at the beginning of a conversation, the intelligent agent automatically recognizes the user as the speaker.
+                     *   - Personalized mode: When creating an agent, a speaker's voiceprint URL is pre-registered through the `sample_urls` field. The agent then locates the speaker based on the pre-registered voiceprint.
+                     * - `recognition`: Voiceprint recognition mode. The agent identifies different speakers and suppresses other background voices and environmental noise.
+                     */
+                    sal_mode?: Sal.SalMode;
+                    /**
+                     * The registered voiceprint URL as a key-value pair, where the key is the voiceprint name and the value is the download URL for the speaker's voiceprint. Only one voiceprint URL is supported.
+                     * > - Do not set the incoming voiceprint name to "unknown"; this is a reserved keyword used to identify unknown speakers.
+                     * > - For a registered voiceprint, ensure that:
+                     * >   - Size: A single voiceprint file must not exceed 2 MB.
+                     * >   - Duration: 10 to 15 seconds, with at least 8 seconds of effective audio without silent segments.
+                     * >   - Format: 16kHz sampling rate, 16-bit depth, mono PCM audio file. The file name extension must be ".pcm".
+                     */
+                    sample_urls?: Record<string, string>;
+                }
+
+                export namespace Sal {
+                    /**
+                     * Selective attention lock mode:
+                     * - `locking`: Speaker Lock Mode. The agent locks onto the speaker, blocking 95% of ambient human voices and noise. You can enable this mode in two ways:
+                     *   - Seamless mode: When a user speaks loudly and clearly at the beginning of a conversation, the intelligent agent automatically recognizes the user as the speaker.
+                     *   - Personalized mode: When creating an agent, a speaker's voiceprint URL is pre-registered through the `sample_urls` field. The agent then locates the speaker based on the pre-registered voiceprint.
+                     * - `recognition`: Voiceprint recognition mode. The agent identifies different speakers and suppresses other background voices and environmental noise.
+                     */
+                    export const SalMode = {
+                        Locking: "locking",
+                        Recognition: "recognition",
+                    } as const;
+                    export type SalMode = (typeof SalMode)[keyof typeof SalMode];
+                }
+
+                /**
+                 * RTC media encryption configuration.
+                 */
+                export interface Rtc {
+                    /** The encryption key for RTC media content. The key has no length limit. Agora recommends using a 32-byte key. If no encryption key is set or if the key is empty, built-in encryption is not used. */
+                    encryption_key?: string;
+                    /** The salt value used for encryption. This is a Base64-encoded string that is 32 bytes long after decoding. This parameter only takes effect when `encryption_mode` is set to `7` (AES_128_GCM2) or `8` (AES_256_GCM2). Ensure that the salt parameter is not empty for these encryption modes. */
+                    encryption_salt?: string;
+                    /**
+                     * The built-in encryption mode.
+                     * - `1`: AES_128_XTS - 128-bit AES encryption, XTS mode.
+                     * - `2`: AES_128_ECB - 128-bit AES encryption, ECB mode.
+                     * - `3`: AES_256_XTS - 256-bit AES encryption, XTS mode.
+                     * - `4`: SM4_128_ECB - 128-bit SM4 encryption, ECB mode.
+                     * - `5`: AES_128_GCM - 128-bit AES encryption, GCM mode.
+                     * - `6`: AES_256_GCM - 256-bit AES encryption, GCM mode.
+                     * - `7`: AES_128_GCM2 - 128-bit AES encryption, GCM mode. Requires setting `encryption_salt`.
+                     * - `8`: AES_256_GCM2 - 256-bit AES encryption, GCM mode. Requires setting `encryption_salt`.
+                     */
+                    encryption_mode?: number;
+                }
+
+                /**
+                 * Filler word configuration. Plays filler words while waiting for LLM responses to reduce user anxiety and improve conversation flow.
+                 */
+                export interface FillerWords {
+                    /**
+                     * Whether to enable filler words:
+                     * - `true`: Enable filler words.
+                     * - `false`: Disable filler words.
+                     */
+                    enable?: boolean;
+                    /** Filler word trigger configuration. Defines when to trigger filler word playback. */
+                    trigger?: FillerWords.Trigger;
+                    /** Filler word content configuration. Defines the source and selection rules for filler words. */
+                    content?: FillerWords.Content;
+                }
+
+                export namespace FillerWords {
+                    /**
+                     * Filler word trigger configuration. Defines when to trigger filler word playback.
+                     */
+                    export interface Trigger {
+                        /**
+                         * Filler word trigger mode:
+                         * - `fixed_time`: Fixed time trigger. Triggers filler word playback when LLM response wait time exceeds the threshold.
+                         */
+                        mode?: "fixed_time";
+                        /** Fixed time trigger configuration. Used when `mode` is `fixed_time`. */
+                        fixed_time_config?: Trigger.FixedTimeConfig;
+                    }
+
+                    export namespace Trigger {
+                        /**
+                         * Fixed time trigger configuration. Used when `mode` is `fixed_time`.
+                         */
+                        export interface FixedTimeConfig {
+                            /** LLM response wait threshold in milliseconds. Triggers filler word playback when the LLM waits this duration without generating a response. */
+                            response_wait_ms?: number;
+                        }
+                    }
+
+                    /**
+                     * Filler word content configuration. Defines the source and selection rules for filler words.
+                     */
+                    export interface Content {
+                        /**
+                         * Filler word content mode:
+                         * - `static`: Static filler words. Uses a predefined list of filler words.
+                         * - `generated`: LLM-generated filler words based on recent conversation context.
+                         */
+                        mode?: Content.Mode;
+                        /** Static filler word configuration. Required when `mode` is `static`. */
+                        static_config?: Content.StaticConfig;
+                        /** Optional configuration for generated filler words. When omitted, the service uses its default generator settings. */
+                        generated_config?: Content.GeneratedConfig;
+                    }
+
+                    export namespace Content {
+                        /**
+                         * Filler word content mode:
+                         * - `static`: Static filler words. Uses a predefined list of filler words.
+                         * - `generated`: LLM-generated filler words based on recent conversation context.
+                         */
+                        export const Mode = {
+                            Static: "static",
+                            Generated: "generated",
+                        } as const;
+                        export type Mode = (typeof Mode)[keyof typeof Mode];
+
+                        /**
+                         * Static filler word configuration. Required when `mode` is `static`.
+                         */
+                        export interface StaticConfig {
+                            /** List of filler word phrases. Maximum 100 filler words, each not exceeding 50 English words. */
+                            phrases: string[];
+                            /**
+                             * Filler word selection rule:
+                             * - `shuffle`: Random shuffle. Already-used filler words are not repeated until all have been used once.
+                             * - `round_robin`: Round-robin. Selects and plays filler words sequentially from the list.
+                             */
+                            selection_rule?: StaticConfig.SelectionRule;
+                        }
+
+                        export namespace StaticConfig {
+                            /**
+                             * Filler word selection rule:
+                             * - `shuffle`: Random shuffle. Already-used filler words are not repeated until all have been used once.
+                             * - `round_robin`: Round-robin. Selects and plays filler words sequentially from the list.
+                             */
+                            export const SelectionRule = {
+                                Shuffle: "shuffle",
+                                RoundRobin: "round_robin",
+                            } as const;
+                            export type SelectionRule = (typeof SelectionRule)[keyof typeof SelectionRule];
+                        }
+
+                        /**
+                         * Optional configuration for generated filler words. When omitted, the service uses its default generator settings.
+                         */
+                        export interface GeneratedConfig {
+                            /** OpenAI-compatible LLM provider used to generate filler words. Runs in parallel with the main business LLM. */
+                            llm_provider?: GeneratedConfig.LlmProvider;
+                            /** System prompt used to generate a short filler phrase based on recent conversation context. The generated text should be conversational and must not answer the user's question. */
+                            prompt?: string;
+                            /** Fallback strategy when generated filler text is not ready, fails, or returns empty text. Phase 1 only supports `static`. */
+                            fallback_strategy?: "static";
+                            /** Maximum number of recent conversation messages used to generate a filler word. */
+                            context_message_limit?: number;
+                            /** Maximum number of characters from conversation history used to generate a filler word. */
+                            history_character_limit?: number;
+                        }
+
+                        export namespace GeneratedConfig {
+                            /**
+                             * OpenAI-compatible LLM provider used to generate filler words. Runs in parallel with the main business LLM.
+                             */
+                            export interface LlmProvider {
+                                /** URL of the OpenAI-compatible chat completions endpoint. If the URL does not end with `/chat/completions`, the engine appends it automatically. */
+                                url: string;
+                                /** API key for authenticating requests to the filler LLM provider. */
+                                api_key: string;
+                                /** Additional request parameters merged into the generated filler LLM request body, such as `model`. */
+                                params?: Record<string, unknown>;
+                            }
+                        }
+                    }
+                }
+
+                /**
+                 * Agent configuration parameters.
+                 */
+                export interface Parameters {
+                    /** Settings related to agent silence behavior. Does not apply when you integrate a `mllm`. */
+                    silence_config?: Parameters.SilenceConfig;
+                    /** Graceful hang-up settings for the agent. */
+                    farewell_config?: Parameters.FarewellConfig;
+                    /**
+                     * Agent data transmission channel:
+                     * - `rtm`: Use RTM transmission. This configuration takes effect only when `advanced_features.enable_rtm` is `true`.
+                     * - `datastream`: Use RTC data stream transport.
+                     */
+                    data_channel?: Parameters.DataChannel;
+                    /** Whether to receive agent performance data. This setting only takes effect when `advanced_features.enable_rtm` is `true`. */
+                    enable_metrics?: boolean;
+                    /** Whether to receive agent error events. This setting only takes effect when `advanced_features.enable_rtm` is `true`. */
+                    enable_error_message?: boolean;
+                    /**
+                     * The audio scenario for the RTC channel.
+                     * - `default`: Maps to `aiserver`.
+                     * - `chorus`: Real-time chorus scenario, where users have good network conditions and require ultra-low latency.
+                     * - `aiserver`: Optimized for interactions between the user and the conversational AI agent in terms of latency and network resilience.
+                     */
+                    audio_scenario?: Parameters.AudioScenario;
+                    /**
+                     * Whether to disable data retention for the current session:
+                     * - `false`: Default. Session data retention remains enabled.
+                     * - `true`: Disables session data retention. When disabled, historical session content cannot be used for troubleshooting, effectiveness review, or agent optimization.
+                     */
+                    opt_out?: boolean;
+                }
+
+                export namespace Parameters {
+                    /**
+                     * Settings related to agent silence behavior. Does not apply when you integrate a `mllm`.
+                     */
+                    export interface SilenceConfig {
+                        /**
+                         * Specifies the maximum duration (in milliseconds) that the agent can remain silent.
+                         * - `0`: Disables the silent reminder feature.
+                         * - `(0, 60000]`: Enables the silent reminder. You must also set `content`.
+                         */
+                        timeout_ms?: number;
+                        /**
+                         * Specifies how the agent behaves when the silent timeout is reached:
+                         * - `speak`: Uses the TTS module to announce the silent prompt (`content`).
+                         * - `think`: Appends the silent prompt (`content`) to the context and passes it to the LLM.
+                         */
+                        action?: SilenceConfig.Action;
+                        /** Specifies the silent prompt message. The message use depends on the value of `action` parameter. */
+                        content?: string;
+                    }
+
+                    export namespace SilenceConfig {
+                        /**
+                         * Specifies how the agent behaves when the silent timeout is reached:
+                         * - `speak`: Uses the TTS module to announce the silent prompt (`content`).
+                         * - `think`: Appends the silent prompt (`content`) to the context and passes it to the LLM.
+                         */
+                        export const Action = {
+                            Speak: "speak",
+                            Think: "think",
+                        } as const;
+                        export type Action = (typeof Action)[keyof typeof Action];
+                    }
+
+                    /**
+                     * Graceful hang-up settings for the agent.
+                     */
+                    export interface FarewellConfig {
+                        /**
+                         * Enable graceful leave:
+                         * - `true`: When enabled, calling the POST method to stop the agent ensures that the agent is in an `IDLE` state before leaving the channel.
+                         * - `false`: Disabled.
+                         */
+                        graceful_enabled?: boolean;
+                        /** Graceful exit timeout (in seconds). Represents the maximum time to wait for the agent to enter an `IDLE` state before exiting the channel. This field is only effective when `graceful_enabled` is `true`. */
+                        graceful_timeout_seconds?: number;
+                    }
+
+                    /**
+                     * Agent data transmission channel:
+                     * - `rtm`: Use RTM transmission. This configuration takes effect only when `advanced_features.enable_rtm` is `true`.
+                     * - `datastream`: Use RTC data stream transport.
+                     */
+                    export const DataChannel = {
+                        Rtm: "rtm",
+                        Datastream: "datastream",
+                    } as const;
+                    export type DataChannel = (typeof DataChannel)[keyof typeof DataChannel];
+                    /**
+                     * The audio scenario for the RTC channel.
+                     * - `default`: Maps to `aiserver`.
+                     * - `chorus`: Real-time chorus scenario, where users have good network conditions and require ultra-low latency.
+                     * - `aiserver`: Optimized for interactions between the user and the conversational AI agent in terms of latency and network resilience.
+                     */
+                    export const AudioScenario = {
+                        Default: "default",
+                        Chorus: "chorus",
+                        Aiserver: "aiserver",
+                    } as const;
+                    export type AudioScenario = (typeof AudioScenario)[keyof typeof AudioScenario];
+                }
+            }
+        }
+  - id: patch-b142ce71
+    content_hash: sha256:72bfdeca6a113af476520d29832acd53194d0c83d9bd89afa67813f23e72480f
+    original_commit: b142ce7171699b149d70cf7730955b8a3d477639
+    original_message: "chore: finalize v2.8.0 release packaging"
+    original_author: digitallysavvy <hermes.frangoudis@gmail.com>
+    base_generation: c19864f176e1c3d19246216d4da38d180fb199b0
+    files:
+      - tsconfig.cjs.json
+      - tsconfig.esm.json
+      - tsconfig.json
+    patch_content: |
+      diff --git a/tsconfig.cjs.json b/tsconfig.cjs.json
+      index 5c11446..55b83c1 100644
+      --- a/tsconfig.cjs.json
+      +++ b/tsconfig.cjs.json
+      @@ -1,9 +1,8 @@
+       {
+           "extends": "./tsconfig.base.json",
+           "compilerOptions": {
+      -        "module": "CommonJS",
+               "outDir": "dist/cjs"
+           },
+           "include": ["src"],
+      -    "exclude": []
+      +    "exclude": ["src/**/__tests__/**"]
+       }
+      diff --git a/tsconfig.esm.json b/tsconfig.esm.json
+      index 6ce9097..ddb13dd 100644
+      --- a/tsconfig.esm.json
+      +++ b/tsconfig.esm.json
+      @@ -2,9 +2,10 @@
+           "extends": "./tsconfig.base.json",
+           "compilerOptions": {
+               "module": "esnext",
+      +        "moduleResolution": "bundler",
+               "outDir": "dist/esm",
+               "verbatimModuleSyntax": true
+           },
+           "include": ["src"],
+      -    "exclude": []
+      +    "exclude": ["src/**/__tests__/**"]
+       }
+      diff --git a/tsconfig.json b/tsconfig.json
+      index d77fdf0..7e4e226 100644
+      --- a/tsconfig.json
+      +++ b/tsconfig.json
+      @@ -1,3 +1,8 @@
+       {
+      -    "extends": "./tsconfig.cjs.json"
+      +    "extends": "./tsconfig.base.json",
+      +    "compilerOptions": {
+      +        "noEmit": true
+      +    },
+      +    "include": ["src"],
+      +    "exclude": []
+       }
+    theirs_snapshot:
+      tsconfig.cjs.json: |
+        {
+            "extends": "./tsconfig.base.json",
+            "compilerOptions": {
+                "outDir": "dist/cjs"
+            },
+            "include": ["src"],
+            "exclude": ["src/**/__tests__/**"]
+        }
+      tsconfig.esm.json: |
+        {
+            "extends": "./tsconfig.base.json",
+            "compilerOptions": {
+                "module": "esnext",
+                "moduleResolution": "bundler",
+                "outDir": "dist/esm",
+                "verbatimModuleSyntax": true
+            },
+            "include": ["src"],
+            "exclude": ["src/**/__tests__/**"]
+        }
+      tsconfig.json: |
+        {
+            "extends": "./tsconfig.base.json",
+            "compilerOptions": {
+                "noEmit": true
+            },
+            "include": ["src"],
+            "exclude": []
+        }
+  - id: patch-49d85678
+    content_hash: sha256:e9af44e820182df6ca13e5a967b5f3f531727ea9e50081bc26d0aaa0149914a2
+    original_commit: 49d8567869e02d0a32eefe43222ca9d2edbb627f
+    original_message: "chore: prepare v2.8.1 release"
+    original_author: digitallysavvy <hermes.frangoudis@gmail.com>
+    base_generation: 968052cfeb43496ef6a8aa0bb6469e0ff8968521
+    files:
+      - src/BaseClient.ts
+      - src/version.ts
+    patch_content: |
+      diff --git a/src/BaseClient.ts b/src/BaseClient.ts
+      index 90c0381..5972ce1 100644
+      --- a/src/BaseClient.ts
+      +++ b/src/BaseClient.ts
+      @@ -44,8 +44,8 @@ export function normalizeClientOptions<T extends BaseClientOptions>(options: T):
+               {
+                   "X-Fern-Language": "JavaScript",
+                   "X-Fern-SDK-Name": "agora-agents",
+      -            "X-Fern-SDK-Version": "v2.8.0",
+      -            "User-Agent": "agora-agents/v2.8.0",
+      +            "X-Fern-SDK-Version": "v2.8.1",
+      +            "User-Agent": "agora-agents/v2.8.1",
+                   "X-Fern-Runtime": core.RUNTIME.type,
+                   "X-Fern-Runtime-Version": core.RUNTIME.version,
+               },
+      diff --git a/src/version.ts b/src/version.ts
+      index 4b36d5a..77ad5e2 100644
+      --- a/src/version.ts
+      +++ b/src/version.ts
+      @@ -1 +1 @@
+      -export const SDK_VERSION = "v2.8.0";
+      +export const SDK_VERSION = "v2.8.1";
+    theirs_snapshot:
+      src/BaseClient.ts: |
+        // This file was auto-generated by Fern from our API Definition.
+
+        import { mergeHeaders } from "./core/headers.js";
+        import * as core from "./core/index.js";
+        import type * as environments from "./environments.js";
+
+        export interface BaseClientOptions {
+            environment?: core.Supplier<environments.AgoraEnvironment | string>;
+            /** Specify a custom URL to connect the client to. */
+            baseUrl?: core.Supplier<string>;
+            username: core.Supplier<string>;
+            password: core.Supplier<string>;
+            /** Override the Authorization header */
+            authorization: core.Supplier<string>;
+            /** Additional headers to include in requests. */
+            headers?: Record<string, string | core.Supplier<string | null | undefined> | null | undefined>;
+            /** The default maximum time to wait for a response in seconds. */
+            timeoutInSeconds?: number;
+            /** The default number of times to retry the request. Defaults to 2. */
+            maxRetries?: number;
+            /** Provide a custom fetch implementation. Useful for platforms that don't have a built-in fetch or need a custom implementation. */
+            fetch?: typeof fetch;
+            /** Configure logging for the client. */
+            logging?: core.logging.LogConfig | core.logging.Logger;
+        }
+
+        export interface BaseRequestOptions {
+            /** The maximum time to wait for a response in seconds. */
+            timeoutInSeconds?: number;
+            /** The number of times to retry the request. Defaults to 2. */
+            maxRetries?: number;
+            /** A hook to abort the request. */
+            abortSignal?: AbortSignal;
+            /** Override the Authorization header */
+            authorization?: string;
+            /** Additional query string parameters to include in the request. */
+            queryParams?: Record<string, unknown>;
+            /** Additional headers to include in the request. */
+            headers?: Record<string, string | core.Supplier<string | null | undefined> | null | undefined>;
+        }
+
+        export function normalizeClientOptions<T extends BaseClientOptions>(options: T): T {
+            const headers = mergeHeaders(
+                {
+                    "X-Fern-Language": "JavaScript",
+                    "X-Fern-SDK-Name": "agora-agents",
+                    "X-Fern-SDK-Version": "v2.8.1",
+                    "User-Agent": "agora-agents/v2.8.1",
+                    "X-Fern-Runtime": core.RUNTIME.type,
+                    "X-Fern-Runtime-Version": core.RUNTIME.version,
+                },
+                options?.headers,
+            );
+
+            return {
+                ...options,
+                logging: core.logging.createLogger(options?.logging),
+                headers,
+            } as T;
+        }
+      src/version.ts: |
+        export const SDK_VERSION = "v2.8.1";
+    status: unresolved
