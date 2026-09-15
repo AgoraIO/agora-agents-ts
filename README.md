@@ -228,16 +228,16 @@ const agent = new Agent({ client }).withMllm(
 );
 ```
 
-For Gemini 3.8 Live Extended Thinking, use the same single `GeminiMLLM` class as the regular Live model:
+For Gemini 3.8 Live Extended Thinking, use the same single `GeminiLive` class as the regular Live model:
 
 ```typescript
-import { GeminiMLLM } from 'agora-agents';
+import { GeminiLive } from 'agora-agents';
 
-const geminiAgent = new Agent({ client }).withMllm(new GeminiMLLM({
+const geminiAgent = new Agent({ client }).withMllm(new GeminiLive({
   apiKey: process.env.GOOGLE_API_KEY!,
   model: 'models/gemini-3.8-live-extended-thinking',
   thinkingLevel: 'medium',
-  greeting: 'Hello! Ready to chat.',
+  greetingMessage: 'Hello! Ready to chat.',
 }));
 ```
 

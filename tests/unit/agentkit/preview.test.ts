@@ -3,8 +3,7 @@ import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
 import {
     applyPreviewShape,
-    GeminiMLLM,
-    GeminiMLLMModels,
+    GeminiLiveModels,
     GeminiSTT,
     OpenAIGPTLive,
     PREVIEW_API_BASE_URL,
@@ -12,6 +11,7 @@ import {
     requiredPreviewFeatures,
 } from "../../../src/agentkit/preview/index.js";
 import { Gemini, OpenAI } from "../../../src/agentkit/vendors/llm.js";
+import { GeminiLive } from "../../../src/agentkit/vendors/mllm.js";
 import { DeepgramSTT } from "../../../src/agentkit/vendors/stt.js";
 import { GoogleTTS, MiniMaxTTS } from "../../../src/agentkit/vendors/tts.js";
 import type * as Agora from "../../../src/api/index.js";
@@ -21,22 +21,22 @@ const API_KEY = "AIza-test-key";
 
 describe("Gemini preview MLLM routing", () => {
     test("rejects a blank API key at runtime", () => {
-        expect(() => new GeminiMLLM({ apiKey: "  " })).toThrow("GeminiMLLM requires apiKey");
+        expect(() => new GeminiLive({ apiKey: "  " })).toThrow("GeminiLive requires apiKey");
     });
 
     test("rejects an invalid thinking level at runtime", () => {
-        expect(() => new GeminiMLLM({ apiKey: API_KEY, thinkingLevel: "invalid" as never })).toThrow(
-            "GeminiMLLM thinkingLevel must be low, medium, or high",
+        expect(() => new GeminiLive({ apiKey: API_KEY, thinkingLevel: "invalid" as never })).toThrow(
+            "GeminiLive thinkingLevel must be low, medium, or high",
         );
     });
 
     test("one class supports the public 3.8 model IDs", () => {
-        expect(new GeminiMLLM({ apiKey: API_KEY, model: "  " }).toConfig().params?.model).toBe(GeminiMLLMModels.Live38);
+        expect(new GeminiLive({ apiKey: API_KEY, model: "  " }).toConfig().params?.model).toBe(GeminiLiveModels.Live38);
         for (const [model, thinkingLevel] of [
-            [GeminiMLLMModels.Live38, "medium"],
-            [GeminiMLLMModels.Live38ExtendedThinking, "medium"],
+            [GeminiLiveModels.Live38, "medium"],
+            [GeminiLiveModels.Live38ExtendedThinking, "medium"],
         ] as const) {
-            const config = new GeminiMLLM({
+            const config = new GeminiLive({
                 apiKey: API_KEY,
                 model,
                 thinkingLevel,
@@ -46,7 +46,7 @@ describe("Gemini preview MLLM routing", () => {
             expect((config.params as Record<string, unknown>).api_key).toBeUndefined();
             expect(config.params?.model).toBe(model);
             expect(config.params?.thinking_level).toBe(
-                model === GeminiMLLMModels.Live38ExtendedThinking ? thinkingLevel : undefined,
+                model === GeminiLiveModels.Live38ExtendedThinking ? thinkingLevel : undefined,
             );
             expect(requiredPreviewFeatures({ mllm: config } as Agora.StartAgentsRequest.Properties)).toEqual([
                 PreviewFeatures.GeminiLive,
@@ -60,8 +60,8 @@ describe("Gemini preview MLLM routing", () => {
     });
     test("selects Gemini's gate while GPT Live keeps its own", () => {
         for (const vendor of [
-            new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.Live38 }),
-            new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.Live38ExtendedThinking }),
+            new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38 }),
+            new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38ExtendedThinking }),
         ]) {
             const properties = { mllm: vendor.toConfig() } as Agora.StartAgentsRequest.Properties;
             expect(requiredPreviewFeatures(properties)).toEqual([PreviewFeatures.GeminiLive]);
@@ -73,7 +73,7 @@ describe("Gemini preview MLLM routing", () => {
     test("moves the builder greeting to Gemini's preview wire field", () => {
         const properties = {
             mllm: {
-                ...new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.Live38 }).toConfig(),
+                ...new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38 }).toConfig(),
                 greeting_message: "Hello",
             },
         } as Agora.StartAgentsRequest.Properties;
@@ -85,7 +85,11 @@ describe("Gemini preview MLLM routing", () => {
     test("unknown Gemini model keeps preview greeting without params.api_key", () => {
         const properties = {
             mllm: {
-                ...new GeminiMLLM({ apiKey: API_KEY, model: "future-live-model" }).toConfig(),
+                ...new GeminiLive({
+                    apiKey: API_KEY,
+                    model: "future-live-model",
+                    url: "https://generativelanguage.googleapis.com",
+                }).toConfig(),
                 greeting_message: "Hello",
             },
         } as Agora.StartAgentsRequest.Properties;
@@ -396,9 +400,9 @@ test("Gemini MLLM routes its full session with the gemini-live gate", async () =
         );
     const session = new Agent({ client: createClient(fetchMock, { "agora-feature": "wrong" }) })
         .withMllm(
-            new GeminiMLLM({
+            new GeminiLive({
                 apiKey: API_KEY,
-                model: GeminiMLLMModels.Live38ExtendedThinking,
+                model: GeminiLiveModels.Live38ExtendedThinking,
                 thinkingLevel: "medium",
             }),
         )

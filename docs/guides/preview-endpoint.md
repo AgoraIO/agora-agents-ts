@@ -30,10 +30,10 @@ GPT Live sessions use:
 - Base URL: `https://partner.ai.agora.io/preview/api/conversational-ai-agent`
 - Header: `agora-feature: live-models`
 
-Use the single `GeminiMLLM({ apiKey, model })` class for either Gemini
+Use the single `GeminiLive({ apiKey, model })` class for either Gemini
 voice model. Select `models/gemini-3.8-live` or
 `models/gemini-3.8-live-extended-thinking`; the low-latency ID is the default.
-Set `thinkingLevel: "medium"` for extended thinking. `GeminiMLLM` sends it
+Set `thinkingLevel: "medium"` for extended thinking. `GeminiLive` sends it
 only for the extended-thinking ID. Gemini sessions send the
 Google credential once as `mllm.api_key`, never as `mllm.params.api_key`.
 They use `agora-feature: gemini-live`; GPT Live keeps its `live-models` gate.

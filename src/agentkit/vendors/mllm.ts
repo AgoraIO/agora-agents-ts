@@ -6,6 +6,8 @@
  * sets `mllm.enable: true`.
  */
 
+import type { GeminiThinkingLevel } from "../preview/vendors.js";
+import { buildGeminiPreviewConfig, GeminiLiveModels, GeminiThinkingLevels } from "../preview/vendors.js";
 import type { MllmConfig, MllmTurnDetectionConfig } from "../types.js";
 import { BaseCNMLLM, BaseMLLM } from "./base.js";
 
@@ -229,7 +231,11 @@ export interface GeminiLiveOptions {
     /** Google API key */
     apiKey: string;
     /** Model name (e.g., 'gemini-live-2.5-flash') */
-    model: string;
+    model?: string;
+    /** Sent only for models/gemini-3.8-live-extended-thinking. */
+    thinkingLevel?: GeminiThinkingLevel;
+    /** Languages for Gemini 3.8, sent as params.language_codes. */
+    languageCodes?: readonly string[];
     /** WebSocket URL for real-time communication */
     url?: string;
     /** System instructions for the model */
@@ -278,7 +284,13 @@ export class GeminiLive extends BaseMLLM {
 
     constructor(options: GeminiLiveOptions) {
         super();
-        this.options = options;
+        if (!options.apiKey.trim()) {
+            throw new Error("GeminiLive requires apiKey");
+        }
+        if (options.thinkingLevel !== undefined && !GeminiThinkingLevels.includes(options.thinkingLevel)) {
+            throw new Error("GeminiLive thinkingLevel must be low, medium, or high");
+        }
+        this.options = { ...options, apiKey: options.apiKey.trim() };
     }
 
     toConfig(): MllmConfig {
@@ -301,6 +313,11 @@ export class GeminiLive extends BaseMLLM {
             turnDetection,
         } = this.options;
 
+        const selectedModel = model?.trim() || GeminiLiveModels.Live38;
+        if (selectedModel === GeminiLiveModels.Live38 || selectedModel === GeminiLiveModels.Live38ExtendedThinking) {
+            return buildGeminiPreviewConfig(this.options);
+        }
+
         return {
             vendor: "gemini",
             api_key: apiKey,
@@ -308,7 +325,7 @@ export class GeminiLive extends BaseMLLM {
             params: {
                 // additionalParams spread first so that explicit fields always win.
                 ...additionalParams,
-                model,
+                model: selectedModel,
                 ...(instructions && { instructions }),
                 ...(voice && { voice }),
                 ...(affectiveDialog !== undefined && { affective_dialog: affectiveDialog }),

@@ -102,8 +102,8 @@ const PREVIEW_MLLM_MODELS: ReadonlySet<string> = new Set([
 /**
  * Whether a config carries the envelope the preview MLLM vendor classes emit:
  * a top-level `mllm.api_key`, and a `url` on the Gemini Developer API host.
- * The production {@link GeminiLive} vendor uses a different URL: `""` or a
- * WebSocket endpoint.
+ * GeminiLive configurations for older model IDs use a different URL: `""` or
+ * a WebSocket endpoint.
  *
  * This is the second recognition path, and it exists because keying only off
  * {@link PREVIEW_MLLM_MODELS} makes an unrecognised model name fail silently:

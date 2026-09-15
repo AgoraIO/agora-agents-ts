@@ -112,8 +112,7 @@ export {
     requiredPreviewFeatures,
 } from "./preview/client.js";
 export type {
-    GeminiMLLMModel,
-    GeminiMLLMOptions,
+    GeminiLiveModel,
     GeminiPreviewVoice,
     GeminiThinkingLevel,
     OpenAIGPTLiveOptions,
@@ -121,8 +120,7 @@ export type {
 export {
     GEMINI_MLLM_DEFAULT_MODEL,
     GEMINI_PREVIEW_MLLM_URL,
-    GeminiMLLM,
-    GeminiMLLMModels,
+    GeminiLiveModels,
     GeminiThinkingLevels,
     OpenAIGPTLive,
 } from "./preview/vendors.js";

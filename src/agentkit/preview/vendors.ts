@@ -7,8 +7,9 @@
  * preview endpoint automatically.
  */
 
-import type { McpServersItem, MllmConfig, MllmTurnDetectionConfig, TurnDetectionLanguage } from "../types.js";
+import type { McpServersItem, MllmConfig, MllmTurnDetectionConfig } from "../types.js";
 import { BaseMLLM } from "../vendors/base.js";
+import type { GeminiLiveOptions } from "../vendors/mllm.js";
 
 // =============================================================================
 // OpenAI GPT Live (MLLM)
@@ -176,7 +177,7 @@ export class OpenAIGPTLive extends BaseMLLM {
 }
 
 // Google preview MLLMs use a separate feature gate from GPT Live.
-export const GeminiMLLMModels = {
+export const GeminiLiveModels = {
     /** Public ID for the low-latency voice model. */
     Live38: "models/gemini-3.8-live",
     /** Public ID for the reasoning voice model. */
@@ -188,13 +189,13 @@ export const GeminiMLLMModels = {
  *
  * Low-latency Gemini voice is the default.
  */
-export const GEMINI_MLLM_DEFAULT_MODEL: GeminiMLLMModel = GeminiMLLMModels.Live38;
+export const GEMINI_MLLM_DEFAULT_MODEL: string = GeminiLiveModels.Live38;
 
 /**
  * A preview Gemini MLLM model. Any string is accepted for launch flexibility;
  * the `models/` prefix on the 3.8 IDs is preserved on the wire.
  */
-export type GeminiMLLMModel = (typeof GeminiMLLMModels)[keyof typeof GeminiMLLMModels] | (string & {});
+export type GeminiLiveModel = (typeof GeminiLiveModels)[keyof typeof GeminiLiveModels] | (string & {});
 
 /** Reasoning budget for Gemini extended thinking. */
 export const GeminiThinkingLevels = ["low", "medium", "high"] as const;
@@ -220,81 +221,8 @@ export type GeminiPreviewVoice =
 /** Default endpoint for the preview Gemini MLLMs. */
 export const GEMINI_PREVIEW_MLLM_URL = "https://generativelanguage.googleapis.com";
 
-/** Options shared by both preview Gemini MLLM vendors. */
-export interface GeminiMLLMOptions {
-    /** Google API key. */
-    apiKey: string;
-    /**
-     * Model name. Defaults to models/gemini-3.8-live.
-     */
-    model?: GeminiMLLMModel;
-    /** Sent only for the extended-thinking model. */
-    thinkingLevel?: GeminiThinkingLevel;
-    /** Voice identifier for audio output. Defaults to `Puck`. */
-    voice?: GeminiPreviewVoice;
-    /**
-     * Languages the model should work in, sent as `params.language_codes`.
-     *
-     * The preview MLLMs take the plural `language_codes` array, not the
-     * singular `language` other Gemini configs use. Omitted from the request
-     * when unset.
-     */
-    languageCodes?: readonly TurnDetectionLanguage[];
-    /** Endpoint override. Defaults to {@link GEMINI_PREVIEW_MLLM_URL}. */
-    url?: string;
-    /** System instructions that define agent behavior. */
-    instructions?: string;
-    /**
-     * Transcribe the agent's speech in real time.
-     *
-     * MLLM sessions have no ASR stage, so this is the only source of agent
-     * transcripts — leave it off and a transcript UI stays empty.
-     */
-    transcribeAgent?: boolean;
-    /**
-     * Transcribe the user's speech in real time.
-     *
-     * MLLM sessions have no ASR stage, so this is the only source of user
-     * transcripts — leave it off and a transcript UI stays empty.
-     */
-    transcribeUser?: boolean;
-    /** Adapt tone based on emotional cues in the user's speech. */
-    affectiveDialog?: boolean;
-    /** Let the model stay silent when no reply is warranted. */
-    proactiveAudio?: boolean;
-    /** HTTP options passed to the Gemini API (for example `{ api_version: 'v1beta' }`). */
-    httpOptions?: Record<string, unknown>;
-    /**
-     * Agent greeting, serialized to `greeting`.
-     *
-     * The preview Gemini models read `greeting`, not the `greeting_message`
-     * the production providers use — hence the option name.
-     */
-    greeting?: string;
-    /** Message played on failure. */
-    failureMessage?: string;
-    /** Input modalities (e.g., `['audio']`, `['audio', 'text']`). */
-    inputModalities?: string[];
-    /** Output modalities (e.g., `['text', 'audio']`). */
-    outputModalities?: string[];
-    /** Conversation messages for short-term memory. */
-    messages?: Record<string, unknown>[];
-    /** Additional MLLM parameters passed directly to the model. */
-    additionalParams?: Record<string, unknown>;
-    /**
-     * MLLM turn detection, serialized to `mllm.turn_detection`. This is the
-     * VAD the MLLM itself uses.
-     *
-     * Distinct from the agent-level `turnDetection`, which in MLLM mode is
-     * passed through only if you set it — unlike cascading mode, the `Agent`
-     * neither defaults it nor derives anything from it, since there is no `asr`
-     * stage for it to configure.
-     */
-    turnDetection?: MllmTurnDetectionConfig;
-}
-
-/** Builds the Gemini preview wire config. */
-function buildGeminiMllmConfig(options: GeminiMLLMOptions): MllmConfig {
+/** Builds the 3.8 preview wire config from the existing GeminiLive options. */
+export function buildGeminiPreviewConfig(options: GeminiLiveOptions): MllmConfig {
     const {
         model: requestedModel,
         apiKey,
@@ -308,7 +236,7 @@ function buildGeminiMllmConfig(options: GeminiMLLMOptions): MllmConfig {
         affectiveDialog,
         proactiveAudio,
         httpOptions,
-        greeting,
+        greetingMessage,
         failureMessage,
         inputModalities,
         outputModalities,
@@ -318,7 +246,7 @@ function buildGeminiMllmConfig(options: GeminiMLLMOptions): MllmConfig {
     } = options;
 
     const model = requestedModel?.trim() || GEMINI_MLLM_DEFAULT_MODEL;
-    const reasoningModel = model === GeminiMLLMModels.Live38ExtendedThinking;
+    const reasoningModel = model === GeminiLiveModels.Live38ExtendedThinking;
     const params: Record<string, unknown> = {
         ...additionalParams,
         model,
@@ -345,34 +273,10 @@ function buildGeminiMllmConfig(options: GeminiMLLMOptions): MllmConfig {
         ...(messages && { messages }),
         // `greeting`, not `greeting_message`: the preview Gemini models read
         // this spelling. See the preview-endpoint guide.
-        ...(greeting && { greeting }),
+        ...(greetingMessage && { greeting: greetingMessage }),
         ...(failureMessage && { failure_message: failureMessage }),
         ...(inputModalities && { input_modalities: inputModalities }),
         ...(outputModalities && { output_modalities: outputModalities }),
         ...(turnDetection && { turn_detection: turnDetection }),
     };
-}
-
-function requireApiKey(apiKey: string, vendor: string): void {
-    if (!apiKey.trim()) {
-        throw new Error(`${vendor} requires apiKey`);
-    }
-}
-
-/** One preview MLLM class for both Gemini voice models. */
-export class GeminiMLLM extends BaseMLLM {
-    private readonly options: GeminiMLLMOptions;
-
-    constructor(options: GeminiMLLMOptions) {
-        super();
-        requireApiKey(options.apiKey, "GeminiMLLM");
-        if (options.thinkingLevel !== undefined && !GeminiThinkingLevels.includes(options.thinkingLevel)) {
-            throw new Error("GeminiMLLM thinkingLevel must be low, medium, or high");
-        }
-        this.options = { ...options, apiKey: options.apiKey.trim() };
-    }
-
-    toConfig(): MllmConfig {
-        return buildGeminiMllmConfig(this.options);
-    }
 }
