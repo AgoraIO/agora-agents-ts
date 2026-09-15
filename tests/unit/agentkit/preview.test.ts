@@ -280,7 +280,7 @@ describe("preview feature detection", () => {
     });
 });
 
-test("GPT Live v3 routes the full session to preview with the live-models gate", async () => {
+test("legacy GPT Live integration routes the full session to production without a feature gate", async () => {
     const fetchMock = vi
         .fn<typeof fetch>()
         .mockImplementation(
@@ -296,8 +296,8 @@ test("GPT Live v3 routes the full session to preview with the live-models gate",
     await session.stop();
     expect(fetchMock.mock.calls).toHaveLength(5);
     for (const [url, init] of fetchMock.mock.calls) {
-        expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(true);
-        expect(new Headers(init?.headers).get("agora-feature")).toBe("live-models");
+        expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(false);
+        expect(new Headers(init?.headers).get("agora-feature")).toBeNull();
     }
     const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(body.properties.mllm).toMatchObject({

@@ -100,8 +100,7 @@ export type {
     TtsPreset,
 } from "./presets.js";
 export { AgentPresets, normalizePresetInput } from "./presets.js";
-// Preview endpoint: session routing, providers, and feature gating.
-// Temporary surface — removed when these providers ship on the production gateway.
+// Legacy preview endpoint routing and feature-gating compatibility surface.
 export type { PreviewFeature, PreviewRoute } from "./preview/client.js";
 export {
     createPreviewRoute,
@@ -111,8 +110,6 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
-export type { OpenAIGPTLiveOptions } from "./preview/vendors.js";
-export { OpenAIGPTLive } from "./preview/vendors.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,
@@ -204,6 +201,7 @@ export type {
     LlmToolExecution,
     LlmToolFunction,
     LlmToolServer,
+    McpServer,
     McpServersItem,
     // TTS vendor-specific types
     MicrosoftTts,
@@ -241,6 +239,10 @@ export type {
     SessionSummary,
     SilenceAction,
     SilenceConfig,
+    SmallestAiAsr,
+    SmallestAiAsrParams,
+    SmallestAiTts,
+    SmallestAiTtsParams,
     SpatiusAvatarParams,
     SpeakPriority,
     StartOfSpeechConfig,
@@ -303,6 +305,7 @@ export {
     BaseLLM,
     type BaseLlmOptions,
     BaseMLLM,
+    type BaseMllmOptions,
     BaseSTT,
     BaseTTS,
     type GoogleTTSSampleRate,
@@ -377,6 +380,7 @@ export type {
     AzureOpenAIRealtimeOptions,
     AzureOpenAIRealtimeParams,
     GeminiLiveOptions,
+    OpenAIGPTLiveOptions,
     OpenAIRealtimeOptions,
     QwenOmniOptions,
     VertexAIOptions,
@@ -386,6 +390,7 @@ export type {
 export {
     AzureOpenAIRealtime,
     GeminiLive,
+    OpenAIGPTLive,
     OpenAIRealtime,
     QwenOmni,
     VertexAI,
@@ -402,6 +407,7 @@ export type {
     MicrosoftSTTOptions,
     OpenAISTTOptions,
     SarvamSTTOptions,
+    SmallestAISTTOptions,
     SpeechmaticsSTTOptions,
     XAiSTTOptions,
 } from "./vendors/stt.js";
@@ -418,6 +424,7 @@ export {
     MicrosoftSTT,
     OpenAISTT,
     SarvamSTT,
+    SmallestAISTT,
     SpeechmaticsSTT,
     XAiSTT,
 } from "./vendors/stt.js";
@@ -438,6 +445,7 @@ export type {
     OpenAITTSOptions,
     RimeTTSOptions,
     SarvamTTSOptions,
+    SmallestAITTSOptions,
     TypecastTTSOptions,
     XAiTTSOptions,
 } from "./vendors/tts.js";
@@ -459,6 +467,7 @@ export {
     OpenAITTS,
     RimeTTS,
     SarvamTTS,
+    SmallestAITTS,
     TypecastTTS,
     XAiTTS,
 } from "./vendors/tts.js";

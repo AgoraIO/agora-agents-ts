@@ -16,6 +16,7 @@ import {
     OpenAITTS,
     RimeTTS,
     SarvamTTS,
+    SmallestAITTS,
 } from "../../../src/agentkit/vendors/tts.js";
 import { CredentialMode, type CredentialMode as CredentialModeType } from "../../../src/index.js";
 
@@ -321,5 +322,35 @@ describe("TTS vendor helpers", () => {
             credential_mode: "byok",
             params: { api_key: "rime-key", speaker: "speaker", modelId: "mist" },
         });
+    });
+
+    test("serializes Smallest AI provider params", () => {
+        expect(
+            new SmallestAITTS({
+                apiKey: "smallest-key",
+                model: "lightning-v2",
+                voiceId: "emily",
+                sampleRate: 24000,
+                speed: 1.1,
+                language: "en",
+                mathNotation: true,
+                pronunciationDicts: ["products"],
+                skipPatterns: [1, 2],
+            }).toConfig(),
+        ).toEqual({
+            vendor: "smallestai",
+            params: {
+                api_key: "smallest-key",
+                model: "lightning-v2",
+                voice_id: "emily",
+                sample_rate: 24000,
+                speed: 1.1,
+                language: "en",
+                math_notation: true,
+                pronunciation_dicts: ["products"],
+            },
+            skip_patterns: [1, 2],
+        });
+        expect(() => new SmallestAITTS({ apiKey: "" })).toThrow("SmallestAITTS requires apiKey");
     });
 });

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## Unreleased
+
+### Changed
+
+- **OpenAI GPT Live production routing** — Existing `OpenAIGPTLive` integrations now use the configured regional production endpoint without the preview `agora-feature: live-models` gate. The implementation now lives with the production MLLM vendors, while constructor options, request serialization, and legacy preview aliases remain compatible.
+
 ## [v2.8.1] — 2026-09-11
 
 ### Changed

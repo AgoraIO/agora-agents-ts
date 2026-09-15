@@ -33,6 +33,7 @@ import type {
     LlmToolFunction as LlmToolFunctionType,
     LlmToolServer as LlmToolServerType,
     LlmTool as LlmToolType,
+    McpServer as McpServerType,
     MicrosoftTtsParams as MicrosoftTtsParamsType,
     MicrosoftTts as MicrosoftTtsType,
     MinimaxTtsParams as MinimaxTtsParamsType,
@@ -50,6 +51,10 @@ import type {
     RimeTts as RimeTtsType,
     SarvamTtsParams as SarvamTtsParamsType,
     SarvamTts as SarvamTtsType,
+    SmallestAiAsrParams as SmallestAiAsrParamsType,
+    SmallestAiAsr as SmallestAiAsrType,
+    SmallestAiTtsParams as SmallestAiTtsParamsType,
+    SmallestAiTts as SmallestAiTtsType,
     SpatiusAvatarParams as SpatiusAvatarParamsType,
     SpeakAgentsRequest,
     StartAgentsRequest,
@@ -116,12 +121,12 @@ export type LlmToolExecution = LlmToolExecutionType;
 export type LlmToolFunction = LlmToolFunctionType;
 export type LlmToolServer = LlmToolServerType;
 
-/** MLLM configuration, including preview vendors not present in the generated schema yet. */
+/** MLLM configuration, including production vendors not present in the generated schema yet. */
 export type MllmConfig = Omit<Mllm, "vendor"> & {
     vendor?: Mllm.Vendor | "openai_gpt_live";
 };
 
-/** MLLM wire vendor name, including preview vendors. */
+/** MLLM wire vendor name, including schema compatibility extensions. */
 export type MllmVendor = Exclude<MllmConfig["vendor"], undefined>;
 
 /** Avatar configuration */
@@ -320,7 +325,9 @@ export type LlmGreetingConfigs = Llm.GreetingConfigs;
 export type LlmGreetingConfigsMode = Llm.GreetingConfigs.UninterruptibleAsrPolicy;
 
 /** MCP server config item (`llm.mcp_servers[]` or `mllm.mcp_servers[]`) */
-export type McpServersItem = Record<string, unknown>;
+export type McpServer = McpServerType;
+/** @deprecated Use {@link McpServer}. */
+export type McpServersItem = McpServer & Record<string, unknown>;
 
 // =============================================================================
 // Agent Configuration (combines all the above)
@@ -698,6 +705,8 @@ export interface SarvamAsrParams {
  */
 export type XAiAsr = XAiAsrType;
 export type XAiAsrParams = XAiAsrParamsType;
+export type SmallestAiAsr = SmallestAiAsrType;
+export type SmallestAiAsrParams = SmallestAiAsrParamsType;
 
 /** Google Gemini STT parameters generated from the API schema. */
 export type GeminiAsrParams = GeminiAsrParamsType;
@@ -738,6 +747,8 @@ export type SarvamTts = SarvamTtsType;
 export type SarvamTtsParams = SarvamTtsParamsType;
 export type XAiTts = XAiTtsType;
 export type XAiTtsParams = XAiTtsParamsType;
+export type SmallestAiTts = SmallestAiTtsType;
+export type SmallestAiTtsParams = SmallestAiTtsParamsType;
 export type TypecastTts = TypecastTtsType;
 export type TypecastTtsParams = TypecastTtsParamsType;
 export type SpatiusAvatarParams = SpatiusAvatarParamsType;

@@ -7,7 +7,7 @@
  */
 
 import type { MllmConfig, MllmTurnDetectionConfig } from "../types.js";
-import { BaseCNMLLM, BaseMLLM } from "./base.js";
+import { BaseCNMLLM, BaseMLLM, type BaseMllmOptions } from "./base.js";
 
 function requireString(value: unknown, field: string, vendor: string): asserts value is string {
     if (typeof value !== "string" || value.length === 0) {
@@ -21,10 +21,170 @@ function requireObject(value: unknown, field: string, vendor: string): asserts v
     }
 }
 
+// =============================================================================
+// OpenAI GPT Live (MLLM)
+// =============================================================================
+
+export const OPENAI_GPT_LIVE_VENDOR = "openai_gpt_live" as const;
+
+export function isOpenAIGPTLiveConfig(config: unknown): boolean {
+    return (config as { vendor?: unknown } | null | undefined)?.vendor === OPENAI_GPT_LIVE_VENDOR;
+}
+
+/** GPT Live v3 options. */
+export interface OpenAIGPTLiveOptions extends BaseMllmOptions {
+    apiKey: string;
+    /** Full WebSocket URL, used verbatim except OpenAI's legacy /v1/live route. */
+    url?: string;
+    /** @deprecated Use prompt. Serialized as prompt; an explicit prompt wins. */
+    instructions?: string;
+    greeting?: string;
+    failureMessage?: string;
+    inputModalities?: string[];
+    outputModalities?: string[];
+    messages?: Record<string, unknown>[];
+    /** Additional provider fields; explicit options take precedence. */
+    params?: Record<string, unknown>;
+    /** @deprecated Unsupported in v3; setting this raises an error. */
+    inputAudioTranscription?: Record<string, unknown>;
+    /** @deprecated Ignored with a warning; v3 performs endpointing internally. */
+    turnDetection?: MllmTurnDetectionConfig;
+    /** Defaults to gpt-live-1. */
+    model?: string;
+    /** Output voice; provider default marin. Custom voice objects require PR #1522; use params after rollout. */
+    voice?: string;
+    /** Session instructions. */
+    prompt?: string;
+    /** Host when url is omitted; default wss://api.openai.com. */
+    baseUrl?: string;
+    /** WebSocket path; default /v1/live/sessions. */
+    path?: string;
+    /** Optional OpenAI-Alpha selector for preview contracts. Omitted by default. */
+    alphaSelector?: string;
+    /** Extra provider request headers as a JSON string; protocol headers win. */
+    headers?: string;
+    /** Assistant silence boundary in ms; provider default 600. Zero disables inference. */
+    outputIdleEndMs?: number;
+    /** Caller silence boundary in ms; provider default 1500. */
+    inputIdleEndMs?: number;
+    /** Speech amplitude threshold on the 16-bit scale; provider default 50. */
+    outputSilencePeak?: number;
+    /** Graph PCM sample rate; provider default 24000. */
+    outputSampleRate?: number;
+    /** Initial audio cushion; provider default 0. Negative disables pacing. */
+    outputBufferMs?: number;
+    /** Mic append batching in ms. Join default 0; extension class default 100. */
+    inputBatchMs?: number;
+    /** Advertise graph tools; provider default false. Does not control delegate built-ins. */
+    toolEnabled?: boolean;
+    /** Tool delegation mode; provider default responses. Fixed for the session. */
+    delegation?: "client" | "responses";
+    /** Tool delegate model; provider default gpt-5.6-sol. */
+    responsesModel?: string;
+    /** Interrupt playback on caller speech; provider default false. */
+    interruptOnUserTurn?: boolean;
+    /** Unmodelled v3 session fields. Cannot override model, delegation, audio, instructions or input. */
+    sessionParams?: Record<string, unknown>;
+}
+
+export class OpenAIGPTLive extends BaseMLLM {
+    constructor(private readonly options: OpenAIGPTLiveOptions) {
+        super(options);
+        if (!options.apiKey) throw new Error("OpenAIGPTLive requires apiKey");
+    }
+
+    toConfig(): MllmConfig {
+        const o = this.options;
+        const params: Record<string, unknown> = {
+            model: "gpt-live-1",
+            ...o.params,
+            ...(o.instructions !== undefined && { prompt: o.instructions }),
+            ...(o.model !== undefined && { model: o.model }),
+            ...(o.voice !== undefined && { voice: o.voice }),
+            ...(o.prompt !== undefined && { prompt: o.prompt }),
+            ...(o.baseUrl !== undefined && { base_url: o.baseUrl }),
+            ...(o.path !== undefined && { path: o.path }),
+            ...(o.alphaSelector !== undefined && { alpha_selector: o.alphaSelector }),
+            ...(o.headers !== undefined && { headers: o.headers }),
+            ...(o.outputIdleEndMs !== undefined && { output_idle_end_ms: o.outputIdleEndMs }),
+            ...(o.inputIdleEndMs !== undefined && { input_idle_end_ms: o.inputIdleEndMs }),
+            ...(o.outputSilencePeak !== undefined && { output_silence_peak: o.outputSilencePeak }),
+            ...(o.outputSampleRate !== undefined && { output_sample_rate: o.outputSampleRate }),
+            ...(o.outputBufferMs !== undefined && { output_buffer_ms: o.outputBufferMs }),
+            ...(o.inputBatchMs !== undefined && { input_batch_ms: o.inputBatchMs }),
+            ...(o.toolEnabled !== undefined && { tool_enabled: o.toolEnabled }),
+            ...(o.delegation !== undefined && { delegation: o.delegation }),
+            ...(o.responsesModel !== undefined && { responses_model: o.responsesModel }),
+            ...(o.interruptOnUserTurn !== undefined && { interrupt_on_user_turn: o.interruptOnUserTurn }),
+            ...(o.sessionParams !== undefined && { session_params: o.sessionParams }),
+        };
+        if (o.inputAudioTranscription !== undefined || "input_audio_transcription" in params) {
+            throw new Error("GPT Live v3 does not support input_audio_transcription");
+        }
+        if (o.turnDetection !== undefined || "turn_detection" in params) {
+            console.warn("GPT Live v3 ignores turn_detection; endpointing is internal");
+            delete params.turn_detection;
+        }
+        if (params.delegation !== undefined && params.delegation !== "client" && params.delegation !== "responses") {
+            throw new Error("GPT Live delegation must be client or responses");
+        }
+        if (params.headers !== undefined) {
+            let headers: unknown;
+            try {
+                headers = JSON.parse(String(params.headers));
+            } catch {
+                throw new Error("GPT Live headers must be a JSON object string");
+            }
+            if (headers === null || typeof headers !== "object" || Array.isArray(headers)) {
+                throw new Error("GPT Live headers must be a JSON object string");
+            }
+        }
+        const session = params.session_params === undefined ? {} : params.session_params;
+        if (session === null || typeof session !== "object" || Array.isArray(session)) {
+            throw new Error("GPT Live session_params must be an object");
+        }
+        for (const key of ["model", "delegation", "audio", "instructions", "input"]) {
+            if (key in session) throw new Error(`GPT Live session_params cannot override ${key}`);
+        }
+        let url =
+            o.url ||
+            `${String(params.base_url ?? "wss://api.openai.com").replace(/\/+$/, "")}/${String(params.path ?? "/v1/live/sessions").replace(/^\/+/, "")}`;
+        if (!/^wss?:\/\/[^/]/i.test(url)) {
+            throw new Error("GPT Live url must be a full ws:// or wss:// endpoint");
+        }
+        let parsed: URL;
+        try {
+            parsed = new URL(url);
+        } catch {
+            throw new Error("GPT Live url must be a full ws:// or wss:// endpoint");
+        }
+        if ((parsed.protocol !== "ws:" && parsed.protocol !== "wss:") || !parsed.hostname) {
+            throw new Error("GPT Live url must be a full ws:// or wss:// endpoint");
+        }
+        if (parsed.hostname === "api.openai.com" && parsed.pathname === "/v1/live") {
+            parsed.pathname = "/v1/live/sessions";
+            url = parsed.toString();
+        }
+        return {
+            vendor: OPENAI_GPT_LIVE_VENDOR,
+            api_key: o.apiKey,
+            url,
+            params,
+            ...(o.greeting !== undefined && { greeting_message: o.greeting }),
+            ...(o.failureMessage !== undefined && { failure_message: o.failureMessage }),
+            ...(o.inputModalities !== undefined && { input_modalities: o.inputModalities }),
+            ...(o.outputModalities !== undefined && { output_modalities: o.outputModalities }),
+            ...(o.messages !== undefined && { messages: o.messages }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
+        };
+    }
+}
+
 /**
  * Constructor options for OpenAI Realtime API.
  */
-export interface OpenAIRealtimeOptions {
+export interface OpenAIRealtimeOptions extends BaseMllmOptions {
     /** OpenAI API key */
     apiKey: string;
     /** Model name (e.g., 'gpt-4o-realtime-preview') */
@@ -70,7 +230,7 @@ export class OpenAIRealtime extends BaseMLLM {
     private readonly options: OpenAIRealtimeOptions;
 
     constructor(options: OpenAIRealtimeOptions) {
-        super();
+        super(options);
         this.options = options;
     }
 
@@ -119,6 +279,8 @@ export class OpenAIRealtime extends BaseMLLM {
             ...(messages && { messages }),
             ...(this.options.failureMessage && { failure_message: this.options.failureMessage }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
@@ -134,7 +296,7 @@ export interface AzureOpenAIRealtimeParams {
 }
 
 /** Constructor options for Azure OpenAI Realtime API. */
-export interface AzureOpenAIRealtimeOptions {
+export interface AzureOpenAIRealtimeOptions extends BaseMllmOptions {
     /** Azure OpenAI API key */
     apiKey: string;
     /** Azure OpenAI Realtime WebSocket URL, including deployment routing when required */
@@ -177,7 +339,7 @@ export class AzureOpenAIRealtime extends BaseMLLM {
     private readonly options: AzureOpenAIRealtimeOptions;
 
     constructor(options: AzureOpenAIRealtimeOptions) {
-        super();
+        super(options);
         requireString(options.apiKey, "apiKey", "AzureOpenAIRealtime");
         requireString(options.url, "url", "AzureOpenAIRealtime");
         requireObject(options.turnDetection, "turnDetection", "AzureOpenAIRealtime");
@@ -218,6 +380,8 @@ export class AzureOpenAIRealtime extends BaseMLLM {
             ...(outputModalities && { output_modalities: outputModalities }),
             ...(messages && { messages }),
             turn_detection: turnDetection,
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
@@ -225,7 +389,7 @@ export class AzureOpenAIRealtime extends BaseMLLM {
 /**
  * Constructor options for Google Gemini Live (direct API, non-Vertex AI).
  */
-export interface GeminiLiveOptions {
+export interface GeminiLiveOptions extends BaseMllmOptions {
     /** Google API key */
     apiKey: string;
     /** Model name (e.g., 'gemini-live-2.5-flash') */
@@ -277,7 +441,7 @@ export class GeminiLive extends BaseMLLM {
     private readonly options: GeminiLiveOptions;
 
     constructor(options: GeminiLiveOptions) {
-        super();
+        super(options);
         this.options = options;
     }
 
@@ -323,6 +487,8 @@ export class GeminiLive extends BaseMLLM {
             ...(outputModalities && { output_modalities: outputModalities }),
             ...(this.options.failureMessage && { failure_message: this.options.failureMessage }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
@@ -330,7 +496,7 @@ export class GeminiLive extends BaseMLLM {
 /**
  * Constructor options for Google Gemini Live (Vertex AI).
  */
-export interface VertexAIOptions {
+export interface VertexAIOptions extends BaseMllmOptions {
     /** Model name (e.g., 'gemini-live-2.5-flash-preview-native-audio-09-2025') */
     model: string;
     /** WebSocket URL for real-time communication */
@@ -388,7 +554,7 @@ export class VertexAI extends BaseMLLM {
     private readonly options: VertexAIOptions;
 
     constructor(options: VertexAIOptions) {
-        super();
+        super(options);
         this.options = options;
     }
 
@@ -438,6 +604,8 @@ export class VertexAI extends BaseMLLM {
             ...(outputModalities && { output_modalities: outputModalities }),
             ...(this.options.failureMessage && { failure_message: this.options.failureMessage }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
@@ -445,7 +613,7 @@ export class VertexAI extends BaseMLLM {
 /**
  * Constructor options for xAI Grok Realtime API.
  */
-export interface XaiGrokOptions {
+export interface XaiGrokOptions extends BaseMllmOptions {
     /** xAI API key */
     apiKey: string;
     /** WebSocket URL for real-time communication (defaults to xAI Realtime API) */
@@ -495,7 +663,7 @@ export class XaiGrok extends BaseMLLM {
     private readonly options: XaiGrokOptions;
 
     constructor(options: XaiGrokOptions) {
-        super();
+        super(options);
         this.options = options;
 
         if (!options.apiKey) {
@@ -535,12 +703,14 @@ export class XaiGrok extends BaseMLLM {
             ...(greetingMessage && { greeting_message: greetingMessage }),
             ...(failureMessage && { failure_message: failureMessage }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
 
 /** Constructor options for Alibaba Cloud Qwen Omni Realtime. */
-export interface QwenOmniOptions {
+export interface QwenOmniOptions extends BaseMllmOptions {
     /** Alibaba Cloud DashScope API key */
     apiKey: string;
     /** Qwen Omni model identifier */
@@ -584,7 +754,7 @@ export class QwenOmni extends BaseCNMLLM {
     private readonly options: QwenOmniOptions;
 
     constructor(options: QwenOmniOptions) {
-        super();
+        super(options);
         requireString(options.apiKey, "apiKey", "QwenOmni");
         requireString(options.model, "model", "QwenOmni");
         requireString(options.url, "url", "QwenOmni");
@@ -623,6 +793,8 @@ export class QwenOmni extends BaseCNMLLM {
             ...(outputModalities && { output_modalities: outputModalities }),
             ...(messages && { messages }),
             ...(turnDetection && { turn_detection: turnDetection }),
+            ...(this.mcpServers !== undefined && { mcp_servers: this.mcpServers }),
+            ...(this.tools !== undefined && { tools: this.tools }),
         };
     }
 }
