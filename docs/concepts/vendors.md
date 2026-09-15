@@ -107,7 +107,7 @@ const stt = new DeepgramSTT({
 });
 ```
 
-> **Preview providers** — `GeminiWalkieTalkie` and `GeminiCleverChatter` (MLLM) are served only by the preview gateway and require `AgoraPreviewClient`. See [Preview Endpoint](../guides/preview-endpoint.md).
+> **Preview providers** — `GeminiMLLM` uses the preview gateway through `AgoraClient`. See [Preview Endpoint](../guides/preview-endpoint.md).
 
 ## MLLM vendors
 

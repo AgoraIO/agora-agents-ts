@@ -20,20 +20,17 @@ export {
     requiredPreviewFeatures,
 } from "./client.js";
 export type {
-    GeminiCleverChatterOptions,
-    GeminiPreviewMllmModel,
-    GeminiPreviewMllmOptions,
+    GeminiMLLMModel,
+    GeminiMLLMOptions,
     GeminiPreviewVoice,
     GeminiThinkingLevel,
-    GeminiWalkieTalkieOptions,
     OpenAIGPTLiveOptions,
 } from "./vendors.js";
 export {
-    GEMINI_PREVIEW_MLLM_DEFAULTS,
+    GEMINI_MLLM_DEFAULT_MODEL,
     GEMINI_PREVIEW_MLLM_URL,
-    GeminiCleverChatter,
-    GeminiPreviewMllmModels,
+    GeminiMLLM,
+    GeminiMLLMModels,
     GeminiThinkingLevels,
-    GeminiWalkieTalkie,
     OpenAIGPTLive,
 } from "./vendors.js";

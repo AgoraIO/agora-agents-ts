@@ -37,7 +37,7 @@ export const PREVIEW_FEATURE_HEADER = "agora-feature";
  * preview endpoint.
  */
 export const PreviewFeatures = {
-    /** @deprecated Gemini ASR now uses the production endpoint. */
+    /** Gemini preview MLLM gate; Gemini ASR uses the production endpoint. */
     GeminiLive: "gemini-live",
     LiveModels: "live-models",
 } as const;
@@ -97,8 +97,8 @@ const PREVIEW_ASR_VENDORS: ReadonlySet<string> = new Set();
 const PREVIEW_MLLM_MODELS: ReadonlySet<string> = new Set([
     "walkie-talkie",
     "clever-chatter",
-    "gemini-3.5-live",
-    "gemini-3.5-live-thinking",
+    "models/gemini-3.8-live",
+    "models/gemini-3.8-live-extended-thinking",
 ]);
 
 /**

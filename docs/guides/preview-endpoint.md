@@ -30,10 +30,13 @@ GPT Live sessions use:
 - Base URL: `https://partner.ai.agora.io/preview/api/conversational-ai-agent`
 - Header: `agora-feature: live-models`
 
-`GeminiWalkieTalkie` and `GeminiCleverChatter` use the same preview base URL with
-`agora-feature: gemini-live`. Construct either with a Google `apiKey` and pass it to `withMllm`.
-The SDK translates an agent-level greeting to Gemini's preview wire field `greeting`; GPT Live keeps
-`greeting_message`.
+Use the single `GeminiMLLM({ apiKey, model })` class for either Gemini
+voice model. Select `walkie-talkie` or `clever-chatter` while they are live, then
+`models/gemini-3.8-live` or `models/gemini-3.8-live-extended-thinking` at launch.
+Set `thinkingLevel: "medium"` for extended thinking. `GeminiMLLM` sends it
+only for `clever-chatter` or the extended-thinking ID. The walkie codename
+remains the default until the new IDs are available. Gemini sessions
+send `agora-feature: gemini-live`; GPT Live keeps its `live-models` gate.
 
 The route is session-scoped. Every lifecycle request from the session uses the same preview route, while ordinary
 client calls and Gemini STT sessions continue to use the configured GA regional endpoint. Caller headers cannot

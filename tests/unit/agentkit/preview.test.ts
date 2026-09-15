@@ -3,9 +3,9 @@ import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
 import {
     applyPreviewShape,
-    GeminiCleverChatter,
+    GeminiMLLM,
+    GeminiMLLMModels,
     GeminiSTT,
-    GeminiWalkieTalkie,
     OpenAIGPTLive,
     PREVIEW_API_BASE_URL,
     PreviewFeatures,
@@ -20,10 +20,52 @@ import { Area } from "../../../src/core/domain/index.js";
 const API_KEY = "AIza-test-key";
 
 describe("Gemini preview MLLM routing", () => {
+    test("rejects a blank API key at runtime", () => {
+        expect(() => new GeminiMLLM({ apiKey: "  " })).toThrow("GeminiMLLM requires apiKey");
+    });
+
+    test("rejects an invalid thinking level at runtime", () => {
+        expect(() => new GeminiMLLM({ apiKey: API_KEY, thinkingLevel: "invalid" as never })).toThrow(
+            "GeminiMLLM thinkingLevel must be low, medium, or high",
+        );
+    });
+
+    test("one class supports current codenames and the exact 3.8 model IDs", () => {
+        expect(new GeminiMLLM({ apiKey: API_KEY, model: "  " }).toConfig().params?.model).toBe(
+            GeminiMLLMModels.WalkieTalkie,
+        );
+        for (const [model, thinkingLevel] of [
+            [GeminiMLLMModels.WalkieTalkie, "medium"],
+            [GeminiMLLMModels.CleverChatter, "medium"],
+            [GeminiMLLMModels.Live38, "medium"],
+            [GeminiMLLMModels.Live38ExtendedThinking, "medium"],
+        ] as const) {
+            const config = new GeminiMLLM({
+                apiKey: API_KEY,
+                model,
+                thinkingLevel,
+                additionalParams: { thinking_level: "high" },
+            }).toConfig();
+            expect(config.params?.model).toBe(model);
+            expect(config.params?.thinking_level).toBe(
+                model === GeminiMLLMModels.CleverChatter || model === GeminiMLLMModels.Live38ExtendedThinking
+                    ? thinkingLevel
+                    : undefined,
+            );
+            expect(requiredPreviewFeatures({ mllm: config } as Agora.StartAgentsRequest.Properties)).toEqual([
+                PreviewFeatures.GeminiLive,
+            ]);
+            expect(
+                requiredPreviewFeatures({
+                    mllm: { vendor: "gemini", params: { model } },
+                } as Agora.StartAgentsRequest.Properties),
+            ).toEqual([PreviewFeatures.GeminiLive]);
+        }
+    });
     test("selects Gemini's gate while GPT Live keeps its own", () => {
         for (const vendor of [
-            new GeminiWalkieTalkie({ apiKey: API_KEY }),
-            new GeminiCleverChatter({ apiKey: API_KEY }),
+            new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.WalkieTalkie }),
+            new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.CleverChatter }),
         ]) {
             const properties = { mllm: vendor.toConfig() } as Agora.StartAgentsRequest.Properties;
             expect(requiredPreviewFeatures(properties)).toEqual([PreviewFeatures.GeminiLive]);
@@ -34,7 +76,10 @@ describe("Gemini preview MLLM routing", () => {
 
     test("moves the builder greeting to Gemini's preview wire field", () => {
         const properties = {
-            mllm: { ...new GeminiWalkieTalkie({ apiKey: API_KEY }).toConfig(), greeting_message: "Hello" },
+            mllm: {
+                ...new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.WalkieTalkie }).toConfig(),
+                greeting_message: "Hello",
+            },
         } as Agora.StartAgentsRequest.Properties;
         applyPreviewShape(properties);
         expect((properties.mllm as Record<string, unknown>).greeting).toBe("Hello");
@@ -342,7 +387,7 @@ test("Gemini MLLM routes its full session with the gemini-live gate", async () =
             async () => new Response(JSON.stringify({ agent_id: "agent-1", data: { list: [] } }), { status: 200 }),
         );
     const session = new Agent({ client: createClient(fetchMock, { "agora-feature": "wrong" }) })
-        .withMllm(new GeminiCleverChatter({ apiKey: API_KEY, thinkingLevel: "medium" }))
+        .withMllm(new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.CleverChatter, thinkingLevel: "medium" }))
         .withGreeting("Hello")
         .createSession(sessionOptions());
     await session.start();
