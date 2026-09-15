@@ -11,6 +11,7 @@ export type { GeminiSTTModel, GeminiSTTOptions } from "../vendors/stt.js";
 export { GeminiSTT, GeminiSTTModels, GeminiTranscriptionMode } from "../vendors/stt.js";
 export type { PreviewFeature, PreviewRoute } from "./client.js";
 export {
+    applyPreviewShape,
     createPreviewRoute,
     PREVIEW_API_BASE_URL,
     PREVIEW_FEATURE_HEADER,
@@ -18,5 +19,16 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./client.js";
-export type { OpenAIGPTLiveOptions } from "./vendors.js";
-export { OpenAIGPTLive } from "./vendors.js";
+export type {
+    GeminiLiveModel,
+    GeminiPreviewVoice,
+    GeminiThinkingLevel,
+    OpenAIGPTLiveOptions,
+} from "./vendors.js";
+export {
+    GEMINI_MLLM_DEFAULT_MODEL,
+    GEMINI_PREVIEW_MLLM_URL,
+    GeminiLiveModels,
+    GeminiThinkingLevels,
+    OpenAIGPTLive,
+} from "./vendors.js";
