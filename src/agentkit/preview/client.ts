@@ -115,9 +115,7 @@ const PREVIEW_MLLM_MODELS: ReadonlySet<string> = new Set([
  */
 function hasPreviewMllmEnvelope(mllm: Agora.Mllm): boolean {
     return (
-        typeof mllm.api_key === "string" &&
-        typeof mllm.url === "string" &&
-        mllm.url.startsWith(GEMINI_PREVIEW_MLLM_URL)
+        typeof mllm.api_key === "string" && typeof mllm.url === "string" && mllm.url.startsWith(GEMINI_PREVIEW_MLLM_URL)
     );
 }
 

@@ -31,9 +31,7 @@ describe("Gemini preview MLLM routing", () => {
     });
 
     test("one class supports the public 3.8 model IDs", () => {
-        expect(new GeminiMLLM({ apiKey: API_KEY, model: "  " }).toConfig().params?.model).toBe(
-            GeminiMLLMModels.Live38,
-        );
+        expect(new GeminiMLLM({ apiKey: API_KEY, model: "  " }).toConfig().params?.model).toBe(GeminiMLLMModels.Live38);
         for (const [model, thinkingLevel] of [
             [GeminiMLLMModels.Live38, "medium"],
             [GeminiMLLMModels.Live38ExtendedThinking, "medium"],
@@ -48,9 +46,7 @@ describe("Gemini preview MLLM routing", () => {
             expect((config.params as Record<string, unknown>).api_key).toBeUndefined();
             expect(config.params?.model).toBe(model);
             expect(config.params?.thinking_level).toBe(
-                model === GeminiMLLMModels.Live38ExtendedThinking
-                    ? thinkingLevel
-                    : undefined,
+                model === GeminiMLLMModels.Live38ExtendedThinking ? thinkingLevel : undefined,
             );
             expect(requiredPreviewFeatures({ mllm: config } as Agora.StartAgentsRequest.Properties)).toEqual([
                 PreviewFeatures.GeminiLive,
@@ -399,7 +395,13 @@ test("Gemini MLLM routes its full session with the gemini-live gate", async () =
             async () => new Response(JSON.stringify({ agent_id: "agent-1", data: { list: [] } }), { status: 200 }),
         );
     const session = new Agent({ client: createClient(fetchMock, { "agora-feature": "wrong" }) })
-        .withMllm(new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.Live38ExtendedThinking, thinkingLevel: "medium" }))
+        .withMllm(
+            new GeminiMLLM({
+                apiKey: API_KEY,
+                model: GeminiMLLMModels.Live38ExtendedThinking,
+                thinkingLevel: "medium",
+            }),
+        )
         .withGreeting("Hello")
         .createSession(sessionOptions());
     await session.start();
