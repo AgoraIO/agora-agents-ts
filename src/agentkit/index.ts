@@ -111,8 +111,19 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
-export type { OpenAIGPTLiveOptions } from "./preview/vendors.js";
-export { OpenAIGPTLive } from "./preview/vendors.js";
+export type {
+    GeminiLiveModel,
+    GeminiPreviewVoice,
+    GeminiThinkingLevel,
+    OpenAIGPTLiveOptions,
+} from "./preview/vendors.js";
+export {
+    GEMINI_MLLM_DEFAULT_MODEL,
+    GEMINI_PREVIEW_MLLM_URL,
+    GeminiLiveModels,
+    GeminiThinkingLevels,
+    OpenAIGPTLive,
+} from "./preview/vendors.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,

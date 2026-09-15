@@ -107,6 +107,8 @@ const stt = new DeepgramSTT({
 });
 ```
 
+> **Gemini 3.8 preview models** — `GeminiLive` uses the preview gateway only for the two 3.8 model IDs. Other Gemini Live model IDs keep the production route. See [Preview Endpoint](../guides/preview-endpoint.md).
+
 ## MLLM vendors
 
 MLLM (Multimodal LLM) vendors handle audio end-to-end — no separate STT or TTS step. Call `agent.withMllm(vendor)` and MLLM mode is enabled automatically; no separate `advancedFeatures` flag is needed.

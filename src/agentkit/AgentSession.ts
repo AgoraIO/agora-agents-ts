@@ -36,6 +36,7 @@ import {
     resolveSessionPresets,
 } from "./presets.js";
 import {
+    applyPreviewShape,
     createPreviewRoute,
     type PreviewFeature,
     previewRequestHeaders,
@@ -617,6 +618,7 @@ export class AgentSession {
             });
             const enrichedProperties = this._enrichAvatarParams(resolved.properties, expiresIn);
             this._validateEnrichedAvatarConfig(enrichedProperties);
+            applyPreviewShape(enrichedProperties);
             this._previewFeatures = requiredPreviewFeatures(enrichedProperties);
             if (this._previewFeatures.length > 0) {
                 const route = createPreviewRoute(this._client, this._previewFeatures);
