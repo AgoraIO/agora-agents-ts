@@ -44,8 +44,10 @@ describe("Gemini preview MLLM routing", () => {
                 apiKey: API_KEY,
                 model,
                 thinkingLevel,
-                additionalParams: { thinking_level: "high" },
+                additionalParams: { thinking_level: "high", api_key: "ignored-key" },
             }).toConfig();
+            expect(config.api_key).toBe(API_KEY);
+            expect((config.params as Record<string, unknown>).api_key).toBeUndefined();
             expect(config.params?.model).toBe(model);
             expect(config.params?.thinking_level).toBe(
                 model === GeminiMLLMModels.CleverChatter || model === GeminiMLLMModels.Live38ExtendedThinking
@@ -78,6 +80,18 @@ describe("Gemini preview MLLM routing", () => {
         const properties = {
             mllm: {
                 ...new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.WalkieTalkie }).toConfig(),
+                greeting_message: "Hello",
+            },
+        } as Agora.StartAgentsRequest.Properties;
+        applyPreviewShape(properties);
+        expect((properties.mllm as Record<string, unknown>).greeting).toBe("Hello");
+        expect((properties.mllm as Record<string, unknown>).greeting_message).toBeUndefined();
+    });
+
+    test("unknown Gemini model keeps preview greeting without params.api_key", () => {
+        const properties = {
+            mllm: {
+                ...new GeminiMLLM({ apiKey: API_KEY, model: "future-live-model" }).toConfig(),
                 greeting_message: "Hello",
             },
         } as Agora.StartAgentsRequest.Properties;
@@ -404,9 +418,11 @@ test("Gemini MLLM routes its full session with the gemini-live gate", async () =
     const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(body.properties.mllm).toMatchObject({
         vendor: "gemini",
+        api_key: API_KEY,
         greeting: "Hello",
         params: { model: "clever-chatter", thinking_level: "medium" },
     });
+    expect(body.properties.mllm.params.api_key).toBeUndefined();
     expect(body.properties.mllm.greeting_message).toBeUndefined();
 });
 

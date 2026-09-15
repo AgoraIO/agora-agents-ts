@@ -327,7 +327,6 @@ function buildGeminiMllmConfig(options: GeminiMLLMOptions): MllmConfig {
         model === GeminiMLLMModels.CleverChatter || model === GeminiMLLMModels.Live38ExtendedThinking;
     const params: Record<string, unknown> = {
         ...additionalParams,
-        api_key: apiKey,
         model,
         voice,
         ...(reasoningModel && thinkingLevel !== undefined && { thinking_level: thinkingLevel }),
@@ -342,6 +341,7 @@ function buildGeminiMllmConfig(options: GeminiMLLMOptions): MllmConfig {
     if (!reasoningModel) {
         delete params.thinking_level;
     }
+    delete params.api_key;
 
     return {
         vendor: "gemini",

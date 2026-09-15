@@ -103,9 +103,9 @@ const PREVIEW_MLLM_MODELS: ReadonlySet<string> = new Set([
 
 /**
  * Whether a config carries the envelope the preview MLLM vendor classes emit:
- * the API key repeated inside `params`, and a `url` on the Gemini Developer API
- * host. The production {@link GeminiLive} vendor emits neither — it leaves
- * `params.api_key` unset and defaults `url` to `""` or a WebSocket endpoint.
+ * a top-level `mllm.api_key`, and a `url` on the Gemini Developer API host.
+ * The production {@link GeminiLive} vendor uses a different URL: `""` or a
+ * WebSocket endpoint.
  *
  * This is the second recognition path, and it exists because keying only off
  * {@link PREVIEW_MLLM_MODELS} makes an unrecognised model name fail silently:
@@ -116,9 +116,8 @@ const PREVIEW_MLLM_MODELS: ReadonlySet<string> = new Set([
  * ahead of a release, so the failure has to not be silent.
  */
 function hasPreviewMllmEnvelope(mllm: Agora.Mllm): boolean {
-    const params = mllm.params as Record<string, unknown> | undefined;
     return (
-        typeof params?.api_key === "string" &&
+        typeof mllm.api_key === "string" &&
         typeof mllm.url === "string" &&
         mllm.url.startsWith(GEMINI_PREVIEW_MLLM_URL)
     );

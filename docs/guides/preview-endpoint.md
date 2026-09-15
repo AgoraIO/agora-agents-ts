@@ -35,8 +35,9 @@ voice model. Select `walkie-talkie` or `clever-chatter` while they are live, the
 `models/gemini-3.8-live` or `models/gemini-3.8-live-extended-thinking` at launch.
 Set `thinkingLevel: "medium"` for extended thinking. `GeminiMLLM` sends it
 only for `clever-chatter` or the extended-thinking ID. The walkie codename
-remains the default until the new IDs are available. Gemini sessions
-send `agora-feature: gemini-live`; GPT Live keeps its `live-models` gate.
+remains the default until the new IDs are available. Gemini sessions send the
+Google credential once as `mllm.api_key`, never as `mllm.params.api_key`.
+They use `agora-feature: gemini-live`; GPT Live keeps its `live-models` gate.
 
 The route is session-scoped. Every lifecycle request from the session uses the same preview route, while ordinary
 client calls and Gemini STT sessions continue to use the configured GA regional endpoint. Caller headers cannot
