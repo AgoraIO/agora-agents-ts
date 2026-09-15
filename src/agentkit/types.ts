@@ -121,12 +121,12 @@ export type LlmToolExecution = LlmToolExecutionType;
 export type LlmToolFunction = LlmToolFunctionType;
 export type LlmToolServer = LlmToolServerType;
 
-/** MLLM configuration, including preview vendors not present in the generated schema yet. */
+/** MLLM configuration, including production vendors not present in the generated schema yet. */
 export type MllmConfig = Omit<Mllm, "vendor"> & {
     vendor?: Mllm.Vendor | "openai_gpt_live";
 };
 
-/** MLLM wire vendor name, including preview vendors. */
+/** MLLM wire vendor name, including schema compatibility extensions. */
 export type MllmVendor = Exclude<MllmConfig["vendor"], undefined>;
 
 /** Avatar configuration */

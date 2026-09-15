@@ -17,7 +17,6 @@ import type * as Agora from "../../api/index.js";
 import { AgentManagementClient } from "../../api/resources/agentManagement/client/Client.js";
 import { AgentsClient } from "../../api/resources/agents/client/Client.js";
 import type { BaseClientOptions } from "../../BaseClient.js";
-import { isOpenAIGPTLiveConfig } from "./vendors.js";
 
 /** Base URL that serves the preview providers. */
 export const PREVIEW_API_BASE_URL = "https://partner.ai.agora.io/preview/api/conversational-ai-agent";
@@ -39,6 +38,7 @@ export const PREVIEW_FEATURE_HEADER = "agora-feature";
 export const PreviewFeatures = {
     /** @deprecated Gemini ASR now uses the production endpoint. */
     GeminiLive: "gemini-live",
+    /** @deprecated GPT Live now uses the production endpoint. */
     LiveModels: "live-models",
 } as const;
 
@@ -101,9 +101,5 @@ export function requiredPreviewFeatures(properties: Agora.StartAgentsRequest.Pro
     if (asrVendor !== undefined && PREVIEW_ASR_VENDORS.has(asrVendor)) {
         features.add(PreviewFeatures.GeminiLive);
     }
-    if (isOpenAIGPTLiveConfig(properties.mllm)) {
-        features.add(PreviewFeatures.LiveModels);
-    }
-
     return [...features];
 }

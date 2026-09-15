@@ -2,7 +2,6 @@ import { describe, expect, test, vi } from "vitest";
 import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
 import { AudioScenario } from "../../../src/agentkit/constants.js";
-import { OpenAIGPTLive } from "../../../src/agentkit/preview/vendors.js";
 import type { SttConfig } from "../../../src/agentkit/types.js";
 import { AnamAvatar } from "../../../src/agentkit/vendors/avatar.js";
 import { BaseSTT } from "../../../src/agentkit/vendors/base.js";
@@ -21,6 +20,7 @@ import {
 import {
     AzureOpenAIRealtime,
     GeminiLive,
+    OpenAIGPTLive,
     OpenAIRealtime,
     QwenOmni,
     VertexAI,
@@ -1429,7 +1429,7 @@ describe("MLLM vendor coverage", () => {
             }),
         ],
         ["xAI Grok (global)", new XaiGrok({ apiKey: "key", tools: [tool], mcpServers: [mcpServer] })],
-        ["GPT Live preview (global)", new OpenAIGPTLive({ apiKey: "key", tools: [tool], mcpServers: [mcpServer] })],
+        ["GPT Live (global)", new OpenAIGPTLive({ apiKey: "key", tools: [tool], mcpServers: [mcpServer] })],
         [
             "Qwen Omni (CN)",
             new QwenOmni({
@@ -1481,7 +1481,7 @@ describe("MLLM vendor coverage", () => {
         expect((config as Record<string, unknown>)?.url).toBe("wss://api.openai.com/v1/realtime");
     });
 
-    test("OpenAIGPTLive emits its preview vendor and fixed WebSocket URL", () => {
+    test("OpenAIGPTLive emits its vendor and fixed WebSocket URL", () => {
         const config = new OpenAIGPTLive({
             apiKey: "live-key",
             greeting: "Hello from GPT Live",

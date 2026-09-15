@@ -100,8 +100,7 @@ export type {
     TtsPreset,
 } from "./presets.js";
 export { AgentPresets, normalizePresetInput } from "./presets.js";
-// Preview endpoint: session routing, providers, and feature gating.
-// Temporary surface — removed when these providers ship on the production gateway.
+// Legacy preview endpoint routing and feature-gating compatibility surface.
 export type { PreviewFeature, PreviewRoute } from "./preview/client.js";
 export {
     createPreviewRoute,
@@ -111,8 +110,6 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
-export type { OpenAIGPTLiveOptions } from "./preview/vendors.js";
-export { OpenAIGPTLive } from "./preview/vendors.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,
@@ -383,6 +380,7 @@ export type {
     AzureOpenAIRealtimeOptions,
     AzureOpenAIRealtimeParams,
     GeminiLiveOptions,
+    OpenAIGPTLiveOptions,
     OpenAIRealtimeOptions,
     QwenOmniOptions,
     VertexAIOptions,
@@ -392,6 +390,7 @@ export type {
 export {
     AzureOpenAIRealtime,
     GeminiLive,
+    OpenAIGPTLive,
     OpenAIRealtime,
     QwenOmni,
     VertexAI,

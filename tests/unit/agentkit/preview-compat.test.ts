@@ -1,10 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { requiredPreviewFeatures } from "../../../src/agentkit/index.js";
+import { OpenAIGPTLive as PreviewOpenAIGPTLive } from "../../../src/agentkit/preview/vendors.js";
+import { OpenAIGPTLive as ProductionOpenAIGPTLive } from "../../../src/agentkit/vendors/mllm.js";
 import type * as Agora from "../../../src/api/index.js";
 import {
     createPreviewRoute,
     GeminiSTT,
     GeminiSTTModels,
+    OpenAIGPTLive,
     PREVIEW_API_BASE_URL,
     PREVIEW_FEATURE_HEADER,
     PreviewFeatures,
@@ -15,6 +18,8 @@ describe("preview public API compatibility", () => {
     test("retains the legacy package-root exports", () => {
         expect(GeminiSTT).toBeTypeOf("function");
         expect(GeminiSTTModels.Transcribe35Live).toBe("gemini-3.5-transcribe-live");
+        expect(OpenAIGPTLive).toBe(ProductionOpenAIGPTLive);
+        expect(PreviewOpenAIGPTLive).toBe(ProductionOpenAIGPTLive);
         expect(createPreviewRoute).toBeTypeOf("function");
         expect(PREVIEW_API_BASE_URL).toContain("/preview/");
         expect(PREVIEW_FEATURE_HEADER).toBe("agora-feature");
@@ -27,6 +32,13 @@ describe("preview public API compatibility", () => {
 
     test("does not route production Gemini through preview", () => {
         const properties = { asr: { vendor: "gemini" } } as unknown as Agora.StartAgentsRequest.Properties;
+        expect(requiredPreviewFeatures(properties)).toEqual([]);
+    });
+
+    test("automatically routes legacy GPT Live configs through production", () => {
+        const properties = {
+            mllm: { vendor: "openai_gpt_live" },
+        } as unknown as Agora.StartAgentsRequest.Properties;
         expect(requiredPreviewFeatures(properties)).toEqual([]);
     });
 });

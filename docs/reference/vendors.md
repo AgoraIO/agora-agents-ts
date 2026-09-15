@@ -456,7 +456,7 @@ AgentKit exposes the switches as booleans even though the generated REST schema 
 
 ## MLLM vendors
 
-All global and CN MLLM helpers share these tool options. This includes `OpenAIRealtime`, `AzureOpenAIRealtime`, `GeminiLive`, `VertexAI`, `XaiGrok`, preview `OpenAIGPTLive`, and CN `QwenOmni`.
+All global and CN MLLM helpers share these tool options. This includes `OpenAIRealtime`, `AzureOpenAIRealtime`, `GeminiLive`, `VertexAI`, `XaiGrok`, `OpenAIGPTLive`, and CN `QwenOmni`.
 
 | Option | Type | Required | Description |
 |---|---|---|---|
@@ -485,9 +485,9 @@ new OpenAIRealtime(options: OpenAIRealtimeOptions)
 | `params` | `Record<string, unknown>` | No | Additional MLLM parameters |
 | `turnDetection` | `MllmTurnDetectionConfig` | No | MLLM turn detection configuration; overrides top-level `turn_detection` |
 
-### OpenAIGPTLive (preview)
+### OpenAIGPTLive
 
-GPT Live v3 uses `mllm.vendor: "openai_gpt_live"`, model `gpt-live-1`, and `wss://api.openai.com/v1/live/sessions`. Sessions route through the preview gateway automatically. This alpha must not carry production traffic.
+GPT Live v3 uses `mllm.vendor: "openai_gpt_live"`, model `gpt-live-1`, and `wss://api.openai.com/v1/live/sessions`. Sessions use the configured regional production endpoint. Existing preview-era integrations are migrated automatically without constructor or request-body changes.
 
 The SDK omits `params.alpha_selector` by default. Set `alphaSelector` only when a future preview contract requires an `OpenAI-Alpha` selector. Other tuning defaults remain owned by the provider. Explicit options override entries in `params`. Zero and false values are preserved.
 

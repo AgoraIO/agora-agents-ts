@@ -116,14 +116,14 @@ MLLM (Multimodal LLM) vendors handle audio end-to-end — no separate STT or TTS
 | Class            | Provider                        | Key constructor params                                                                                                                                                                    |
 | ---------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `OpenAIRealtime` | OpenAI Realtime API             | `apiKey`, `model?`, `url?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?`                                                 |
-| `OpenAIGPTLive` (preview) | OpenAI GPT Live | `apiKey`, `greeting?`, `model?`, `voice?`, `prompt?`, `params?` |
+| `OpenAIGPTLive` | OpenAI GPT Live | `apiKey`, `greeting?`, `model?`, `voice?`, `prompt?`, `params?` |
 | `AzureOpenAIRealtime` | Azure OpenAI Realtime (global) | `apiKey`, `url`, `turnDetection`, `model?`, `voice?`, `instructions?`, `params?`, `messages?`, `outputModalities?`, `maxHistory?`, `greetingMessage?` |
 | `GeminiLive`     | Google Gemini Live API          | `apiKey`, `model`, `url?`, `voice?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?`                                        |
 | `VertexAI`       | Vertex AI Gemini Live           | `model`, `url?`, `projectId`, `location`, `adcCredentialsString`, `voice?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?` |
 | `XaiGrok`        | xAI Grok (`mllm.vendor`: `xai`) | `apiKey`, `url?`, `voice?`, `language?`, `sampleRate?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?`                     |
 | `QwenOmni`       | Alibaba Cloud Qwen Omni (CN)    | `apiKey`, `model`, `url`, `voice?`, `greetingMessage?`, `failureMessage?`, `turnDetection?` |
 
-Every MLLM helper accepts the common `tools?: LlmTool[]` and `mcpServers?: McpServer[]` options, including preview `OpenAIGPTLive` and CN `QwenOmni`. These serialize as top-level `mllm.tools` and `mllm.mcp_servers`; they are not provider `params`. Call `agent.withTools()` to enable invocation. When an MCP server omits `transport`, AgentKit supplies `streamable_http`.
+Every MLLM helper accepts the common `tools?: LlmTool[]` and `mcpServers?: McpServer[]` options, including `OpenAIGPTLive` and CN `QwenOmni`. These serialize as top-level `mllm.tools` and `mllm.mcp_servers`; they are not provider `params`. Call `agent.withTools()` to enable invocation. When an MCP server omits `transport`, AgentKit supplies `streamable_http`.
 
 For Alibaba Cloud, use `QwenOmni` for the realtime MLLM flow. The cascading `AliyunLLM` helper supports the same `tools` and `mcpServers` options under top-level `llm.tools` and `llm.mcp_servers`.
 

@@ -20,7 +20,7 @@ Call `agent.withMllm(vendor)` — that's it. MLLM mode is enabled automatically 
 
 `AzureOpenAIRealtime` is a global MLLM (`GlobalMllmVendor`). `QwenOmni` is a Chinese mainland MLLM (`CNMllmVendor`). As with the other explicit vendor helpers, `client.area` controls Agora REST routing but does not prevent you from selecting a provider explicitly.
 
-All MLLM helpers accept inline REST `tools` and `mcpServers`: OpenAI Realtime, Azure OpenAI Realtime, Gemini Live, Vertex AI, xAI Grok, preview GPT Live, and CN Qwen Omni. Call `.withTools()` on the agent whenever either option is configured.
+All MLLM helpers accept inline REST `tools` and `mcpServers`: OpenAI Realtime, Azure OpenAI Realtime, Gemini Live, Vertex AI, xAI Grok, GPT Live, and CN Qwen Omni. Call `.withTools()` on the agent whenever either option is configured.
 
 ## Limitations
 
