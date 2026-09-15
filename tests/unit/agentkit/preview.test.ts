@@ -30,13 +30,11 @@ describe("Gemini preview MLLM routing", () => {
         );
     });
 
-    test("one class supports current codenames and the exact 3.8 model IDs", () => {
+    test("one class supports the public 3.8 model IDs", () => {
         expect(new GeminiMLLM({ apiKey: API_KEY, model: "  " }).toConfig().params?.model).toBe(
-            GeminiMLLMModels.WalkieTalkie,
+            GeminiMLLMModels.Live38,
         );
         for (const [model, thinkingLevel] of [
-            [GeminiMLLMModels.WalkieTalkie, "medium"],
-            [GeminiMLLMModels.CleverChatter, "medium"],
             [GeminiMLLMModels.Live38, "medium"],
             [GeminiMLLMModels.Live38ExtendedThinking, "medium"],
         ] as const) {
@@ -50,7 +48,7 @@ describe("Gemini preview MLLM routing", () => {
             expect((config.params as Record<string, unknown>).api_key).toBeUndefined();
             expect(config.params?.model).toBe(model);
             expect(config.params?.thinking_level).toBe(
-                model === GeminiMLLMModels.CleverChatter || model === GeminiMLLMModels.Live38ExtendedThinking
+                model === GeminiMLLMModels.Live38ExtendedThinking
                     ? thinkingLevel
                     : undefined,
             );
@@ -66,8 +64,8 @@ describe("Gemini preview MLLM routing", () => {
     });
     test("selects Gemini's gate while GPT Live keeps its own", () => {
         for (const vendor of [
-            new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.WalkieTalkie }),
-            new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.CleverChatter }),
+            new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.Live38 }),
+            new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.Live38ExtendedThinking }),
         ]) {
             const properties = { mllm: vendor.toConfig() } as Agora.StartAgentsRequest.Properties;
             expect(requiredPreviewFeatures(properties)).toEqual([PreviewFeatures.GeminiLive]);
@@ -79,7 +77,7 @@ describe("Gemini preview MLLM routing", () => {
     test("moves the builder greeting to Gemini's preview wire field", () => {
         const properties = {
             mllm: {
-                ...new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.WalkieTalkie }).toConfig(),
+                ...new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.Live38 }).toConfig(),
                 greeting_message: "Hello",
             },
         } as Agora.StartAgentsRequest.Properties;
@@ -401,7 +399,7 @@ test("Gemini MLLM routes its full session with the gemini-live gate", async () =
             async () => new Response(JSON.stringify({ agent_id: "agent-1", data: { list: [] } }), { status: 200 }),
         );
     const session = new Agent({ client: createClient(fetchMock, { "agora-feature": "wrong" }) })
-        .withMllm(new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.CleverChatter, thinkingLevel: "medium" }))
+        .withMllm(new GeminiMLLM({ apiKey: API_KEY, model: GeminiMLLMModels.Live38ExtendedThinking, thinkingLevel: "medium" }))
         .withGreeting("Hello")
         .createSession(sessionOptions());
     await session.start();
@@ -420,7 +418,7 @@ test("Gemini MLLM routes its full session with the gemini-live gate", async () =
         vendor: "gemini",
         api_key: API_KEY,
         greeting: "Hello",
-        params: { model: "clever-chatter", thinking_level: "medium" },
+        params: { model: "models/gemini-3.8-live-extended-thinking", thinking_level: "medium" },
     });
     expect(body.properties.mllm.params.api_key).toBeUndefined();
     expect(body.properties.mllm.greeting_message).toBeUndefined();

@@ -177,23 +177,18 @@ export class OpenAIGPTLive extends BaseMLLM {
 
 // Google preview MLLMs use a separate feature gate from GPT Live.
 export const GeminiMLLMModels = {
-    /** Codename for the low-latency model. Currently the default. */
-    WalkieTalkie: "walkie-talkie",
-    /** Codename for the reasoning model. */
-    CleverChatter: "clever-chatter",
-    /** Google launch ID for the low-latency voice model. */
+    /** Public ID for the low-latency voice model. */
     Live38: "models/gemini-3.8-live",
-    /** Google launch ID for the reasoning voice model. */
+    /** Public ID for the reasoning voice model. */
     Live38ExtendedThinking: "models/gemini-3.8-live-extended-thinking",
 } as const;
 
 /**
  * The model name the Gemini MLLM sends by default.
  *
- * Keep the working codenames until the 3.8 IDs launch. Callers can select
- * either new ID with `model` without changing the preview gate.
+ * Low-latency Gemini voice is the default.
  */
-export const GEMINI_MLLM_DEFAULT_MODEL: GeminiMLLMModel = GeminiMLLMModels.WalkieTalkie;
+export const GEMINI_MLLM_DEFAULT_MODEL: GeminiMLLMModel = GeminiMLLMModels.Live38;
 
 /**
  * A preview Gemini MLLM model. Any string is accepted for launch flexibility;
@@ -230,10 +225,10 @@ export interface GeminiMLLMOptions {
     /** Google API key. */
     apiKey: string;
     /**
-     * Model name. Defaults to walkie-talkie. Set an exact 3.8 ID at launch.
+     * Model name. Defaults to models/gemini-3.8-live.
      */
     model?: GeminiMLLMModel;
-    /** Sent only for clever-chatter or the extended-thinking model. */
+    /** Sent only for the extended-thinking model. */
     thinkingLevel?: GeminiThinkingLevel;
     /** Voice identifier for audio output. Defaults to `Puck`. */
     voice?: GeminiPreviewVoice;
@@ -323,8 +318,7 @@ function buildGeminiMllmConfig(options: GeminiMLLMOptions): MllmConfig {
     } = options;
 
     const model = requestedModel?.trim() || GEMINI_MLLM_DEFAULT_MODEL;
-    const reasoningModel =
-        model === GeminiMLLMModels.CleverChatter || model === GeminiMLLMModels.Live38ExtendedThinking;
+    const reasoningModel = model === GeminiMLLMModels.Live38ExtendedThinking;
     const params: Record<string, unknown> = {
         ...additionalParams,
         model,

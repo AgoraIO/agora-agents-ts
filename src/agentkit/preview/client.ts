@@ -95,8 +95,6 @@ const PREVIEW_ASR_VENDORS: ReadonlySet<string> = new Set();
  * covered too.
  */
 const PREVIEW_MLLM_MODELS: ReadonlySet<string> = new Set([
-    "walkie-talkie",
-    "clever-chatter",
     "models/gemini-3.8-live",
     "models/gemini-3.8-live-extended-thinking",
 ]);
