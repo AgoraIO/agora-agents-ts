@@ -481,6 +481,8 @@ Global Azure OpenAI Realtime wrapper. It emits `mllm.vendor = 'azure'`; `maxHist
 
 ### GeminiLive
 
+`GeminiLive` supports existing Gemini Live models and both public Gemini 3.8 voice models. The 3.8 IDs select the preview gateway with `agora-feature: gemini-live`; older model IDs keep the production route. See [Preview Endpoint](../guides/preview-endpoint.md).
+
 <!-- snippet: fragment -->
 ```typescript
 new GeminiLive(options: GeminiLiveOptions)
@@ -489,11 +491,13 @@ new GeminiLive(options: GeminiLiveOptions)
 | Option | Type | Required | Description |
 |---|---|---|---|
 | `apiKey` | `string` | Yes | Google API key |
-| `model` | `string` | Yes | Model name (e.g., `'gemini-live-2.5-flash'`) |
-| `url` | `string` | No | WebSocket URL |
+| `model` | `string` | No | Model name; defaults to `models/gemini-3.8-live` |
+| `thinkingLevel` | `string` | No | `low`, `medium`, or `high`; sent only for 3.8 Extended Thinking |
+| `languageCodes` | `string[]` | No | 3.8 language codes in `mllm.params.language_codes` |
+| `url` | `string` | No | Custom endpoint; 3.8 defaults to the Gemini Developer API host |
 | `instructions` | `string` | No | System instructions for the model |
 | `voice` | `string` | No | Voice name (e.g., `'Aoede'`, `'Charon'`) |
-| `greetingMessage` | `string` | No | Agent greeting message |
+| `greetingMessage` | `string` | No | Agent greeting; sent as `mllm.greeting` for 3.8 models |
 | `failureMessage` | `string` | No | Message played when the model call fails |
 | `inputModalities` | `string[]` | No | Input modalities |
 | `outputModalities` | `string[]` | No | Output modalities |

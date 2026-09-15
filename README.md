@@ -228,6 +228,21 @@ const agent = new Agent({ client }).withMllm(
 );
 ```
 
+For Gemini 3.8 Live Extended Thinking, use the same single `GeminiLive` class as the regular Live model:
+
+```typescript
+import { GeminiLive } from 'agora-agents';
+
+const geminiAgent = new Agent({ client }).withMllm(new GeminiLive({
+  apiKey: process.env.GOOGLE_API_KEY!,
+  model: 'models/gemini-3.8-live-extended-thinking',
+  thinkingLevel: 'medium',
+  greetingMessage: 'Hello! Ready to chat.',
+}));
+```
+
+Use `models/gemini-3.8-live` without `thinkingLevel` for the lower-latency model. Gemini sessions use the preview gateway and `agora-feature: gemini-live`; the Google key is sent as `mllm.api_key`. See the [Preview Endpoint guide](./docs/guides/preview-endpoint.md).
+
 See the [MLLM Flow guide](./docs/guides/mllm-flow.md) for full examples with Gemini Live, Vertex AI, and xAI Grok.
 
 > Avatars are not supported with MLLM. The avatar publisher requires the cascading ASR + LLM + TTS pipeline; combining `withMllm()` with `withAvatar()` throws at `Agent.toProperties()` and `AgentSession.start()`.

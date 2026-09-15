@@ -1,13 +1,14 @@
 ---
 sidebar_position: 10
 title: Preview Endpoint
-description: How AgentSession routes GPT Live through the preview gateway.
+description: How AgentSession routes GPT Live and Gemini 3.8 MLLMs through the preview gateway.
 ---
 
 # Preview Endpoint
 
-OpenAI GPT Live is served by the preview Conversational AI gateway. `AgentSession` detects it from the resolved
-request body and routes the full session automatically. Gemini STT is available through the GA endpoint in v2.8.
+OpenAI GPT Live and the Gemini 3.8 MLLMs are served by the preview Conversational AI
+gateway. `AgentSession` detects them from the resolved request body and routes the full session automatically.
+Gemini STT is available through the GA endpoint in v2.8.
 
 ```typescript
 import { Agent, OpenAIGPTLive } from "agora-agents";
@@ -28,6 +29,14 @@ GPT Live sessions use:
 
 - Base URL: `https://partner.ai.agora.io/preview/api/conversational-ai-agent`
 - Header: `agora-feature: live-models`
+
+Use the single `GeminiLive({ apiKey, model })` class for either Gemini
+voice model. Select `models/gemini-3.8-live` or
+`models/gemini-3.8-live-extended-thinking`; the low-latency ID is the default.
+Set `thinkingLevel: "medium"` for extended thinking. `GeminiLive` sends it
+only for the extended-thinking ID. Gemini sessions send the
+Google credential once as `mllm.api_key`, never as `mllm.params.api_key`.
+They use `agora-feature: gemini-live`; GPT Live keeps its `live-models` gate.
 
 The route is session-scoped. Every lifecycle request from the session uses the same preview route, while ordinary
 client calls and Gemini STT sessions continue to use the configured GA regional endpoint. Caller headers cannot
