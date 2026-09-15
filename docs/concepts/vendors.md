@@ -107,7 +107,7 @@ const stt = new DeepgramSTT({
 });
 ```
 
-> **Preview providers** — `GeminiLive` uses the preview gateway through `AgoraClient`. See [Preview Endpoint](../guides/preview-endpoint.md).
+> **Gemini 3.8 preview models** — `GeminiLive` uses the preview gateway only for the two 3.8 model IDs. Other Gemini Live model IDs keep the production route. See [Preview Endpoint](../guides/preview-endpoint.md).
 
 ## MLLM vendors
 

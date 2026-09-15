@@ -494,7 +494,7 @@ new GeminiLive(options: GeminiLiveOptions)
 | `model` | `string` | No | Model name; defaults to `models/gemini-3.8-live` |
 | `thinkingLevel` | `string` | No | `low`, `medium`, or `high`; sent only for 3.8 Extended Thinking |
 | `languageCodes` | `string[]` | No | 3.8 language codes in `mllm.params.language_codes` |
-| `url` | `string` | No | WebSocket URL |
+| `url` | `string` | No | Custom endpoint; 3.8 defaults to the Gemini Developer API host |
 | `instructions` | `string` | No | System instructions for the model |
 | `voice` | `string` | No | Voice name (e.g., `'Aoede'`, `'Charon'`) |
 | `greetingMessage` | `string` | No | Agent greeting; sent as `mllm.greeting` for 3.8 models |

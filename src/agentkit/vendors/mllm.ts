@@ -236,7 +236,7 @@ export interface GeminiLiveOptions {
     thinkingLevel?: GeminiThinkingLevel;
     /** Languages for Gemini 3.8, sent as params.language_codes. */
     languageCodes?: readonly string[];
-    /** WebSocket URL for real-time communication */
+    /** Endpoint override; Gemini 3.8 defaults to the Developer API host. */
     url?: string;
     /** System instructions for the model */
     instructions?: string;
