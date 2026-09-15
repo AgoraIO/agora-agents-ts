@@ -92,6 +92,8 @@ const agent = new Agent({ client }).withMllm(new AzureOpenAIRealtime({
 
 ## Example: Gemini Live
 
+Gemini 3.8 Live and Gemini 3.8 Live Extended Thinking use the separate `GeminiMLLM` preview class, not `GeminiLive`. See the [Preview Endpoint guide](./preview-endpoint.md) for the public model IDs, thinking level, and feature header.
+
 ```typescript
 import { AgoraClient, Area, Agent, GeminiLive } from 'agora-agents';
 

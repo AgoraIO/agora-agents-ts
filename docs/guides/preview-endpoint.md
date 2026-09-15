@@ -1,7 +1,7 @@
 ---
 sidebar_position: 10
 title: Preview Endpoint
-description: How AgentSession routes GPT Live through the preview gateway.
+description: How AgentSession routes GPT Live and Gemini 3.8 MLLMs through the preview gateway.
 ---
 
 # Preview Endpoint

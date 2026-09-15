@@ -479,6 +479,20 @@ Global Azure OpenAI Realtime wrapper. It emits `mllm.vendor = 'azure'`; `maxHist
 | `params` | `AzureOpenAIRealtimeParams` | No | Azure parameters limited to `instructions`, `model`, and `voice` |
 | `turnDetection` | `MllmTurnDetectionConfig` | Yes | MLLM turn detection configuration |
 
+### GeminiMLLM (preview)
+
+`new GeminiMLLM({ apiKey, model })` configures either public Gemini 3.8 voice model. A session using this provider routes to the preview gateway with `agora-feature: gemini-live`. See [Preview Endpoint](../guides/preview-endpoint.md).
+
+| Option | Default / wire behavior |
+|---|---|
+| `apiKey` | Required; sent once as `mllm.api_key`. |
+| `model` | Defaults to `models/gemini-3.8-live`; also accepts `models/gemini-3.8-live-extended-thinking`. |
+| `thinkingLevel` | `low`, `medium`, or `high`; sent as `mllm.params.thinking_level` only for Extended Thinking. |
+| `voice` | Defaults to `Puck`. |
+| `instructions` | System prompt in `mllm.params.instructions`. |
+| `greeting` | Initial utterance in `mllm.greeting`. |
+| `languageCodes` | Optional language array in `mllm.params.language_codes`. |
+
 ### GeminiLive
 
 <!-- snippet: fragment -->

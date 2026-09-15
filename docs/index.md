@@ -62,4 +62,4 @@ npm install agora-agents
 | [AgentSession Reference](./reference/session.md) | All methods, events, and payload types |
 | [Vendor Reference](./reference/vendors.md) | Constructor options for every vendor class |
 
-For generated REST API types, see the [API Reference](../../reference.md).
+For generated REST API types, see the [API Reference](../reference.md).
