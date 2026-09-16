@@ -7,7 +7,6 @@ import {
     GeminiSTT,
     OpenAIGPTLive,
     PREVIEW_API_BASE_URL,
-    PreviewFeatures,
     requiredPreviewFeatures,
 } from "../../../src/agentkit/preview/index.js";
 import { Gemini, OpenAI } from "../../../src/agentkit/vendors/llm.js";
@@ -19,7 +18,7 @@ import { Area } from "../../../src/core/domain/index.js";
 
 const API_KEY = "AIza-test-key";
 
-describe("Gemini preview MLLM routing", () => {
+describe("Gemini 3.8 production MLLM routing", () => {
     test("rejects a blank API key at runtime", () => {
         expect(() => new GeminiLive({ apiKey: "  " })).toThrow("GeminiLive requires apiKey");
     });
@@ -48,29 +47,27 @@ describe("Gemini preview MLLM routing", () => {
             expect(config.params?.thinking_level).toBe(
                 model === GeminiLiveModels.Live38ExtendedThinking ? thinkingLevel : undefined,
             );
-            expect(requiredPreviewFeatures({ mllm: config } as Agora.StartAgentsRequest.Properties)).toEqual([
-                PreviewFeatures.GeminiLive,
-            ]);
+            expect(requiredPreviewFeatures({ mllm: config } as Agora.StartAgentsRequest.Properties)).toEqual([]);
             expect(
                 requiredPreviewFeatures({
                     mllm: { vendor: "gemini", params: { model } },
                 } as Agora.StartAgentsRequest.Properties),
-            ).toEqual([PreviewFeatures.GeminiLive]);
+            ).toEqual([]);
         }
     });
-    test("selects Gemini's gate while GPT Live uses production routing", () => {
+    test("keeps Gemini and GPT Live on production routing", () => {
         for (const vendor of [
             new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38 }),
             new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38ExtendedThinking }),
         ]) {
             const properties = { mllm: vendor.toConfig() } as Agora.StartAgentsRequest.Properties;
-            expect(requiredPreviewFeatures(properties)).toEqual([PreviewFeatures.GeminiLive]);
+            expect(requiredPreviewFeatures(properties)).toEqual([]);
         }
         const gpt = { mllm: new OpenAIGPTLive({ apiKey: API_KEY }).toConfig() } as Agora.StartAgentsRequest.Properties;
         expect(requiredPreviewFeatures(gpt)).toEqual([]);
     });
 
-    test("moves the builder greeting to Gemini's preview wire field", () => {
+    test("keeps the builder greeting in Gemini's production wire field", () => {
         const properties = {
             mllm: {
                 ...new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38 }).toConfig(),
@@ -78,24 +75,25 @@ describe("Gemini preview MLLM routing", () => {
             },
         } as Agora.StartAgentsRequest.Properties;
         applyPreviewShape(properties);
-        expect((properties.mllm as Record<string, unknown>).greeting).toBe("Hello");
-        expect((properties.mllm as Record<string, unknown>).greeting_message).toBeUndefined();
+        expect((properties.mllm as Record<string, unknown>).greeting).toBeUndefined();
+        expect((properties.mllm as Record<string, unknown>).greeting_message).toBe("Hello");
     });
 
-    test("unknown Gemini model keeps preview greeting without params.api_key", () => {
+    test("normalizes the legacy preview greeting for production", () => {
         const properties = {
             mllm: {
                 ...new GeminiLive({
                     apiKey: API_KEY,
-                    model: "future-live-model",
-                    url: "https://generativelanguage.googleapis.com",
+                    model: GeminiLiveModels.Live38,
                 }).toConfig(),
-                greeting_message: "Hello",
+                greeting: "Hello",
+                greeting_message: undefined,
             },
         } as Agora.StartAgentsRequest.Properties;
         applyPreviewShape(properties);
-        expect((properties.mllm as Record<string, unknown>).greeting).toBe("Hello");
-        expect((properties.mllm as Record<string, unknown>).greeting_message).toBeUndefined();
+        expect((properties.mllm as Record<string, unknown>).greeting).toBeUndefined();
+        expect((properties.mllm as Record<string, unknown>).greeting_message).toBe("Hello");
+        expect((properties.mllm?.params as Record<string, unknown>).api_key).toBeUndefined();
     });
 });
 
@@ -392,7 +390,7 @@ test("legacy GPT Live integration routes the full session to production without 
     });
 });
 
-test("Gemini MLLM routes its full session with the gemini-live gate", async () => {
+test("Gemini 3.8 MLLM routes its full session through production", async () => {
     const fetchMock = vi
         .fn<typeof fetch>()
         .mockImplementation(
@@ -416,18 +414,18 @@ test("Gemini MLLM routes its full session with the gemini-live gate", async () =
 
     expect(fetchMock.mock.calls).toHaveLength(5);
     for (const [url, init] of fetchMock.mock.calls) {
-        expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(true);
-        expect(new Headers(init?.headers).get("agora-feature")).toBe("gemini-live");
+        expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(false);
+        expect(new Headers(init?.headers).get("agora-feature")).toBe("wrong");
     }
     const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(body.properties.mllm).toMatchObject({
         vendor: "gemini",
         api_key: API_KEY,
-        greeting: "Hello",
+        greeting_message: "Hello",
         params: { model: "models/gemini-3.8-live-extended-thinking", thinking_level: "medium" },
     });
     expect(body.properties.mllm.params.api_key).toBeUndefined();
-    expect(body.properties.mllm.greeting_message).toBeUndefined();
+    expect(body.properties.mllm.greeting).toBeUndefined();
 });
 
 test("GPT Live v3 warns and drops agent-level turn detection", () => {

@@ -553,7 +553,7 @@ Global Azure OpenAI Realtime wrapper. It emits `mllm.vendor = 'azure'`; `maxHist
 
 ### GeminiLive
 
-`GeminiLive` supports existing Gemini Live models and both public Gemini 3.8 voice models. The 3.8 IDs select the preview gateway with `agora-feature: gemini-live`; older model IDs keep the production route. See [Preview Endpoint](../guides/preview-endpoint.md).
+`GeminiLive` supports existing Gemini Live models and both public Gemini 3.8 voice models through the configured regional production endpoint. Existing preview-era imports continue to work without adding an `agora-feature` header.
 
 <!-- snippet: fragment -->
 ```typescript
@@ -569,7 +569,7 @@ new GeminiLive(options: GeminiLiveOptions)
 | `url` | `string` | No | Custom endpoint; 3.8 defaults to the Gemini Developer API host |
 | `instructions` | `string` | No | System instructions for the model |
 | `voice` | `string` | No | Voice name (e.g., `'Aoede'`, `'Charon'`) |
-| `greetingMessage` | `string` | No | Agent greeting; sent as `mllm.greeting` for 3.8 models |
+| `greetingMessage` | `string` | No | Agent greeting; sent as `mllm.greeting_message` |
 | `failureMessage` | `string` | No | Message played when the model call fails |
 | `inputModalities` | `string[]` | No | Input modalities |
 | `outputModalities` | `string[]` | No | Output modalities |

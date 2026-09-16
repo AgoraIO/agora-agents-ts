@@ -109,7 +109,7 @@ const stt = new DeepgramSTT({
 });
 ```
 
-> **Gemini 3.8 preview models** — `GeminiLive` uses the preview gateway only for the two 3.8 model IDs. Other Gemini Live model IDs keep the production route. See [Preview Endpoint](../guides/preview-endpoint.md).
+> **Gemini 3.8 models** — `GeminiLive` uses the configured regional production endpoint for both 3.8 model IDs and does not add a preview feature header.
 
 ## MLLM vendors
 

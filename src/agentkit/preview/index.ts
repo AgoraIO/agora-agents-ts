@@ -23,11 +23,13 @@ export {
 } from "./client.js";
 export type {
     GeminiLiveModel,
+    GeminiLiveVoice,
     GeminiPreviewVoice,
     GeminiThinkingLevel,
 } from "./vendors.js";
 export {
     GEMINI_MLLM_DEFAULT_MODEL,
+    GEMINI_MLLM_URL,
     GEMINI_PREVIEW_MLLM_URL,
     GeminiLiveModels,
     GeminiThinkingLevels,

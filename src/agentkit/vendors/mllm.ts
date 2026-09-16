@@ -6,8 +6,6 @@
  * sets `mllm.enable: true`.
  */
 
-import type { GeminiThinkingLevel } from "../preview/vendors.js";
-import { buildGeminiPreviewConfig, GeminiLiveModels, GeminiThinkingLevels } from "../preview/vendors.js";
 import type { MllmConfig, MllmTurnDetectionConfig } from "../types.js";
 import { BaseCNMLLM, BaseMLLM, type BaseMllmOptions } from "./base.js";
 
@@ -22,6 +20,49 @@ function requireObject(value: unknown, field: string, vendor: string): asserts v
         throw new Error(`${vendor} requires ${field}`);
     }
 }
+
+// =============================================================================
+// Google Gemini Live (MLLM)
+// =============================================================================
+
+export const GeminiLiveModels = {
+    /** Public ID for the low-latency voice model. */
+    Live38: "models/gemini-3.8-live",
+    /** Public ID for the reasoning voice model. */
+    Live38ExtendedThinking: "models/gemini-3.8-live-extended-thinking",
+} as const;
+
+/** The model Gemini Live sends by default. */
+export const GEMINI_MLLM_DEFAULT_MODEL: string = GeminiLiveModels.Live38;
+
+/** Default Gemini Developer API endpoint for Gemini 3.8 models. */
+export const GEMINI_MLLM_URL = "https://generativelanguage.googleapis.com";
+
+/** @deprecated Use {@link GEMINI_MLLM_URL}. */
+export const GEMINI_PREVIEW_MLLM_URL: string = GEMINI_MLLM_URL;
+
+/** A Gemini Live model. Known models autocomplete while future model IDs remain accepted. */
+export type GeminiLiveModel = (typeof GeminiLiveModels)[keyof typeof GeminiLiveModels] | (string & {});
+
+/** Reasoning budgets accepted by Gemini Extended Thinking. */
+export const GeminiThinkingLevels = ["low", "medium", "high"] as const;
+
+export type GeminiThinkingLevel = (typeof GeminiThinkingLevels)[number];
+
+/** Known Gemini output voices; future voice names remain accepted. */
+export type GeminiLiveVoice =
+    | "Puck"
+    | "Charon"
+    | "Kore"
+    | "Fenrir"
+    | "Aoede"
+    | "Leda"
+    | "Orus"
+    | "Zephyr"
+    | (string & {});
+
+/** @deprecated Use {@link GeminiLiveVoice}. */
+export type GeminiPreviewVoice = GeminiLiveVoice;
 
 // =============================================================================
 // OpenAI GPT Live (MLLM)
@@ -395,7 +436,7 @@ export interface GeminiLiveOptions extends BaseMllmOptions {
     /** Google API key */
     apiKey: string;
     /** Model name (e.g., 'gemini-live-2.5-flash') */
-    model?: string;
+    model?: GeminiLiveModel;
     /** Sent only for models/gemini-3.8-live-extended-thinking. */
     thinkingLevel?: GeminiThinkingLevel;
     /** Languages for Gemini 3.8, sent as params.language_codes. */
@@ -405,7 +446,7 @@ export interface GeminiLiveOptions extends BaseMllmOptions {
     /** System instructions for the model */
     instructions?: string;
     /** Voice name (e.g., 'Aoede', 'Charon') */
-    voice?: string;
+    voice?: GeminiLiveVoice;
     affectiveDialog?: boolean;
     proactiveAudio?: boolean;
     transcribeAgent?: boolean;
@@ -477,27 +518,36 @@ export class GeminiLive extends BaseMLLM {
             turnDetection,
         } = this.options;
 
-        const selectedModel = model?.trim() || GeminiLiveModels.Live38;
-        if (selectedModel === GeminiLiveModels.Live38 || selectedModel === GeminiLiveModels.Live38ExtendedThinking) {
-            return buildGeminiPreviewConfig(this.options);
+        const selectedModel = model?.trim() || GEMINI_MLLM_DEFAULT_MODEL;
+        const isGemini38 =
+            selectedModel === GeminiLiveModels.Live38 || selectedModel === GeminiLiveModels.Live38ExtendedThinking;
+        const isExtendedThinking = selectedModel === GeminiLiveModels.Live38ExtendedThinking;
+        const params: Record<string, unknown> = {
+            ...additionalParams,
+            model: selectedModel,
+            ...(instructions && { instructions }),
+            ...((voice || isGemini38) && { voice: voice || "Puck" }),
+            ...(isExtendedThinking &&
+                this.options.thinkingLevel !== undefined && {
+                    thinking_level: this.options.thinkingLevel,
+                }),
+            ...(isGemini38 && this.options.languageCodes && { language_codes: [...this.options.languageCodes] }),
+            ...(affectiveDialog !== undefined && { affective_dialog: affectiveDialog }),
+            ...(proactiveAudio !== undefined && { proactive_audio: proactiveAudio }),
+            ...(transcribeAgent !== undefined && { transcribe_agent: transcribeAgent }),
+            ...(transcribeUser !== undefined && { transcribe_user: transcribeUser }),
+            ...(httpOptions && { http_options: httpOptions }),
+        };
+        if (isGemini38) {
+            delete params.api_key;
+            if (!isExtendedThinking) delete params.thinking_level;
         }
 
         return {
             vendor: "gemini",
             api_key: apiKey,
-            url: url ?? "",
-            params: {
-                // additionalParams spread first so that explicit fields always win.
-                ...additionalParams,
-                model: selectedModel,
-                ...(instructions && { instructions }),
-                ...(voice && { voice }),
-                ...(affectiveDialog !== undefined && { affective_dialog: affectiveDialog }),
-                ...(proactiveAudio !== undefined && { proactive_audio: proactiveAudio }),
-                ...(transcribeAgent !== undefined && { transcribe_agent: transcribeAgent }),
-                ...(transcribeUser !== undefined && { transcribe_user: transcribeUser }),
-                ...(httpOptions && { http_options: httpOptions }),
-            },
+            url: url ?? (isGemini38 ? GEMINI_MLLM_URL : ""),
+            params,
             ...(messages && { messages }),
             ...(greetingMessage && { greeting_message: greetingMessage }),
             ...(inputModalities && { input_modalities: inputModalities }),

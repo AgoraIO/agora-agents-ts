@@ -111,17 +111,6 @@ export {
     requiredPreviewFeatures,
 } from "./preview/client.js";
 export type {
-    GeminiLiveModel,
-    GeminiPreviewVoice,
-    GeminiThinkingLevel,
-} from "./preview/vendors.js";
-export {
-    GEMINI_MLLM_DEFAULT_MODEL,
-    GEMINI_PREVIEW_MLLM_URL,
-    GeminiLiveModels,
-    GeminiThinkingLevels,
-} from "./preview/vendors.js";
-export type {
     AvatarVendor,
     CNAvatarVendor,
     CNLlmVendor,
@@ -390,7 +379,11 @@ export {
 export type {
     AzureOpenAIRealtimeOptions,
     AzureOpenAIRealtimeParams,
+    GeminiLiveModel,
     GeminiLiveOptions,
+    GeminiLiveVoice,
+    GeminiPreviewVoice,
+    GeminiThinkingLevel,
     OpenAIGPTLiveOptions,
     OpenAIRealtimeOptions,
     QwenOmniOptions,
@@ -400,7 +393,12 @@ export type {
 // MLLM vendor classes
 export {
     AzureOpenAIRealtime,
+    GEMINI_MLLM_DEFAULT_MODEL,
+    GEMINI_MLLM_URL,
+    GEMINI_PREVIEW_MLLM_URL,
     GeminiLive,
+    GeminiLiveModels,
+    GeminiThinkingLevels,
     OpenAIGPTLive,
     OpenAIRealtime,
     QwenOmni,
