@@ -164,7 +164,7 @@ export namespace StartAgentsRequest {
             enable_rtm?: boolean;
             /** Enable Selective Attention Locking (SAL). When enabled, configure the `sal` field to set up speaker recognition or locking modes. */
             enable_sal?: boolean;
-            /** Enable invocation for MCP servers and inline REST tools. */
+            /** Enable tool invocation. When enabled, the agent can invoke tools provided by the MCP server to implement advanced functionality. */
             enable_tools?: boolean;
         }
 
@@ -203,6 +203,8 @@ export namespace StartAgentsRequest {
                 /**
                  * LiveAvatar (Beta) — formerly HeyGen */
                 Liveavatar: "liveavatar",
+                /**
+                 * Anam Avatar (Beta) */
                 Anam: "anam",
                 /**
                  * Generic avatar (Beta) */

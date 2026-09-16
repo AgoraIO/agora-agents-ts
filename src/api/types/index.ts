@@ -3,6 +3,7 @@ export * from "./AmazonAsr.js";
 export * from "./AmazonAsrParams.js";
 export * from "./AmazonTts.js";
 export * from "./AmazonTtsParams.js";
+export * from "./AnamAvatarParams.js";
 export * from "./AresAsr.js";
 export * from "./AresAsrParams.js";
 export * from "./Asr.js";
