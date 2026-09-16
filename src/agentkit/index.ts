@@ -100,7 +100,7 @@ export type {
     TtsPreset,
 } from "./presets.js";
 export { AgentPresets, normalizePresetInput } from "./presets.js";
-// Legacy preview endpoint routing and feature-gating compatibility surface.
+// Preview endpoint routing and feature-gating compatibility surface.
 export type { PreviewFeature, PreviewRoute } from "./preview/client.js";
 export {
     createPreviewRoute,
@@ -110,6 +110,17 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
+export type {
+    GeminiLiveModel,
+    GeminiPreviewVoice,
+    GeminiThinkingLevel,
+} from "./preview/vendors.js";
+export {
+    GEMINI_MLLM_DEFAULT_MODEL,
+    GEMINI_PREVIEW_MLLM_URL,
+    GeminiLiveModels,
+    GeminiThinkingLevels,
+} from "./preview/vendors.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,
