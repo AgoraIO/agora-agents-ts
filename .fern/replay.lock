@@ -2935,7 +2935,6 @@ patches:
         }
       src/version.ts: |
         export const SDK_VERSION = "v2.8.1";
-    status: unresolved
   - id: patch-ef28f9d0
     content_hash: sha256:3496d94bb82b0ca0d69c32fa67dda76b476ffc8f653fa589c821a927321bd4f4
     original_commit: ef28f9d069c515f9459a4e5ae53e75935300bc5b
@@ -3032,4 +3031,3 @@ patches:
         }
       src/version.ts: |
         export const SDK_VERSION = "v2.9.0";
-    status: unresolved
