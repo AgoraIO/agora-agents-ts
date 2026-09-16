@@ -102,22 +102,28 @@ export type {
 export { AgentPresets, normalizePresetInput } from "./presets.js";
 // Preview endpoint: session routing, providers, and feature gating.
 // Temporary surface — removed when these providers ship on the production gateway.
-export type {
-    GeminiSTTModel,
-    GeminiSTTOptions,
-    PreviewFeature,
-    PreviewRoute,
-} from "./preview/index.js";
+export type { PreviewFeature, PreviewRoute } from "./preview/client.js";
 export {
     createPreviewRoute,
-    GeminiSTT,
-    GeminiSTTModels,
     PREVIEW_API_BASE_URL,
     PREVIEW_FEATURE_HEADER,
     PreviewFeatures,
     previewRequestHeaders,
     requiredPreviewFeatures,
-} from "./preview/index.js";
+} from "./preview/client.js";
+export type {
+    GeminiLiveModel,
+    GeminiPreviewVoice,
+    GeminiThinkingLevel,
+    OpenAIGPTLiveOptions,
+} from "./preview/vendors.js";
+export {
+    GEMINI_MLLM_DEFAULT_MODEL,
+    GEMINI_PREVIEW_MLLM_URL,
+    GeminiLiveModels,
+    GeminiThinkingLevels,
+    OpenAIGPTLive,
+} from "./preview/vendors.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,
@@ -401,6 +407,8 @@ export type {
     AresSTTOptions,
     AssemblyAISTTOptions,
     DeepgramSTTOptions,
+    GeminiSTTModel,
+    GeminiSTTOptions,
     GoogleSTTOptions,
     MicrosoftSTTOptions,
     OpenAISTTOptions,
@@ -414,6 +422,9 @@ export {
     AresSTT,
     AssemblyAISTT,
     DeepgramSTT,
+    GeminiSTT,
+    GeminiSTTModels,
+    GeminiTranscriptionMode,
     GoogleSTT,
     MicrosoftSTT,
     OpenAISTT,

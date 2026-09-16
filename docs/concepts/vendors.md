@@ -91,6 +91,7 @@ The `sampleRate` is critical when using avatars. See [Avatar Integration](../gui
 | `AresSTT`         | Agora ARES        | `keywords?`, `additionalParams?`                 |
 | `SarvamSTT`       | Sarvam AI         | `apiKey`, `language`                             |
 | `XAiSTT`          | xAI               | `apiKey`, `language?`, `baseUrl?`, `sampleRate?` |
+| `GeminiSTT`       | Google Gemini     | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp` |
 
 `AresSTT` and `FengmingSTT` serialize `keywords` at the ASR top level (`asr.keywords`), while arbitrary fields passed through `additionalParams` are kept under `asr.params`.
 
@@ -106,7 +107,7 @@ const stt = new DeepgramSTT({
 });
 ```
 
-> **Preview providers** — `GeminiSTT` (ASR) is served by the preview gateway; `AgoraClient` routes its sessions automatically. See [Preview Endpoint](../guides/preview-endpoint.md).
+> **Gemini 3.8 preview models** — `GeminiLive` uses the preview gateway only for the two 3.8 model IDs. Other Gemini Live model IDs keep the production route. See [Preview Endpoint](../guides/preview-endpoint.md).
 
 ## MLLM vendors
 
@@ -115,6 +116,7 @@ MLLM (Multimodal LLM) vendors handle audio end-to-end — no separate STT or TTS
 | Class            | Provider                        | Key constructor params                                                                                                                                                                    |
 | ---------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `OpenAIRealtime` | OpenAI Realtime API             | `apiKey`, `model?`, `url?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?`                                                 |
+| `OpenAIGPTLive` (preview) | OpenAI GPT Live | `apiKey`, `greeting?`, `model?`, `voice?`, `prompt?`, `params?` |
 | `AzureOpenAIRealtime` | Azure OpenAI Realtime (global) | `apiKey`, `url`, `turnDetection`, `model?`, `voice?`, `instructions?`, `params?`, `messages?`, `outputModalities?`, `maxHistory?`, `greetingMessage?` |
 | `GeminiLive`     | Google Gemini Live API          | `apiKey`, `model`, `url?`, `voice?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?`                                        |
 | `VertexAI`       | Vertex AI Gemini Live           | `model`, `url?`, `projectId`, `location`, `adcCredentialsString`, `voice?`, `greetingMessage?`, `failureMessage?`, `inputModalities?`, `outputModalities?`, `messages?`, `turnDetection?` |

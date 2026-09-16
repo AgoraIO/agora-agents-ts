@@ -1,14 +1,103 @@
 import { describe, expect, test, vi } from "vitest";
 import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
-import { GeminiSTT, PREVIEW_API_BASE_URL, requiredPreviewFeatures } from "../../../src/agentkit/preview/index.js";
+import {
+    applyPreviewShape,
+    GeminiLiveModels,
+    GeminiSTT,
+    OpenAIGPTLive,
+    PREVIEW_API_BASE_URL,
+    PreviewFeatures,
+    requiredPreviewFeatures,
+} from "../../../src/agentkit/preview/index.js";
 import { Gemini, OpenAI } from "../../../src/agentkit/vendors/llm.js";
+import { GeminiLive } from "../../../src/agentkit/vendors/mllm.js";
 import { DeepgramSTT } from "../../../src/agentkit/vendors/stt.js";
 import { GoogleTTS, MiniMaxTTS } from "../../../src/agentkit/vendors/tts.js";
 import type * as Agora from "../../../src/api/index.js";
 import { Area } from "../../../src/core/domain/index.js";
 
 const API_KEY = "AIza-test-key";
+
+describe("Gemini preview MLLM routing", () => {
+    test("rejects a blank API key at runtime", () => {
+        expect(() => new GeminiLive({ apiKey: "  " })).toThrow("GeminiLive requires apiKey");
+    });
+
+    test("rejects an invalid thinking level at runtime", () => {
+        expect(() => new GeminiLive({ apiKey: API_KEY, thinkingLevel: "invalid" as never })).toThrow(
+            "GeminiLive thinkingLevel must be low, medium, or high",
+        );
+    });
+
+    test("one class supports the public 3.8 model IDs", () => {
+        expect(new GeminiLive({ apiKey: API_KEY, model: "  " }).toConfig().params?.model).toBe(GeminiLiveModels.Live38);
+        for (const [model, thinkingLevel] of [
+            [GeminiLiveModels.Live38, "medium"],
+            [GeminiLiveModels.Live38ExtendedThinking, "medium"],
+        ] as const) {
+            const config = new GeminiLive({
+                apiKey: API_KEY,
+                model,
+                thinkingLevel,
+                additionalParams: { thinking_level: "high", api_key: "ignored-key" },
+            }).toConfig();
+            expect(config.api_key).toBe(API_KEY);
+            expect((config.params as Record<string, unknown>).api_key).toBeUndefined();
+            expect(config.params?.model).toBe(model);
+            expect(config.params?.thinking_level).toBe(
+                model === GeminiLiveModels.Live38ExtendedThinking ? thinkingLevel : undefined,
+            );
+            expect(requiredPreviewFeatures({ mllm: config } as Agora.StartAgentsRequest.Properties)).toEqual([
+                PreviewFeatures.GeminiLive,
+            ]);
+            expect(
+                requiredPreviewFeatures({
+                    mllm: { vendor: "gemini", params: { model } },
+                } as Agora.StartAgentsRequest.Properties),
+            ).toEqual([PreviewFeatures.GeminiLive]);
+        }
+    });
+    test("selects Gemini's gate while GPT Live keeps its own", () => {
+        for (const vendor of [
+            new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38 }),
+            new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38ExtendedThinking }),
+        ]) {
+            const properties = { mllm: vendor.toConfig() } as Agora.StartAgentsRequest.Properties;
+            expect(requiredPreviewFeatures(properties)).toEqual([PreviewFeatures.GeminiLive]);
+        }
+        const gpt = { mllm: new OpenAIGPTLive({ apiKey: API_KEY }).toConfig() } as Agora.StartAgentsRequest.Properties;
+        expect(requiredPreviewFeatures(gpt)).toEqual([PreviewFeatures.LiveModels]);
+    });
+
+    test("moves the builder greeting to Gemini's preview wire field", () => {
+        const properties = {
+            mllm: {
+                ...new GeminiLive({ apiKey: API_KEY, model: GeminiLiveModels.Live38 }).toConfig(),
+                greeting_message: "Hello",
+            },
+        } as Agora.StartAgentsRequest.Properties;
+        applyPreviewShape(properties);
+        expect((properties.mllm as Record<string, unknown>).greeting).toBe("Hello");
+        expect((properties.mllm as Record<string, unknown>).greeting_message).toBeUndefined();
+    });
+
+    test("unknown Gemini model keeps preview greeting without params.api_key", () => {
+        const properties = {
+            mllm: {
+                ...new GeminiLive({
+                    apiKey: API_KEY,
+                    model: "future-live-model",
+                    url: "https://generativelanguage.googleapis.com",
+                }).toConfig(),
+                greeting_message: "Hello",
+            },
+        } as Agora.StartAgentsRequest.Properties;
+        applyPreviewShape(properties);
+        expect((properties.mllm as Record<string, unknown>).greeting).toBe("Hello");
+        expect((properties.mllm as Record<string, unknown>).greeting_message).toBeUndefined();
+    });
+});
 
 function createClient(fetchFn?: typeof fetch, headers?: Record<string, string>) {
     return new AgoraClient({
@@ -25,11 +114,9 @@ function sessionOptions() {
 }
 
 /**
- * Completes an agent with the preview ASR plus Gemini LLM and Google TTS.
- * The preview ASR only reaches its provider through the preview endpoint, so
- * this is what the routing and gating tests need to have configured.
+ * Completes an agent with GA Gemini ASR plus Gemini LLM and Google TTS.
  */
-function withPreviewAsr(agent: Agent): Agent {
+function withGeminiAsr(agent: Agent): Agent {
     return agent
         .withStt(new GeminiSTT({ apiKey: API_KEY, languageCodes: ["en-US"] }))
         .withLlm(new Gemini({ apiKey: API_KEY, model: "gemini-2.0-flash" }))
@@ -42,9 +129,9 @@ function withPreviewAsr(agent: Agent): Agent {
         );
 }
 
-describe("Gemini 3.5 Transcribe ASR (preview)", () => {
+describe("Gemini 3.5 Transcribe ASR (GA)", () => {
     test("serialises to the documented asr wire shape", () => {
-        const properties = withPreviewAsr(new Agent({ client: createClient() })).toProperties({
+        const properties = withGeminiAsr(new Agent({ client: createClient() })).toProperties({
             channel: "preview-channel",
             agentUid: "1",
             remoteUids: ["100"],
@@ -59,7 +146,7 @@ describe("Gemini 3.5 Transcribe ASR (preview)", () => {
                 api_key: API_KEY,
                 model: "gemini-3.5-transcribe-live",
                 sample_rate: 16000,
-                language_codes: ["en-US"],
+                language_hints: ["en-US"],
             },
         });
     });
@@ -93,12 +180,12 @@ describe("Gemini 3.5 Transcribe ASR (preview)", () => {
 
         expect(config).not.toHaveProperty("language");
         expect(config.params).not.toHaveProperty("language");
-        // Nor does it invent language_codes — absent means auto-detect.
-        expect(config.params).not.toHaveProperty("language_codes");
+        // Nor does it invent language_hints — absent means auto-detect.
+        expect(config.params).not.toHaveProperty("language_hints");
     });
 
     test("the Agent supplies asr.language from turnDetection", () => {
-        const properties = withPreviewAsr(new Agent({ client: createClient() }))
+        const properties = withGeminiAsr(new Agent({ client: createClient() }))
             .withStt(new GeminiSTT({ apiKey: API_KEY }))
             .withTurnDetection({ language: "ja-JP" })
             .toProperties({ channel: "c", agentUid: "1", remoteUids: ["100"], token: "t" });
@@ -107,15 +194,15 @@ describe("Gemini 3.5 Transcribe ASR (preview)", () => {
         expect(properties.turn_detection).toMatchObject({ language: "ja-JP" });
     });
 
-    test("languageCodes is sent verbatim when supplied", () => {
+    test("legacy languageCodes maps to GA language_hints", () => {
         const single = new GeminiSTT({ apiKey: API_KEY, languageCodes: ["es-ES"] }).toConfig();
-        expect(single.params).toMatchObject({ language_codes: ["es-ES"] });
+        expect(single.params).toMatchObject({ language_hints: ["es-ES"] });
 
         const multiple = new GeminiSTT({
             apiKey: API_KEY,
             languageCodes: ["en-US", "es-ES"],
         }).toConfig();
-        expect(multiple.params).toMatchObject({ language_codes: ["en-US", "es-ES"] });
+        expect(multiple.params).toMatchObject({ language_hints: ["en-US", "es-ES"] });
     });
 
     test("an explicit empty languageCodes array still reaches the wire", () => {
@@ -123,7 +210,7 @@ describe("Gemini 3.5 Transcribe ASR (preview)", () => {
 
         // `[]` is the caller spelling auto-detect outright; both that and
         // omitting the field mean the same thing to the provider.
-        expect(config.params).toMatchObject({ language_codes: [] });
+        expect(config.params).toMatchObject({ language_hints: [] });
     });
 
     test("customVocabulary is sent only when supplied", () => {
@@ -146,14 +233,10 @@ describe("Gemini 3.5 Transcribe ASR (preview)", () => {
         expect(withTimestamp.params).toMatchObject({ word_timestamp: true });
     });
 
-    test.each([
-        { customVocabulary: ["Agora"], wordTimestamp: true },
-        { customVocabulary: [], wordTimestamp: true },
-        { additionalParams: { custom_vocabulary: ["Agora"], word_timestamp: true } },
-    ])("rejects customVocabulary with enabled wordTimestamp: %o", (options) => {
-        expect(() => new GeminiSTT({ apiKey: API_KEY, ...options }).toConfig()).toThrow(
-            "customVocabulary cannot be used with wordTimestamp=true",
-        );
+    test("rejects customVocabulary with enabled wordTimestamp", () => {
+        expect(() =>
+            new GeminiSTT({ apiKey: API_KEY, customVocabulary: ["Agora"], wordTimestamp: true }).toConfig(),
+        ).toThrow("customVocabulary cannot be used with wordTimestamp=true");
     });
 
     test("allows customVocabulary with explicitly disabled wordTimestamp", () => {
@@ -175,32 +258,23 @@ describe("Gemini 3.5 Transcribe ASR (preview)", () => {
 });
 
 describe("session-scoped preview routing", () => {
-    test("sends preview sessions to the preview endpoint with the agora-feature header", async () => {
+    test("sends Gemini ASR sessions to the GA endpoint without a preview gate", async () => {
         const fetchMock = vi
             .fn<typeof fetch>()
             .mockImplementation(async () => new Response(JSON.stringify({ agent_id: "agent-1" }), { status: 200 }));
 
-        const session = withPreviewAsr(new Agent({ client: createClient(fetchMock) })).createSession(sessionOptions());
+        const session = withGeminiAsr(new Agent({ client: createClient(fetchMock) })).createSession(sessionOptions());
 
         await session.start();
 
         expect(fetchMock).toHaveBeenCalledOnce();
-        expect(fetchMock.mock.calls[0]?.[0]).toBe(
-            `${PREVIEW_API_BASE_URL}/v2/projects/test-app-id-0123456789abcdefghij/join`,
-        );
+        expect(String(fetchMock.mock.calls[0]?.[0]).startsWith(PREVIEW_API_BASE_URL)).toBe(false);
 
         const headers = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
-        expect(headers.get("agora-feature")).toBe("gemini-live");
-        // Exactly one header may carry the preview value — the gateway accepts other
-        // spellings that are not part of the public contract, and none may ship here.
-        expect([...headers].filter(([, value]) => value.includes("gemini-live")).map(([name]) => name)).toEqual([
-            "agora-feature",
-        ]);
+        expect(headers.get("agora-feature")).toBeNull();
     });
 
-    test("keeps the gate header on every request, not just start", async () => {
-        // A request that loses the header is routed to the production environment,
-        // where the preview providers do not exist — so each verb must carry it.
+    test("keeps the full Gemini ASR session lifecycle on the GA endpoint", async () => {
         // A fresh Response per call: a body can only be read once.
         const fetchMock = vi.fn<typeof fetch>().mockImplementation(
             async () =>
@@ -209,7 +283,7 @@ describe("session-scoped preview routing", () => {
         );
         const client = createClient(fetchMock);
 
-        const session = withPreviewAsr(new Agent({ client })).createSession(sessionOptions());
+        const session = withGeminiAsr(new Agent({ client })).createSession(sessionOptions());
 
         await session.start();
         await session.say("hello");
@@ -220,26 +294,21 @@ describe("session-scoped preview routing", () => {
         await client.stopAgent("agent-2");
 
         expect(fetchMock.mock.calls.length).toBe(7);
-        for (const [url, init] of fetchMock.mock.calls.slice(0, 5)) {
-            const headers = new Headers(init?.headers);
-            expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(true);
-            expect(headers.get("agora-feature"), `missing gate on ${String(url)}`).toBe("gemini-live");
-        }
-        for (const [url, init] of fetchMock.mock.calls.slice(5)) {
+        for (const [url, init] of fetchMock.mock.calls) {
             const headers = new Headers(init?.headers);
             expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(false);
             expect(headers.get("agora-feature")).toBeNull();
         }
     });
 
-    test("caller-supplied headers cannot drop the gate", async () => {
+    test("GA routing preserves caller-supplied headers", async () => {
         const fetchMock = vi
             .fn<typeof fetch>()
             .mockImplementation(async () => new Response(JSON.stringify({ agent_id: "agent-1" }), { status: 200 }));
 
         const client = createClient(fetchMock, { "agora-feature": "", "x-custom": "kept" });
 
-        const session = withPreviewAsr(new Agent({ client })).createSession(sessionOptions());
+        const session = withGeminiAsr(new Agent({ client })).createSession(sessionOptions());
         await session.start();
         await session.raw.get(
             { appid: "test-app-id-0123456789abcdefghij", agentId: "agent-1" },
@@ -248,7 +317,7 @@ describe("session-scoped preview routing", () => {
 
         for (const [, init] of fetchMock.mock.calls) {
             const headers = new Headers(init?.headers);
-            expect(headers.get("agora-feature")).toBe("gemini-live");
+            expect(headers.get("agora-feature")).toBe("");
             expect(headers.get("x-custom")).toBe("kept");
         }
     });
@@ -273,10 +342,10 @@ describe("session-scoped preview routing", () => {
 });
 
 describe("preview feature detection", () => {
-    test("flags the gemini ASR vendor", () => {
+    test("leaves the GA Gemini ASR vendor off preview routing", () => {
         expect(
             requiredPreviewFeatures({ asr: { vendor: "gemini" } } as unknown as Agora.StartAgentsRequest.Properties),
-        ).toEqual(["gemini-live"]);
+        ).toEqual([]);
     });
 
     test("leaves a GA pipeline alone", () => {
@@ -285,12 +354,97 @@ describe("preview feature detection", () => {
         ).toEqual([]);
     });
 
-    test("standard AgoraClient accepts preview providers", async () => {
+    test("standard AgoraClient accepts Gemini ASR", async () => {
         const fetchMock = vi
             .fn<typeof fetch>()
             .mockResolvedValue(new Response(JSON.stringify({ agent_id: "agent-1" }), { status: 200 }));
-        const session = withPreviewAsr(new Agent({ client: createClient(fetchMock) })).createSession(sessionOptions());
+        const session = withGeminiAsr(new Agent({ client: createClient(fetchMock) })).createSession(sessionOptions());
 
         await expect(session.start()).resolves.toBe("agent-1");
     });
+});
+
+test("GPT Live v3 routes the full session to preview with the live-models gate", async () => {
+    const fetchMock = vi
+        .fn<typeof fetch>()
+        .mockImplementation(
+            async () => new Response(JSON.stringify({ agent_id: "agent-1", data: { list: [] } }), { status: 200 }),
+        );
+    const session = new Agent({ client: createClient(fetchMock) })
+        .withMllm(new OpenAIGPTLive({ apiKey: "test", prompt: "Be brief", outputIdleEndMs: 0 }))
+        .createSession(sessionOptions());
+    await session.start();
+    await session.say("hello");
+    await session.interrupt();
+    await session.getHistory();
+    await session.stop();
+    expect(fetchMock.mock.calls).toHaveLength(5);
+    for (const [url, init] of fetchMock.mock.calls) {
+        expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(true);
+        expect(new Headers(init?.headers).get("agora-feature")).toBe("live-models");
+    }
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(body.properties.mllm).toMatchObject({
+        enable: true,
+        vendor: "openai_gpt_live",
+        url: "wss://api.openai.com/v1/live/sessions",
+        params: { model: "gpt-live-1", prompt: "Be brief", output_idle_end_ms: 0 },
+    });
+});
+
+test("Gemini MLLM routes its full session with the gemini-live gate", async () => {
+    const fetchMock = vi
+        .fn<typeof fetch>()
+        .mockImplementation(
+            async () => new Response(JSON.stringify({ agent_id: "agent-1", data: { list: [] } }), { status: 200 }),
+        );
+    const session = new Agent({ client: createClient(fetchMock, { "agora-feature": "wrong" }) })
+        .withMllm(
+            new GeminiLive({
+                apiKey: API_KEY,
+                model: GeminiLiveModels.Live38ExtendedThinking,
+                thinkingLevel: "medium",
+            }),
+        )
+        .withGreeting("Hello")
+        .createSession(sessionOptions());
+    await session.start();
+    await session.say("hello");
+    await session.interrupt();
+    await session.getHistory();
+    await session.stop();
+
+    expect(fetchMock.mock.calls).toHaveLength(5);
+    for (const [url, init] of fetchMock.mock.calls) {
+        expect(String(url).startsWith(PREVIEW_API_BASE_URL)).toBe(true);
+        expect(new Headers(init?.headers).get("agora-feature")).toBe("gemini-live");
+    }
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(body.properties.mllm).toMatchObject({
+        vendor: "gemini",
+        api_key: API_KEY,
+        greeting: "Hello",
+        params: { model: "models/gemini-3.8-live-extended-thinking", thinking_level: "medium" },
+    });
+    expect(body.properties.mllm.params.api_key).toBeUndefined();
+    expect(body.properties.mllm.greeting_message).toBeUndefined();
+});
+
+test("GPT Live v3 warns and drops agent-level turn detection", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+        const properties = new Agent({ client: createClient() })
+            .withMllm(new OpenAIGPTLive({ apiKey: "test" }))
+            .withTurnDetection({ language: "en-US" })
+            .toProperties({
+                channel: "preview-channel",
+                agentUid: "1",
+                remoteUids: ["100"],
+                token: "test-token",
+            });
+        expect(properties).not.toHaveProperty("turn_detection");
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("ignores agent-level turn_detection"));
+    } finally {
+        warn.mockRestore();
+    }
 });

@@ -7,9 +7,9 @@
  * and binds that session to the preview host while ordinary AgoraClient calls
  * remain on the regional production endpoint.
  *
- * Everything under `agentkit/preview/` is temporary. When these providers ship
- * on the production gateway, delete this directory and move the vendor classes
- * into `vendors/stt.ts`.
+ * Everything under `agentkit/preview/` is temporary. When a provider ships on
+ * the production gateway, remove its preview registration and move its class
+ * into the corresponding production vendor module.
  */
 
 import type { AgoraClient } from "../../AgoraPoolClient.js";
@@ -17,6 +17,7 @@ import type * as Agora from "../../api/index.js";
 import { AgentManagementClient } from "../../api/resources/agentManagement/client/Client.js";
 import { AgentsClient } from "../../api/resources/agents/client/Client.js";
 import type { BaseClientOptions } from "../../BaseClient.js";
+import { GEMINI_PREVIEW_MLLM_URL, isOpenAIGPTLiveConfig } from "./vendors.js";
 
 /** Base URL that serves the preview providers. */
 export const PREVIEW_API_BASE_URL = "https://partner.ai.agora.io/preview/api/conversational-ai-agent";
@@ -36,11 +37,12 @@ export const PREVIEW_FEATURE_HEADER = "agora-feature";
  * preview endpoint.
  */
 export const PreviewFeatures = {
-    /** Gemini 3.5 Transcribe ASR. */
+    /** Gemini preview MLLM gate; Gemini ASR uses the production endpoint. */
     GeminiLive: "gemini-live",
+    LiveModels: "live-models",
 } as const;
 
-/** A preview provider family (`"gemini-live"`). */
+/** A preview provider family gate value. */
 export type PreviewFeature = (typeof PreviewFeatures)[keyof typeof PreviewFeatures];
 
 /** Session-scoped clients bound to one resolved route. */
@@ -85,13 +87,53 @@ export function createPreviewRoute(client: AgoraClient, features: readonly Previ
 }
 
 /** ASR vendor served only by the preview endpoint. */
-const PREVIEW_ASR_VENDORS: ReadonlySet<string> = new Set(["gemini"]);
+const PREVIEW_ASR_VENDORS: ReadonlySet<string> = new Set();
 
 /**
  * Returns the preview features a start request needs, derived from the request
  * body rather than from the vendor classes — so hand-written configs are
  * covered too.
  */
+const PREVIEW_MLLM_MODELS: ReadonlySet<string> = new Set([
+    "models/gemini-3.8-live",
+    "models/gemini-3.8-live-extended-thinking",
+]);
+
+/**
+ * Whether a config carries the envelope the preview MLLM vendor classes emit:
+ * a top-level `mllm.api_key`, and a `url` on the Gemini Developer API host.
+ * GeminiLive configurations for older model IDs use a different URL: `""` or
+ * a WebSocket endpoint.
+ *
+ * This is the second recognition path, and it exists because keying only off
+ * {@link PREVIEW_MLLM_MODELS} makes an unrecognised model name fail silently:
+ * {@link applyPreviewShape} would stop retargeting `greeting_message`, the
+ * greeting would land in a field these models ignore, and the agent would
+ * simply never greet. A model name we have not listed yet is reachable by
+ * following this SDK's own advice to override `model` when Google renames one
+ * ahead of a release, so the failure has to not be silent.
+ */
+function hasPreviewMllmEnvelope(mllm: Agora.Mllm): boolean {
+    return (
+        typeof mllm.api_key === "string" && typeof mllm.url === "string" && mllm.url.startsWith(GEMINI_PREVIEW_MLLM_URL)
+    );
+}
+
+/**
+ * Whether an MLLM config targets a preview model — by name, or by the wire
+ * envelope only the preview vendor classes produce.
+ */
+function isPreviewMllm(mllm: Agora.Mllm | null | undefined): boolean {
+    if (!mllm || mllm.vendor !== "gemini") {
+        return false;
+    }
+    const model = mllm.params?.model;
+    if (typeof model === "string" && PREVIEW_MLLM_MODELS.has(model)) {
+        return true;
+    }
+    return hasPreviewMllmEnvelope(mllm);
+}
+
 export function requiredPreviewFeatures(properties: Agora.StartAgentsRequest.Properties): PreviewFeature[] {
     const features = new Set<PreviewFeature>();
 
@@ -99,6 +141,50 @@ export function requiredPreviewFeatures(properties: Agora.StartAgentsRequest.Pro
     if (asrVendor !== undefined && PREVIEW_ASR_VENDORS.has(asrVendor)) {
         features.add(PreviewFeatures.GeminiLive);
     }
+    if (isOpenAIGPTLiveConfig(properties.mllm)) {
+        features.add(PreviewFeatures.LiveModels);
+    }
+
+    if (isPreviewMllm(properties.mllm)) {
+        features.add(PreviewFeatures.GeminiLive);
+    }
 
     return [...features];
+}
+
+const PREVIEW_MLLM_FIELD_RENAMES: ReadonlyMap<string, string> = new Map([["greeting_message", "greeting"]]);
+
+/**
+ * Retargets MLLM fields that the shared builder wrote using production
+ * spellings, so a preview config follows the preview route's structure.
+ *
+ * `Agent` fills `mllm.greeting_message` from an agent-level `greeting` whenever
+ * the vendor has not set that key — correct for every GA vendor, but the
+ * preview Gemini models read `greeting`, so the value would land in a field
+ * they ignore and the agent would silently never greet.
+ *
+ * Rather than teach the shared builder about preview providers, the translation
+ * lives here and disappears with this directory at GA. The vendor's own value
+ * wins; the production-spelled one is the fallback, which also migrates a
+ * hand-written `greeting_message` onto the preview key so an existing config
+ * keeps working after only swapping the model.
+ *
+ * Mutates `properties.mllm` in place. Safe because every SDK hands this a fresh
+ * copy of the MLLM config rather than the Agent's stored one.
+ */
+export function applyPreviewShape(properties: Agora.StartAgentsRequest.Properties): void {
+    const mllm = properties.mllm;
+    if (!mllm || !isPreviewMllm(mllm)) {
+        return;
+    }
+    for (const [production, preview] of PREVIEW_MLLM_FIELD_RENAMES) {
+        const value = mllm[production];
+        if (value === undefined) {
+            continue;
+        }
+        if (mllm[preview] === undefined) {
+            mllm[preview] = value;
+        }
+        delete mllm[production];
+    }
 }

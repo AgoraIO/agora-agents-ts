@@ -382,8 +382,11 @@ When `.withStt()` is omitted, AgentKit now selects the wire ASR vendor from `cli
 | `AresSTT` | `keywords?`, `additionalParams?` |
 | `SarvamSTT` | `apiKey`, `language` |
 | `XAiSTT` | `apiKey`, `language?`, `baseUrl?`, `sampleRate?`, `additionalParams?` |
+| `GeminiSTT` | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp`, `additionalParams` |
 
 For both `AresSTT` and `FengmingSTT`, `keywords` is serialized at the ASR top level as `asr.keywords`. Extra vendor fields supplied through `additionalParams` remain supported and are serialized under `asr.params`.
+
+`GeminiSTT.model` defaults to `gemini-3.5-transcribe-live`, and `sampleRate` defaults to `16000`. `languageHints` serializes as `params.language_hints`; deprecated `languageCodes` is used only when `languageHints` is unset. Omitted arrays are not sent, while explicitly empty arrays are preserved. `customVocabulary` cannot be combined with `wordTimestamp: true`.
 
 `SpeechmaticsSTT` always serializes its credential as `asr.params.key`. The deprecated `apiKey` option remains accepted for backward compatibility and is normalized to `key`; when both are provided, `key` takes precedence.
 
@@ -411,6 +414,48 @@ new OpenAIRealtime(options: OpenAIRealtimeOptions)
 | `params` | `Record<string, unknown>` | No | Additional MLLM parameters |
 | `turnDetection` | `MllmTurnDetectionConfig` | No | MLLM turn detection configuration; overrides top-level `turn_detection` |
 
+### OpenAIGPTLive (preview)
+
+GPT Live v3 uses `mllm.vendor: "openai_gpt_live"`, model `gpt-live-1`, and `wss://api.openai.com/v1/live/sessions`. Sessions route through the preview gateway automatically. This alpha must not carry production traffic.
+
+The SDK omits `params.alpha_selector` by default. Set `alphaSelector` only when a future preview contract requires an `OpenAI-Alpha` selector. Other tuning defaults remain owned by the provider. Explicit options override entries in `params`. Zero and false values are preserved.
+
+| Option | Type | Wire parameter / behavior |
+|---|---|---|
+| `apiKey` | string, required | `mllm.api_key` |
+| `url` | string | `mllm.url`; overrides base/path. Only the legacy `/v1/live` route on OpenAI's host is rewritten to `/v1/live/sessions`. Custom endpoints are preserved. |
+| `model` | `string` | `params.model`. Defaults to gpt-live-1. |
+| `voice` | `string` | `params.voice`. Output voice; provider default marin. Custom voice objects require PR #1522; use params after rollout. |
+| `prompt` | `string` | `params.prompt`. Session instructions. |
+| `baseUrl` | `string` | `params.base_url`. Host when url is omitted; default wss://api.openai.com. |
+| `path` | `string` | `params.path`. WebSocket path; default /v1/live/sessions. |
+| `alphaSelector` | `string` | Optional `params.alpha_selector` for preview contracts; omitted by default. |
+| `headers` | `string` | `params.headers`. Extra provider request headers as a JSON string; protocol headers win. |
+| `outputIdleEndMs` | `number` | `params.output_idle_end_ms`. Assistant silence boundary in ms; provider default 600. Zero disables inference. |
+| `inputIdleEndMs` | `number` | `params.input_idle_end_ms`. Caller silence boundary in ms; provider default 1500. |
+| `outputSilencePeak` | `number` | `params.output_silence_peak`. Speech amplitude threshold on the 16-bit scale; provider default 50. |
+| `outputSampleRate` | `number` | `params.output_sample_rate`. Graph PCM sample rate; provider default 24000. |
+| `outputBufferMs` | `number` | `params.output_buffer_ms`. Initial audio cushion; provider default 0. Negative disables pacing. |
+| `inputBatchMs` | `number` | `params.input_batch_ms`. Mic append batching in ms. Join default 0; extension class default 100. |
+| `toolEnabled` | `boolean` | `params.tool_enabled`. Advertise graph tools; provider default false. Does not control delegate built-ins. |
+| `delegation` | `"client" \| "responses"` | `params.delegation`. Tool delegation mode; provider default responses. Fixed for the session. |
+| `responsesModel` | `string` | `params.responses_model`. Tool delegate model; provider default gpt-5.6-sol. |
+| `interruptOnUserTurn` | `boolean` | `params.interrupt_on_user_turn`. Interrupt playback on caller speech; provider default false. |
+| `sessionParams` | `Record<string, unknown>` | `params.session_params`. Unmodelled v3 session fields. Cannot override model, delegation, audio, instructions or input. |
+| `instructions` | string | Compatibility alias for `prompt`; explicit prompt wins. |
+| `greeting` | string | `mllm.greeting_message`; v3 may reword this request. |
+| `messages` | list | `mllm.messages`; prior conversation seeded by Agora. |
+| `mcpServers` | list | `mllm.mcp_servers`; MCP servers exposed to GPT Live. Requires `Agent.withTools()`. |
+| `failureMessage` | string | `mllm.failure_message` |
+| `inputModalities / outputModalities` | string lists | Agora outer `mllm.input_modalities` / `mllm.output_modalities` |
+| `params` | object | Additional snake_case provider parameters. |
+| `turnDetection` | object | Unsupported in v3; ignored with a warning. |
+| `inputAudioTranscription` | object | Legacy Realtime option; rejected for GPT Live v3. |
+
+Backend PR #1522 is not assumed to be deployed, so custom voice objects, `responses_params`, and first-class `context_management` have no typed options. After rollout, opt in through raw `params`; before rollout, use `params.session_params.context_management` for context management. Leaving context management unset preserves the provider default.
+
+For complete examples and main-body settings, see [GPT Live v3](../guides/openai-gpt-live-v3.md).
+
 ### AzureOpenAIRealtime
 
 <!-- snippet: fragment -->
@@ -436,6 +481,8 @@ Global Azure OpenAI Realtime wrapper. It emits `mllm.vendor = 'azure'`; `maxHist
 
 ### GeminiLive
 
+`GeminiLive` supports existing Gemini Live models and both public Gemini 3.8 voice models. The 3.8 IDs select the preview gateway with `agora-feature: gemini-live`; older model IDs keep the production route. See [Preview Endpoint](../guides/preview-endpoint.md).
+
 <!-- snippet: fragment -->
 ```typescript
 new GeminiLive(options: GeminiLiveOptions)
@@ -444,11 +491,13 @@ new GeminiLive(options: GeminiLiveOptions)
 | Option | Type | Required | Description |
 |---|---|---|---|
 | `apiKey` | `string` | Yes | Google API key |
-| `model` | `string` | Yes | Model name (e.g., `'gemini-live-2.5-flash'`) |
-| `url` | `string` | No | WebSocket URL |
+| `model` | `string` | No | Model name; defaults to `models/gemini-3.8-live` |
+| `thinkingLevel` | `string` | No | `low`, `medium`, or `high`; sent only for 3.8 Extended Thinking |
+| `languageCodes` | `string[]` | No | 3.8 language codes in `mllm.params.language_codes` |
+| `url` | `string` | No | Custom endpoint; 3.8 defaults to the Gemini Developer API host |
 | `instructions` | `string` | No | System instructions for the model |
 | `voice` | `string` | No | Voice name (e.g., `'Aoede'`, `'Charon'`) |
-| `greetingMessage` | `string` | No | Agent greeting message |
+| `greetingMessage` | `string` | No | Agent greeting; sent as `mllm.greeting` for 3.8 models |
 | `failureMessage` | `string` | No | Message played when the model call fails |
 | `inputModalities` | `string[]` | No | Input modalities |
 | `outputModalities` | `string[]` | No | Output modalities |

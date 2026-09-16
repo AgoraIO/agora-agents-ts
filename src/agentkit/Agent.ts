@@ -12,6 +12,7 @@ import { Area } from "../core/domain/index.js";
 import { AgentSession } from "./AgentSession.js";
 import type { AgoraArea } from "./area.js";
 import { AudioScenario } from "./constants.js";
+import { isOpenAIGPTLiveConfig } from "./preview/vendors.js";
 import type {
     AvatarVendor,
     CNMllmVendor,
@@ -43,6 +44,12 @@ import type {
 } from "./types.js";
 
 const DEFAULT_TURN_DETECTION_LANGUAGE: TurnDetectionLanguage = "en-US";
+
+function toGeneratedMllm(config: MllmConfig | undefined): Agora.Mllm | undefined {
+    // The preview vendor predates its generated schema enum. Keep the assertion at
+    // this wire boundary so the public and builder APIs remain accurately typed.
+    return config as Agora.Mllm | undefined;
+}
 
 const INTERACTION_LANGUAGES = new Set<string>([
     "ar-EG",
@@ -441,7 +448,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
     }
 
     /**
-     * Returns a new Agent with MCP tool invocation enabled or disabled.
+     * Returns a new Agent with MCP and inline REST tool invocation enabled or disabled.
      */
     withTools(enabled = true): Agent<TTSSampleRate, TArea> {
         const newAgent = this._clone();
@@ -833,7 +840,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             remote_rtc_uids: opts.remoteUids,
             idle_timeout: opts.idleTimeout,
             enable_string_uid: opts.enableStringUid,
-            mllm: this._mllm,
+            mllm: toGeneratedMllm(this._mllm),
             interruption: this._interruption,
             sal: this._sal,
             avatar: this._avatar,
@@ -846,15 +853,11 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         };
 
         if (isMllmMode) {
-            const mllmConfig = this._mllm ? { ...this._mllm } : undefined;
+            const mllmConfig = toGeneratedMllm(this._mllm ? { ...this._mllm } : undefined);
             if (mllmConfig) {
                 // Vendor config wins: only apply agent-level values when the vendor hasn't already set them.
                 // Consistent with Python (setdefault) and Go (!exists) semantics.
                 //
-                // These are production wire spellings. A route that spells one of them
-                // differently needs a rename entry in `preview/client.ts`, or the value
-                // lands in a field the provider ignores and fails silently. See
-                // docs/guides/preview-endpoint.md#the-vendor-class-is-not-the-whole-wire-shape.
                 const c = mllmConfig as Record<"greeting_message" | "failure_message", unknown>;
                 if (this._greeting !== undefined && c.greeting_message === undefined) {
                     c.greeting_message = this._greeting;
@@ -863,10 +866,17 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
                     c.failure_message = this._failureMessage;
                 }
             }
+            const isOpenAIGPTLive = isOpenAIGPTLiveConfig(mllmConfig);
+            if (isOpenAIGPTLive && this._turnDetection !== undefined) {
+                console.warn("GPT Live v3 ignores agent-level turn_detection; endpointing is internal");
+            }
             return {
                 ...base,
                 mllm: mllmConfig,
-                turn_detection: this._turnDetection as Agora.StartAgentsRequest.Properties.TurnDetection | undefined,
+                ...(!isOpenAIGPTLive &&
+                    this._turnDetection !== undefined && {
+                        turn_detection: this._turnDetection as Agora.StartAgentsRequest.Properties.TurnDetection,
+                    }),
             };
         }
 
@@ -965,10 +975,16 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
                 : ({
                       vendor: this._client.area === Area.CN ? "fengming" : "ares",
                   } as SttConfig & { language?: string });
-        // Unconditional: turn detection is the single source of truth for the
-        // interaction language, so a vendor-level `language` would be silently
-        // discarded here. Do not add one to a vendor class — see
-        // docs/guides/preview-endpoint.md#the-vendor-class-is-not-the-whole-wire-shape.
+        if (asrConfig.vendor === "gemini" && asrConfig.params !== undefined) {
+            const params = { ...asrConfig.params } as Record<string, unknown>;
+            if (params.language_hints === undefined && params.language_codes !== undefined) {
+                params.language_hints = params.language_codes;
+            }
+            delete params.language_codes;
+            (asrConfig as unknown as { params: Record<string, unknown> }).params = params;
+        }
+        // Turn detection is the single source of truth for the top-level
+        // interaction language. Provider-specific languages remain in params.
         asrConfig.language = turnDetectionConfig.language;
 
         return Object.keys(asrConfig).length > 0 ? asrConfig : undefined;

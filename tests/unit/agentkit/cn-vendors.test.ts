@@ -53,6 +53,9 @@ describe("CN vendor helpers", () => {
                 params: { custom: true },
             },
         );
+        expect(() => new FengmingSTT({ additionalParams: { keywords: ["声网"] } })).toThrow(
+            "use the top-level keywords option",
+        );
 
         expect(
             new TencentSTT({
