@@ -203,6 +203,8 @@ export namespace StartAgentsRequest {
                 /**
                  * LiveAvatar (Beta) — formerly HeyGen */
                 Liveavatar: "liveavatar",
+                /**
+                 * Anam Avatar (Beta) */
                 Anam: "anam",
                 /**
                  * Generic avatar (Beta) */
