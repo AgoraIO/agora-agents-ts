@@ -60,20 +60,20 @@ generations:
     cli_version: unknown
     generator_versions:
       fernapi/fern-typescript-node-sdk: 3.31.1
-  - commit_sha: 150f23da295a1cac7d130101729f326f1636c524
-    tree_hash: 96aa52442082fbf748b36156b3f31f74e6811b71
-    timestamp: 2026-09-14T13:10:40.874Z
+  - commit_sha: 710eeb974b31d047bbad554ad2c13d93b7e55d32
+    tree_hash: 613b02bad2b80ccad45ca3cb5a526c9caf202716
+    timestamp: 2026-09-16T08:58:38.376Z
     cli_version: unknown
     generator_versions:
       fernapi/fern-typescript-node-sdk: 3.31.1
-current_generation: 150f23da295a1cac7d130101729f326f1636c524
+current_generation: 710eeb974b31d047bbad554ad2c13d93b7e55d32
 patches:
   - id: patch-fee3d812
     content_hash: sha256:a682f317c80be32b9fa689ae5d3584b7c9b1b2ada52a1560dcf51b0f3f82fbb7
     original_commit: fee3d8126a03bf95cb09c6b33ab2c32911ce8cf2
     original_message: "fix: update Anam avatar configuration to require avatar_id instead of persona_id"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 150f23da295a1cac7d130101729f326f1636c524
+    base_generation: 710eeb974b31d047bbad554ad2c13d93b7e55d32
     files:
       - pnpm-workspace.yaml
     patch_content: |
@@ -100,7 +100,7 @@ patches:
     original_commit: 8078c202c81fd5caf258ed5af174dc15d255ccdc
     original_message: "feat: implement internal fixed base URL support in AgoraClient"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 150f23da295a1cac7d130101729f326f1636c524
+    base_generation: 710eeb974b31d047bbad554ad2c13d93b7e55d32
     files:
       - tests/unit/AgoraPoolClient.test.ts
     patch_content: |
@@ -324,7 +324,7 @@ patches:
     original_commit: bf6e10d79516d17968d12c7aef0da2e40602a51f
     original_message: "refactor: update AgoraClient to use configurable API base URL"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 150f23da295a1cac7d130101729f326f1636c524
+    base_generation: 710eeb974b31d047bbad554ad2c13d93b7e55d32
     files:
       - tests/unit/AgoraPoolClient.test.ts
     patch_content: |
@@ -548,7 +548,7 @@ patches:
     original_commit: d83a891bf5068e57afc8b3bcfb7e1ed8d15e8d6f
     original_message: "fix(vendors): send Speechmatics STT key instead of api_key"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 150f23da295a1cac7d130101729f326f1636c524
+    base_generation: 710eeb974b31d047bbad554ad2c13d93b7e55d32
     files:
       - src/api/resources/agents/client/Client.ts
       - src/api/types/SpeechmaticsAsrParams.ts
@@ -1559,7 +1559,7 @@ patches:
     original_commit: 1c1e48ba9d7d8d45ed083dc87de9fa8cf6dcea65
     original_message: "feat(asr): add GeminiTranscribe STT"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 150f23da295a1cac7d130101729f326f1636c524
+    base_generation: 710eeb974b31d047bbad554ad2c13d93b7e55d32
     files:
       - tests/tsconfig.json
       - tests/unit/AgoraPoolClient.test.ts
@@ -1901,7 +1901,7 @@ patches:
     original_commit: d7de22fa6a20444593c9bc750df26332beed090d
     original_message: "fix: address v2.8.0 release review findings"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 150f23da295a1cac7d130101729f326f1636c524
+    base_generation: 710eeb974b31d047bbad554ad2c13d93b7e55d32
     files:
       - src/api/resources/agents/client/requests/StartAgentsRequest.ts
     patch_content: |+
@@ -2755,7 +2755,7 @@ patches:
     original_commit: b142ce7171699b149d70cf7730955b8a3d477639
     original_message: "chore: finalize v2.8.0 release packaging"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 150f23da295a1cac7d130101729f326f1636c524
+    base_generation: 710eeb974b31d047bbad554ad2c13d93b7e55d32
     files:
       - tsconfig.cjs.json
       - tsconfig.esm.json
@@ -2837,13 +2837,197 @@ patches:
             "include": ["src"],
             "exclude": []
         }
-dismissals:
-  - patch_id: patch-49d85678
+  - id: patch-49d85678
+    content_hash: sha256:e9af44e820182df6ca13e5a967b5f3f531727ea9e50081bc26d0aaa0149914a2
     original_commit: 49d8567869e02d0a32eefe43222ca9d2edbb627f
     original_message: "chore: prepare v2.8.1 release"
-    content_hashes:
-      - sha256:e9af44e820182df6ca13e5a967b5f3f531727ea9e50081bc26d0aaa0149914a2
-    dismissed_at: 2026-09-14T11:13:48.324Z
-    via: resolve
-forgotten_hashes:
-  - sha256:e9af44e820182df6ca13e5a967b5f3f531727ea9e50081bc26d0aaa0149914a2
+    original_author: digitallysavvy <hermes.frangoudis@gmail.com>
+    base_generation: 968052cfeb43496ef6a8aa0bb6469e0ff8968521
+    files:
+      - src/BaseClient.ts
+      - src/version.ts
+    patch_content: |
+      diff --git a/src/BaseClient.ts b/src/BaseClient.ts
+      index 90c0381..5972ce1 100644
+      --- a/src/BaseClient.ts
+      +++ b/src/BaseClient.ts
+      @@ -44,8 +44,8 @@ export function normalizeClientOptions<T extends BaseClientOptions>(options: T):
+               {
+                   "X-Fern-Language": "JavaScript",
+                   "X-Fern-SDK-Name": "agora-agents",
+      -            "X-Fern-SDK-Version": "v2.8.0",
+      -            "User-Agent": "agora-agents/v2.8.0",
+      +            "X-Fern-SDK-Version": "v2.8.1",
+      +            "User-Agent": "agora-agents/v2.8.1",
+                   "X-Fern-Runtime": core.RUNTIME.type,
+                   "X-Fern-Runtime-Version": core.RUNTIME.version,
+               },
+      diff --git a/src/version.ts b/src/version.ts
+      index 4b36d5a..77ad5e2 100644
+      --- a/src/version.ts
+      +++ b/src/version.ts
+      @@ -1 +1 @@
+      -export const SDK_VERSION = "v2.8.0";
+      +export const SDK_VERSION = "v2.8.1";
+    theirs_snapshot:
+      src/BaseClient.ts: |
+        // This file was auto-generated by Fern from our API Definition.
+
+        import { mergeHeaders } from "./core/headers.js";
+        import * as core from "./core/index.js";
+        import type * as environments from "./environments.js";
+
+        export interface BaseClientOptions {
+            environment?: core.Supplier<environments.AgoraEnvironment | string>;
+            /** Specify a custom URL to connect the client to. */
+            baseUrl?: core.Supplier<string>;
+            username: core.Supplier<string>;
+            password: core.Supplier<string>;
+            /** Override the Authorization header */
+            authorization: core.Supplier<string>;
+            /** Additional headers to include in requests. */
+            headers?: Record<string, string | core.Supplier<string | null | undefined> | null | undefined>;
+            /** The default maximum time to wait for a response in seconds. */
+            timeoutInSeconds?: number;
+            /** The default number of times to retry the request. Defaults to 2. */
+            maxRetries?: number;
+            /** Provide a custom fetch implementation. Useful for platforms that don't have a built-in fetch or need a custom implementation. */
+            fetch?: typeof fetch;
+            /** Configure logging for the client. */
+            logging?: core.logging.LogConfig | core.logging.Logger;
+        }
+
+        export interface BaseRequestOptions {
+            /** The maximum time to wait for a response in seconds. */
+            timeoutInSeconds?: number;
+            /** The number of times to retry the request. Defaults to 2. */
+            maxRetries?: number;
+            /** A hook to abort the request. */
+            abortSignal?: AbortSignal;
+            /** Override the Authorization header */
+            authorization?: string;
+            /** Additional query string parameters to include in the request. */
+            queryParams?: Record<string, unknown>;
+            /** Additional headers to include in the request. */
+            headers?: Record<string, string | core.Supplier<string | null | undefined> | null | undefined>;
+        }
+
+        export function normalizeClientOptions<T extends BaseClientOptions>(options: T): T {
+            const headers = mergeHeaders(
+                {
+                    "X-Fern-Language": "JavaScript",
+                    "X-Fern-SDK-Name": "agora-agents",
+                    "X-Fern-SDK-Version": "v2.8.1",
+                    "User-Agent": "agora-agents/v2.8.1",
+                    "X-Fern-Runtime": core.RUNTIME.type,
+                    "X-Fern-Runtime-Version": core.RUNTIME.version,
+                },
+                options?.headers,
+            );
+
+            return {
+                ...options,
+                logging: core.logging.createLogger(options?.logging),
+                headers,
+            } as T;
+        }
+      src/version.ts: |
+        export const SDK_VERSION = "v2.8.1";
+    status: unresolved
+  - id: patch-ef28f9d0
+    content_hash: sha256:3496d94bb82b0ca0d69c32fa67dda76b476ffc8f653fa589c821a927321bd4f4
+    original_commit: ef28f9d069c515f9459a4e5ae53e75935300bc5b
+    original_message: "chore: prepare v2.9.0 release"
+    original_author: Hermes (agora) <hermes.frangoudis@agora.io>
+    base_generation: 968052cfeb43496ef6a8aa0bb6469e0ff8968521
+    files:
+      - src/BaseClient.ts
+      - src/version.ts
+    patch_content: |
+      diff --git a/src/BaseClient.ts b/src/BaseClient.ts
+      index 5972ce1..c10bfbb 100644
+      --- a/src/BaseClient.ts
+      +++ b/src/BaseClient.ts
+      @@ -44,8 +44,8 @@ export function normalizeClientOptions<T extends BaseClientOptions>(options: T):
+               {
+                   "X-Fern-Language": "JavaScript",
+                   "X-Fern-SDK-Name": "agora-agents",
+      -            "X-Fern-SDK-Version": "v2.8.1",
+      -            "User-Agent": "agora-agents/v2.8.1",
+      +            "X-Fern-SDK-Version": "v2.9.0",
+      +            "User-Agent": "agora-agents/v2.9.0",
+                   "X-Fern-Runtime": core.RUNTIME.type,
+                   "X-Fern-Runtime-Version": core.RUNTIME.version,
+               },
+      diff --git a/src/version.ts b/src/version.ts
+      index 77ad5e2..cd3e54f 100644
+      --- a/src/version.ts
+      +++ b/src/version.ts
+      @@ -1 +1 @@
+      -export const SDK_VERSION = "v2.8.1";
+      +export const SDK_VERSION = "v2.9.0";
+    theirs_snapshot:
+      src/BaseClient.ts: |
+        // This file was auto-generated by Fern from our API Definition.
+
+        import { mergeHeaders } from "./core/headers.js";
+        import * as core from "./core/index.js";
+        import type * as environments from "./environments.js";
+
+        export interface BaseClientOptions {
+            environment?: core.Supplier<environments.AgoraEnvironment | string>;
+            /** Specify a custom URL to connect the client to. */
+            baseUrl?: core.Supplier<string>;
+            username: core.Supplier<string>;
+            password: core.Supplier<string>;
+            /** Override the Authorization header */
+            authorization: core.Supplier<string>;
+            /** Additional headers to include in requests. */
+            headers?: Record<string, string | core.Supplier<string | null | undefined> | null | undefined>;
+            /** The default maximum time to wait for a response in seconds. */
+            timeoutInSeconds?: number;
+            /** The default number of times to retry the request. Defaults to 2. */
+            maxRetries?: number;
+            /** Provide a custom fetch implementation. Useful for platforms that don't have a built-in fetch or need a custom implementation. */
+            fetch?: typeof fetch;
+            /** Configure logging for the client. */
+            logging?: core.logging.LogConfig | core.logging.Logger;
+        }
+
+        export interface BaseRequestOptions {
+            /** The maximum time to wait for a response in seconds. */
+            timeoutInSeconds?: number;
+            /** The number of times to retry the request. Defaults to 2. */
+            maxRetries?: number;
+            /** A hook to abort the request. */
+            abortSignal?: AbortSignal;
+            /** Override the Authorization header */
+            authorization?: string;
+            /** Additional query string parameters to include in the request. */
+            queryParams?: Record<string, unknown>;
+            /** Additional headers to include in the request. */
+            headers?: Record<string, string | core.Supplier<string | null | undefined> | null | undefined>;
+        }
+
+        export function normalizeClientOptions<T extends BaseClientOptions>(options: T): T {
+            const headers = mergeHeaders(
+                {
+                    "X-Fern-Language": "JavaScript",
+                    "X-Fern-SDK-Name": "agora-agents",
+                    "X-Fern-SDK-Version": "v2.9.0",
+                    "User-Agent": "agora-agents/v2.9.0",
+                    "X-Fern-Runtime": core.RUNTIME.type,
+                    "X-Fern-Runtime-Version": core.RUNTIME.version,
+                },
+                options?.headers,
+            );
+
+            return {
+                ...options,
+                logging: core.logging.createLogger(options?.logging),
+                headers,
+            } as T;
+        }
+      src/version.ts: |
+        export const SDK_VERSION = "v2.9.0";
+    status: unresolved
