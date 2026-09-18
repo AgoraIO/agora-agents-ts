@@ -313,6 +313,32 @@ const tts = new RimeTTS({
 
 For BYOK, omit `credentialMode` or set it to `CredentialMode.Byok`, and provide `key`, `speaker`, and `modelId`.
 
+### SmallestAITTS
+
+`SmallestAITTS` is a global TTS vendor and emits `tts.vendor = 'smallestai'`.
+
+<!-- snippet: fragment -->
+```typescript
+new SmallestAITTS(options: SmallestAITTSOptions)
+```
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Smallest AI API key |
+| `url` | `string` | No | Smallest AI streaming TTS HTTP endpoint |
+| `model` | `string` | No | TTS model name |
+| `voiceId` | `string` | No | Voice identifier |
+| `sampleRate` | `number` | No | Output audio sample rate in Hz |
+| `speed` | `number` | No | Speech rate multiplier |
+| `language` | `string` | No | Speech synthesis language |
+| `numberPronunciationLanguage` | `string` | No | Language used to pronounce numbers |
+| `mathNotation` | `boolean` | No | Verbalize mathematical notation |
+| `pronunciationDicts` | `string[]` | No | Pronunciation dictionaries |
+| `sessionId` | `string` | No | Client-provided session identifier |
+| `requestId` | `string` | No | Client-provided request identifier |
+| `additionalParams` | `Partial<SmallestAiTtsParams>` | No | Additional provider parameters; explicit options take precedence |
+| `skipPatterns` | `number[]` | No | Skip patterns for bracketed content |
+
 ### Other TTS vendors
 
 The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts` for the full constructor options:
@@ -390,9 +416,54 @@ For both `AresSTT` and `FengmingSTT`, `keywords` is serialized at the ASR top le
 
 `SpeechmaticsSTT` always serializes its credential as `asr.params.key`. The deprecated `apiKey` option remains accepted for backward compatibility and is normalized to `key`; when both are provided, `key` takes precedence.
 
+### SmallestAISTT
+
+`SmallestAISTT` is a global STT vendor and emits `asr.vendor = 'smallestai'`. Its provider language stays under `asr.params.language`; AgentKit continues to source the top-level interaction language from `turnDetection.language`.
+
+<!-- snippet: fragment -->
+```typescript
+new SmallestAISTT(options: SmallestAISTTOptions)
+```
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Smallest AI API key |
+| `language` | `string` | No | Provider speech-recognition language |
+| `url` | `string` | No | Smallest AI streaming STT WebSocket endpoint |
+| `sampleRate` | `number` | No | Input audio sample rate in Hz |
+| `encoding` | `string` | No | Input audio encoding |
+| `wordTimestamps` | `boolean` | No | Include word-level timestamps |
+| `sentenceTimestamps` | `boolean` | No | Include sentence-level timestamps |
+| `diarize` | `boolean` | No | Enable speaker diarization |
+| `vadEvents` | `boolean` | No | Return voice activity events |
+| `endpointing` | `boolean` | No | Enable endpoint detection |
+| `eouTimeoutMs` | `number` | No | End-of-utterance timeout in milliseconds |
+| `format` | `boolean` | No | Format the transcript |
+| `finalizeOnWords` | `boolean` | No | Finalize results based on recognized words |
+| `maxWords` | `string` | No | Maximum words per result |
+| `punctuate` | `boolean` | No | Add punctuation |
+| `capitalize` | `boolean` | No | Capitalize transcript text |
+| `itnNormalize` | `boolean` | No | Enable inverse text normalization |
+| `fullTranscript` | `boolean` | No | Return the full transcript |
+| `keywords` | `string` | No | Comma-separated `keyword:weight` boosts |
+| `redactPii` | `boolean` | No | Redact personally identifiable information |
+| `redactPci` | `boolean` | No | Redact payment-card information |
+| `additionalParams` | `Partial<SmallestAiAsrParams>` | No | Additional provider parameters; explicit options take precedence |
+
+AgentKit exposes the switches as booleans even though the generated REST schema currently models their wire values as strings. `toConfig()` converts `true` and `false` to `"true"` and `"false"`. Other generated parameter types are preserved; `eouTimeoutMs` is numeric because the latest API schema defines it as a number.
+
 ---
 
 ## MLLM vendors
+
+All global and CN MLLM helpers share these tool options. This includes `OpenAIRealtime`, `AzureOpenAIRealtime`, `GeminiLive`, `VertexAI`, `XaiGrok`, `OpenAIGPTLive`, and CN `QwenOmni`.
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `tools` | `LlmTool[]` | No | Inline synchronous REST tools emitted as top-level `mllm.tools` |
+| `mcpServers` | `McpServer[]` | No | MCP servers emitted as top-level `mllm.mcp_servers`; omitted transport defaults to `streamable_http` |
+
+Call `agent.withTools()` when either option is configured. `tools` and `mcpServers` are not placed inside the provider-specific `params` object.
 
 ### OpenAIRealtime
 
@@ -414,9 +485,9 @@ new OpenAIRealtime(options: OpenAIRealtimeOptions)
 | `params` | `Record<string, unknown>` | No | Additional MLLM parameters |
 | `turnDetection` | `MllmTurnDetectionConfig` | No | MLLM turn detection configuration; overrides top-level `turn_detection` |
 
-### OpenAIGPTLive (preview)
+### OpenAIGPTLive
 
-GPT Live v3 uses `mllm.vendor: "openai_gpt_live"`, model `gpt-live-1`, and `wss://api.openai.com/v1/live/sessions`. Sessions route through the preview gateway automatically. This alpha must not carry production traffic.
+GPT Live v3 uses `mllm.vendor: "openai_gpt_live"`, model `gpt-live-1`, and `wss://api.openai.com/v1/live/sessions`. Sessions use the configured regional production endpoint. Existing preview-era integrations are migrated automatically without constructor or request-body changes.
 
 The SDK omits `params.alpha_selector` by default. Set `alphaSelector` only when a future preview contract requires an `OpenAI-Alpha` selector. Other tuning defaults remain owned by the provider. Explicit options override entries in `params`. Zero and false values are preserved.
 
@@ -446,6 +517,7 @@ The SDK omits `params.alpha_selector` by default. Set `alphaSelector` only when 
 | `greeting` | string | `mllm.greeting_message`; v3 may reword this request. |
 | `messages` | list | `mllm.messages`; prior conversation seeded by Agora. |
 | `mcpServers` | list | `mllm.mcp_servers`; MCP servers exposed to GPT Live. Requires `Agent.withTools()`. |
+| `tools` | `LlmTool[]` | `mllm.tools`; inline synchronous REST tools. Requires `Agent.withTools()`. |
 | `failureMessage` | string | `mllm.failure_message` |
 | `inputModalities / outputModalities` | string lists | Agora outer `mllm.input_modalities` / `mllm.output_modalities` |
 | `params` | object | Additional snake_case provider parameters. |
@@ -481,7 +553,7 @@ Global Azure OpenAI Realtime wrapper. It emits `mllm.vendor = 'azure'`; `maxHist
 
 ### GeminiLive
 
-`GeminiLive` supports existing Gemini Live models and both public Gemini 3.8 voice models. The 3.8 IDs select the preview gateway with `agora-feature: gemini-live`; older model IDs keep the production route. See [Preview Endpoint](../guides/preview-endpoint.md).
+`GeminiLive` supports existing Gemini Live models and both public Gemini 3.8 voice models through the configured regional production endpoint. Existing preview-era imports continue to work without adding an `agora-feature` header.
 
 <!-- snippet: fragment -->
 ```typescript
@@ -497,7 +569,7 @@ new GeminiLive(options: GeminiLiveOptions)
 | `url` | `string` | No | Custom endpoint; 3.8 defaults to the Gemini Developer API host |
 | `instructions` | `string` | No | System instructions for the model |
 | `voice` | `string` | No | Voice name (e.g., `'Aoede'`, `'Charon'`) |
-| `greetingMessage` | `string` | No | Agent greeting; sent as `mllm.greeting` for 3.8 models |
+| `greetingMessage` | `string` | No | Agent greeting; sent as `mllm.greeting_message` |
 | `failureMessage` | `string` | No | Message played when the model call fails |
 | `inputModalities` | `string[]` | No | Input modalities |
 | `outputModalities` | `string[]` | No | Output modalities |
@@ -698,11 +770,13 @@ All CN LLM helpers share the OpenAI-compatible shape and require `url` + `model`
 
 | Class | Key options |
 |---|---|
-| `AliyunLLM` | `url`, `model`, `apiKey?`, `systemMessages?`, `greetingMessage?`, `failureMessage?`, `maxHistory?`, `params?`, `headers?` |
+| `AliyunLLM` | `url`, `model`, `apiKey?`, `systemMessages?`, `greetingMessage?`, `failureMessage?`, `maxHistory?`, `params?`, `headers?`, `tools?`, `mcpServers?` |
 | `BytedanceLLM` | `url`, `model`, `apiKey?`, `systemMessages?`, `greetingMessage?`, `failureMessage?`, `maxHistory?`, `params?`, `headers?` |
 | `DeepSeekLLM` | `url`, `model`, `apiKey?`, `systemMessages?`, `greetingMessage?`, `failureMessage?`, `maxHistory?`, `params?`, `headers?` |
 | `TencentLLM` | `url`, `model`, `apiKey?`, `systemMessages?`, `greetingMessage?`, `failureMessage?`, `maxHistory?`, `params?`, `headers?` |
 | `CustomLLM` | `apiKey`, `model`, `url` |
+
+`AliyunLLM` is the Alibaba Cloud helper for the cascading text LLM flow. It emits inline REST tools and MCP servers at top-level `llm.tools` and `llm.mcp_servers`, defaulting an omitted MCP transport to `streamable_http`. For realtime multimodal Alibaba Cloud sessions, use `QwenOmni`, which emits the same features at top-level `mllm.tools` and `mllm.mcp_servers`.
 
 ### CN TTS vendors
 

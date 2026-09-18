@@ -1,23 +1,24 @@
 ---
 sidebar_position: 10
 title: Preview Endpoint
-description: How AgentSession routes GPT Live and Gemini 3.8 MLLMs through the preview gateway.
+description: Legacy preview routing exports and production migration compatibility.
 ---
 
 # Preview Endpoint
 
-OpenAI GPT Live and the Gemini 3.8 MLLMs are served by the preview Conversational AI
-gateway. `AgentSession` detects them from the resolved request body and routes the full session automatically.
-Gemini STT is available through the GA endpoint in v2.8.
+Gemini 3.8 MLLMs, OpenAI GPT Live, and Gemini STT are served by the production Conversational AI gateway.
+Existing integrations require no routing changes: `AgentSession` sends them through the client's configured
+regional endpoint without a preview feature header.
 
 ```typescript
-import { Agent, OpenAIGPTLive } from "agora-agents";
+import { Agent, GeminiLive, GeminiLiveModels } from "agora-agents";
 
 const session = new Agent({ client })
     .withMllm(
-        new OpenAIGPTLive({
-            apiKey: process.env.OPENAI_API_KEY!,
-            prompt: "Be concise",
+        new GeminiLive({
+            apiKey: process.env.GOOGLE_API_KEY!,
+            model: GeminiLiveModels.Live38ExtendedThinking,
+            thinkingLevel: "medium",
         }),
     )
     .createSession({ channel: "demo", agentUid: "1", remoteUids: ["100"] });
@@ -25,27 +26,17 @@ const session = new Agent({ client })
 const agentId = await session.start();
 ```
 
-GPT Live sessions use:
-
-- Base URL: `https://partner.ai.agora.io/preview/api/conversational-ai-agent`
-- Header: `agora-feature: live-models`
-
-Use the single `GeminiLive({ apiKey, model })` class for either Gemini
-voice model. Select `models/gemini-3.8-live` or
-`models/gemini-3.8-live-extended-thinking`; the low-latency ID is the default.
-Set `thinkingLevel: "medium"` for extended thinking. `GeminiLive` sends it
-only for the extended-thinking ID. Gemini sessions send the
-Google credential once as `mllm.api_key`, never as `mllm.params.api_key`.
-They use `agora-feature: gemini-live`; GPT Live keeps its `live-models` gate.
-
-The route is session-scoped. Every lifecycle request from the session uses the same preview route, while ordinary
-client calls and Gemini STT sessions continue to use the configured GA regional endpoint. Caller headers cannot
-remove the preview feature gate.
+The low-latency `models/gemini-3.8-live` model is the default. `thinkingLevel` is sent only for
+`models/gemini-3.8-live-extended-thinking`. Gemini sessions keep the Google credential at top-level
+`mllm.api_key`, never at `mllm.params.api_key`, and use the production `mllm.greeting_message` field.
 
 ## Compatibility
 
-The historical `agentkit/preview` imports for `GeminiSTT` and `GeminiSTTModels` remain available as aliases to the
-GA implementation. New code may import them from the package root. These aliases do not enable preview routing.
+Historical `agentkit/preview` imports for Gemini model constants and types, `GeminiSTT`, `GeminiSTTModels`, and
+`OpenAIGPTLive` remain available as aliases to production implementations. The old
+`GEMINI_PREVIEW_MLLM_URL` constant remains as an alias to `GEMINI_MLLM_URL`. These exports do not enable preview
+routing. A hand-written Gemini 3.8 config using the old `mllm.greeting` field is normalized to
+`mllm.greeting_message` before the production request is sent.
 
 ## Adding a preview provider
 

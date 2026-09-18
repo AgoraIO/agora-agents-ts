@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2.10.0] — 2026-09-16
+
+### Changed
+
+- **OpenAI GPT Live production routing** — Existing `OpenAIGPTLive` integrations now use the configured regional production endpoint without the preview `agora-feature: live-models` gate. The implementation now lives with the production MLLM vendors, while constructor options, request serialization, and legacy preview aliases remain compatible.
+- **Gemini 3.8 Live production routing** — `models/gemini-3.8-live` and `models/gemini-3.8-live-extended-thinking` now use the configured regional production endpoint without the preview `agora-feature: gemini-live` gate. Gemini model constants, types, and serialization now live with the production MLLM vendors; historical preview imports and preview-shaped greetings remain compatible.
+
 ## [v2.9.0] — 2026-09-15
 
 ### Added

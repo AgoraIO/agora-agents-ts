@@ -47,7 +47,7 @@ function _validOpenAIGPTLive(): Agent {
 }
 
 function _openAIRealtimeCannotSelectGPTLive(): OpenAIRealtime {
-    // @ts-expect-error - GPT Live has a separate preview vendor.
+    // @ts-expect-error - GPT Live has a separate vendor helper.
     return new OpenAIRealtime({ apiKey: "test", mode: "live" });
 }
 

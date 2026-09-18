@@ -11,6 +11,7 @@ import type {
     LlmConfig,
     LlmGreetingConfigs,
     LlmTool,
+    McpServer,
     McpServersItem,
     MllmConfig,
     SttConfig,
@@ -56,6 +57,14 @@ export interface BaseLlmOptions {
     /** MCP server configurations enabling the agent to call tools from external services. Requires `withTools(true)`. */
     mcpServers?: McpServersItem[];
     /** Inline synchronous REST tools exposed to the LLM for function calling. Requires `withTools(true)`. */
+    tools?: LlmTool[];
+}
+
+/** Tool configuration shared by all MLLM vendor helpers. */
+export interface BaseMllmOptions {
+    /** MCP servers exposed to the MLLM. Requires `Agent.withTools()`. */
+    mcpServers?: McpServer[];
+    /** Inline synchronous REST tools exposed to the MLLM. Requires `Agent.withTools()`. */
     tools?: LlmTool[];
 }
 
@@ -246,9 +255,24 @@ export abstract class BaseCNSTT extends ScopedBaseSTT<"cn"> {
  */
 abstract class ScopedBaseMLLM<TScope extends VendorScope> {
     readonly areaScope: TScope;
+    private readonly _mcpServers?: McpServer[];
+    private readonly _tools?: LlmTool[];
 
-    constructor(areaScope: TScope) {
+    constructor(areaScope: TScope, options?: BaseMllmOptions) {
         this.areaScope = areaScope;
+        this._mcpServers = options?.mcpServers;
+        this._tools = options?.tools;
+    }
+
+    protected get mcpServers(): McpServer[] | undefined {
+        if (!this._mcpServers?.length) return this._mcpServers;
+        return this._mcpServers.map((server) =>
+            server.transport ? server : { ...server, transport: "streamable_http" as const },
+        );
+    }
+
+    protected get tools(): LlmTool[] | undefined {
+        return this._tools;
     }
 
     /**
@@ -259,15 +283,15 @@ abstract class ScopedBaseMLLM<TScope extends VendorScope> {
 
 /** Base class for global MLLM vendors. */
 export abstract class BaseMLLM extends ScopedBaseMLLM<"global"> {
-    constructor() {
-        super("global");
+    constructor(options?: BaseMllmOptions) {
+        super("global", options);
     }
 }
 
 /** Base class for Chinese mainland MLLM vendors. */
 export abstract class BaseCNMLLM extends ScopedBaseMLLM<"cn"> {
-    constructor() {
-        super("cn");
+    constructor(options?: BaseMllmOptions) {
+        super("cn", options);
     }
 }
 

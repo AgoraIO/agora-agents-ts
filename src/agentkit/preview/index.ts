@@ -5,8 +5,10 @@
  * the production vendor modules independently.
  */
 
-// The preview namespace keeps its historical names, but Gemini ASR now uses
-// the production implementation and options behind those names.
+export type { OpenAIGPTLiveOptions } from "../vendors/mllm.js";
+export { OpenAIGPTLive } from "../vendors/mllm.js";
+// The preview namespace keeps its historical names. Gemini ASR and GPT Live
+// now use production implementations without requiring caller changes.
 export type { GeminiSTTModel, GeminiSTTOptions } from "../vendors/stt.js";
 export { GeminiSTT, GeminiSTTModels, GeminiTranscriptionMode } from "../vendors/stt.js";
 export type { PreviewFeature, PreviewRoute } from "./client.js";
@@ -21,14 +23,14 @@ export {
 } from "./client.js";
 export type {
     GeminiLiveModel,
+    GeminiLiveVoice,
     GeminiPreviewVoice,
     GeminiThinkingLevel,
-    OpenAIGPTLiveOptions,
 } from "./vendors.js";
 export {
     GEMINI_MLLM_DEFAULT_MODEL,
+    GEMINI_MLLM_URL,
     GEMINI_PREVIEW_MLLM_URL,
     GeminiLiveModels,
     GeminiThinkingLevels,
-    OpenAIGPTLive,
 } from "./vendors.js";
