@@ -164,7 +164,7 @@ export namespace StartAgentsRequest {
             enable_rtm?: boolean;
             /** Enable Selective Attention Locking (SAL). When enabled, configure the `sal` field to set up speaker recognition or locking modes. */
             enable_sal?: boolean;
-            /** Enable invocation for MCP servers and inline REST tools. */
+            /** Enable tool invocation. When enabled, the agent can invoke tools provided by the MCP server to implement advanced functionality. */
             enable_tools?: boolean;
         }
 
@@ -728,6 +728,8 @@ export namespace StartAgentsRequest {
          * Agent configuration parameters.
          */
         export interface Parameters {
+            /** Settings for the agent's speak behavior. */
+            speak?: Parameters.Speak;
             /** Settings related to agent silence behavior. Does not apply when you integrate a `mllm`. */
             silence_config?: Parameters.SilenceConfig;
             /** Graceful hang-up settings for the agent. */
@@ -758,6 +760,18 @@ export namespace StartAgentsRequest {
         }
 
         export namespace Parameters {
+            /**
+             * Settings for the agent's speak behavior.
+             */
+            export interface Speak {
+                /**
+                 * Whether to skip sentence segmentation for speak requests:
+                 * - `false`: Skip sentence segmentation.
+                 * - Omitted or `true`: Preserve sentence segmentation.
+                 */
+                batch?: boolean | null;
+            }
+
             /**
              * Settings related to agent silence behavior. Does not apply when you integrate a `mllm`.
              */
