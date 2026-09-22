@@ -8,6 +8,7 @@ import {
     DeepgramSTT,
     GoogleSTT,
     OpenAISTT,
+    RTZRSTT,
     SmallestAISTT,
     SpeechmaticsSTT,
 } from "../../../src/agentkit/vendors/stt.js";
@@ -199,9 +200,11 @@ describe("STT language serialization", () => {
         );
 
         expect(new DeepgramSTT({ apiKey: "dg-key", language: "en" }).toConfig().params).toMatchObject({
-            key: "dg-key",
+            api_key: "dg-key",
             language: "en",
         });
+
+        expect(() => new RTZRSTT({ clientId: "", clientSecret: "secret" })).toThrow("RTZRSTT requires clientId");
 
         expect(
             new OpenAISTT({

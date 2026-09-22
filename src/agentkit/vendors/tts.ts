@@ -918,21 +918,29 @@ export class MiniMaxTTS extends BaseTTS {
 /**
  * Constructor options for Sarvam TTS (Beta).
  */
-export interface SarvamTTSOptions {
+export interface SarvamTTSOptions<SR extends number = number> {
     /** Sarvam API subscription key */
     key: string;
     /** Speaker/voice ID (e.g., 'anushka', 'abhilash', 'karun', 'hitesh', 'manisha', 'vidya', 'arya') */
     speaker: string;
     /** Target language code (e.g., 'en-IN', 'hi-IN', 'ta-IN') */
     targetLanguageCode: import("../types.js").SarvamTtsParams["target_language_code"];
-    /** Pitch adjustment for the voice */
+    /** Pitch control for the `bulbul:v2` model. */
     pitch?: number;
-    /** Speed of speech */
+    /** Speech speed. Defaults server-side to `1.0`. */
     pace?: number;
-    /** Volume level of the speech */
+    /** Audio loudness control for the `bulbul:v2` model. */
     loudness?: number;
-    /** Audio sample rate in Hz */
-    sampleRate?: number;
+    /** Output speech sample rate in Hz. Defaults server-side to 24000. */
+    speechSampleRate?: SR;
+    /** @deprecated Use `speechSampleRate` instead. */
+    sampleRate?: SR;
+    /** Whether to normalize English words and numeric entities. */
+    enablePreprocessing?: boolean;
+    /** TTS model to use. Defaults server-side to `bulbul:v3`. */
+    model?: string;
+    /** Additional Sarvam parameters. Explicit options take precedence. */
+    additionalParams?: Partial<import("../types.js").SarvamTtsParams>;
     /** Skip patterns for bracketed content */
     skipPatterns?: number[];
 }
@@ -949,27 +957,44 @@ export interface SarvamTTSOptions {
  * });
  * ```
  */
-export class SarvamTTS extends BaseTTS {
-    private readonly options: SarvamTTSOptions;
+export class SarvamTTS<SR extends number = number> extends BaseTTS<SR> {
+    private readonly options: SarvamTTSOptions<SR>;
 
-    constructor(options: SarvamTTSOptions) {
+    constructor(options: SarvamTTSOptions<SR>) {
         super();
         this.options = options;
     }
 
     toConfig(): TtsConfig {
-        const { key, speaker, targetLanguageCode, pitch, pace, loudness, sampleRate, skipPatterns } = this.options;
+        const {
+            key,
+            speaker,
+            targetLanguageCode,
+            pitch,
+            pace,
+            loudness,
+            speechSampleRate,
+            sampleRate,
+            enablePreprocessing,
+            model,
+            additionalParams,
+            skipPatterns,
+        } = this.options;
+        const resolvedSampleRate = speechSampleRate ?? sampleRate;
 
         return {
             vendor: "sarvam",
             params: {
+                ...additionalParams,
                 api_subscription_key: key,
                 speaker,
                 target_language_code: targetLanguageCode,
                 ...(pitch !== undefined && { pitch }),
                 ...(pace !== undefined && { pace }),
                 ...(loudness !== undefined && { loudness }),
-                ...(sampleRate !== undefined && { sample_rate: sampleRate }),
+                ...(resolvedSampleRate !== undefined && { speech_sample_rate: resolvedSampleRate }),
+                ...(enablePreprocessing !== undefined && { enable_preprocessing: enablePreprocessing }),
+                ...(model !== undefined && { model }),
             },
             ...(skipPatterns && { skip_patterns: skipPatterns }),
         };

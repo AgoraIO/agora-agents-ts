@@ -133,6 +133,10 @@ Set `parameters.audio_scenario`. Use the exported `AudioScenario` constants for 
 agent.withAudioScenario(AudioScenario.Aiserver)
 ```
 
+### `withSpeakBatch(batch: boolean): Agent<TTSSampleRate, TArea>`
+
+Set `parameters.speak.batch`. Pass `false` to skip sentence segmentation for speak requests; pass `true` to preserve it. The same field can be supplied through `withParameters({ speak: { batch } })`.
+
 ### `withFailureMessage(message: string): Agent<TTSSampleRate, TArea>`
 
 Deprecated. Configure `failureMessage` on the LLM or MLLM vendor instead.

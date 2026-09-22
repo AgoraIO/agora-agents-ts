@@ -209,12 +209,16 @@ describe("TTS vendor helpers", () => {
                 speaker: "anushka",
                 targetLanguageCode: "en-IN",
                 sampleRate: 24000,
+                enablePreprocessing: true,
+                model: "bulbul:v3",
             }).toConfig().params,
         ).toMatchObject({
             api_subscription_key: "sarvam-key",
             speaker: "anushka",
             target_language_code: "en-IN",
-            sample_rate: 24000,
+            speech_sample_rate: 24000,
+            enable_preprocessing: true,
+            model: "bulbul:v3",
         });
 
         expect(

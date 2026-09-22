@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- Added the global `RTZRSTT` AgentKit vendor and typed RTZR ASR aliases.
+- Added `withSpeakBatch()` and `SpeakConfig` for the new `parameters.speak.batch` setting.
+- Added Sarvam TTS preprocessing, model, and speech sample-rate options.
+
+### Changed
+
+- Updated Deepgram STT credentials to serialize as `api_key` and Sarvam TTS sample rate to serialize as `speech_sample_rate`, matching the v2.14 generated API contract.
+
 ## [v2.10.0] — 2026-09-18
 
 ### Added
