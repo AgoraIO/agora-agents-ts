@@ -939,8 +939,8 @@ export interface SarvamTTSOptions<SR extends number = number> {
     enablePreprocessing?: boolean;
     /** TTS model to use. Defaults server-side to `bulbul:v3`. */
     model?: string;
-    /** Additional Sarvam parameters. Explicit options take precedence. */
-    additionalParams?: Partial<import("../types.js").SarvamTtsParams>;
+    /** Additional vendor-specific parameters. Explicit options take precedence. */
+    additionalParams?: Record<string, unknown>;
     /** Skip patterns for bracketed content */
     skipPatterns?: number[];
 }
