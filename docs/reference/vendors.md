@@ -359,6 +359,8 @@ The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts`
 | `SarvamTTS` | `key`, `speaker`, `targetLanguageCode`, `pitch?`, `pace?`, `loudness?`, `speechSampleRate?`, `enablePreprocessing?`, `model?`, `additionalParams?` |
 | `XAiTTS` | `apiKey`, `language`, `voiceId?`, `sampleRate?`, `additionalParams?` |
 
+`SarvamTTS.additionalParams` is flattened into `tts.params`; it is not sent as a nested `additional_params` field. Explicit Sarvam options override conflicting keys from `additionalParams`.
+
 `GenericTTS` is the public AgentKit wrapper for generic TTS integrations. It currently accepts only absolute HTTP(S) URLs and serializes them with the wire vendor `generic_http`. WebSocket URLs are rejected until the generated API exposes a corresponding WebSocket TTS vendor; AgentKit can then route the same public wrapper by URL protocol.
 
 For `MiniMaxTTS`, `key` is optional only for Agora-managed models:

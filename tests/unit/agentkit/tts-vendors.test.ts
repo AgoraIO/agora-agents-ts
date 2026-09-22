@@ -211,6 +211,7 @@ describe("TTS vendor helpers", () => {
                 sampleRate: 24000,
                 enablePreprocessing: true,
                 model: "bulbul:v3",
+                additionalParams: { model: "ignored-model", custom_flag: "custom-value" },
             }).toConfig().params,
         ).toMatchObject({
             api_subscription_key: "sarvam-key",
@@ -219,6 +220,7 @@ describe("TTS vendor helpers", () => {
             speech_sample_rate: 24000,
             enable_preprocessing: true,
             model: "bulbul:v3",
+            custom_flag: "custom-value",
         });
 
         expect(
