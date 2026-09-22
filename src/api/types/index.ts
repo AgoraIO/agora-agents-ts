@@ -73,6 +73,8 @@ export * from "./OpenAiTts.js";
 export * from "./OpenAiTtsParams.js";
 export * from "./RimeTts.js";
 export * from "./RimeTtsParams.js";
+export * from "./RtzrAsr.js";
+export * from "./RtzrAsrParams.js";
 export * from "./SarvamAsr.js";
 export * from "./SarvamAsrParams.js";
 export * from "./SarvamTts.js";
