@@ -7,7 +7,7 @@ export interface DeepgramAsrParams {
     /** WebSocket URL for Deepgram's streaming API */
     url?: string | null;
     /** Deepgram API key */
-    key: string;
+    api_key: string;
     /** Speech recognition model */
     model?: string | null;
     /** Language code for speech recognition */
