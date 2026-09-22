@@ -983,6 +983,14 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             delete params.language_codes;
             (asrConfig as unknown as { params: Record<string, unknown> }).params = params;
         }
+        if (asrConfig.vendor === "deepgram" && asrConfig.params !== undefined) {
+            const params = { ...asrConfig.params } as Record<string, unknown>;
+            if (params.api_key === undefined && params.key !== undefined) {
+                params.api_key = params.key;
+            }
+            delete params.key;
+            (asrConfig as unknown as { params: Record<string, unknown> }).params = params;
+        }
         // Turn detection is the single source of truth for the top-level
         // interaction language. Provider-specific languages remain in params.
         asrConfig.language = turnDetectionConfig.language;

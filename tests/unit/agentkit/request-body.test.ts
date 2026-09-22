@@ -35,6 +35,7 @@ import {
     GoogleSTT,
     MicrosoftSTT,
     OpenAISTT,
+    RTZRSTT,
     SarvamSTT,
     SpeechmaticsSTT,
     XAiSTT,
@@ -54,6 +55,7 @@ import {
     OpenAITTS,
     RimeTTS,
     SarvamTTS,
+    SarvamTTSLanguage,
     TypecastTTS,
     XAiTTS,
 } from "../../../src/agentkit/vendors/tts.js";
@@ -147,7 +149,7 @@ describe("Scenario 1 — BYOK pipeline properties shape", () => {
 
         expect(normalized.asr?.vendor).toBe("deepgram");
         expect(normalized.asr?.params).toMatchObject({
-            key: "dg-key",
+            api_key: "dg-key",
             model: "nova-2",
             language: "en-US",
         });
@@ -185,6 +187,21 @@ describe("Session parameters defaults", () => {
             .toProperties({ ...SESSION_OPTS });
 
         expect(properties.parameters?.audio_scenario).toBe(AudioScenario.Aiserver);
+    });
+
+    test("withParameters serializes speak.batch=false", () => {
+        const silenceConfig = { timeout_ms: 15_000, action: "think" as const };
+        const properties = new Agent({ client: TEST_AGENT_CLIENT })
+            .withStt(STUB_STT)
+            .withLlm(STUB_LLM)
+            .withTts(STUB_TTS)
+            .withParameters({ silence_config: silenceConfig, speak: { batch: false } })
+            .toProperties({ ...SESSION_OPTS });
+
+        expect(properties.parameters).toMatchObject({
+            speak: { batch: false },
+            silence_config: silenceConfig,
+        });
     });
 });
 
@@ -550,8 +567,7 @@ describe("Scenario 5 — OpenAISTT parameter shape", () => {
 // ---------------------------------------------------------------------------
 
 describe("Scenario 6 — Mixed preset + BYOK", () => {
-    test("6a: Deepgram BYOK with nova-2 model + managed LLM + managed TTS — deepgram preset is NOT inferred (BYOK key field present)", async () => {
-        // inferAsrPreset checks `asr.params?.key`; when set, BYOK is detected and no preset is inferred.
+    test("6a: Deepgram BYOK with nova-2 model + managed LLM + managed TTS — deepgram preset is NOT inferred (BYOK api_key field present)", async () => {
         const { client, start } = createClient();
         const agent = new Agent({ client })
             .withStt(new DeepgramSTT({ apiKey: "byok-dg-key", model: "nova-2", language: "en-US" }))
@@ -562,12 +578,12 @@ describe("Scenario 6 — Mixed preset + BYOK", () => {
         await session.start();
 
         const request = start.mock.calls[0]?.[0] as Agora.StartAgentsRequest;
-        // No ASR preset inferred — BYOK key is present
+        // No ASR preset inferred — BYOK api_key is present
         expect(request.preset).toBe("openai_gpt_4o_mini,openai_tts_1");
 
         // All ASR params retained (nothing stripped for BYOK path)
         expect(request.properties.asr?.vendor).toBe("deepgram");
-        expect(request.properties.asr?.params?.key).toBe("byok-dg-key");
+        expect(request.properties.asr?.params?.api_key).toBe("byok-dg-key");
         expect(request.properties.asr?.params?.model).toBe("nova-2");
         expect(request.properties.asr?.params?.language).toBe("en-US");
     });
@@ -768,29 +784,46 @@ describe("ASR vendor coverage", () => {
         expect(p.asr?.params).not.toHaveProperty("language_codes");
     });
 
-    test("DeepgramSTT BYOK serializes key and model in params", () => {
+    test("DeepgramSTT BYOK serializes api_key and model in params", () => {
         const p = new Agent({ client: TEST_AGENT_CLIENT })
             .withStt(new DeepgramSTT({ apiKey: "dg-key", model: "nova-2", language: "en-US" }))
             .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
 
         expect(p.asr?.vendor).toBe("deepgram");
-        expect(p.asr?.params?.key).toBe("dg-key");
+        expect(p.asr?.params?.api_key).toBe("dg-key");
         expect(p.asr?.params?.model).toBe("nova-2");
         expect(p.asr?.params?.language).toBe("en-US");
     });
 
-    test("DeepgramSTT apiKey → wire key; keyterm passes through unchanged", () => {
-        // apiKey is renamed to "key" in the wire; keyterm stays as "keyterm"
+    test("DeepgramSTT apiKey maps to wire api_key; keyterm passes through unchanged", () => {
         const config = new DeepgramSTT({
             apiKey: "dg-key",
             model: "nova-3",
             language: "en",
             keyterm: "term",
         }).toConfig();
-        expect((config.params as Record<string, unknown>)?.key).toBe("dg-key");
+        expect((config.params as Record<string, unknown>)?.api_key).toBe("dg-key");
         expect((config.params as Record<string, unknown>)?.model).toBe("nova-3");
         expect((config.params as Record<string, unknown>)?.language).toBe("en");
         expect((config.params as Record<string, unknown>)?.keyterm).toBe("term");
+    });
+
+    test("normalizes the legacy Deepgram key field before sending", () => {
+        class LegacyDeepgramSTT extends BaseSTT {
+            toConfig(): SttConfig {
+                return {
+                    vendor: "deepgram",
+                    params: { key: "legacy-key", model: "nova-2" },
+                };
+            }
+        }
+
+        const p = new Agent({ client: TEST_AGENT_CLIENT })
+            .withStt(new LegacyDeepgramSTT())
+            .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
+
+        expect(p.asr?.params).toMatchObject({ api_key: "legacy-key", model: "nova-2" });
+        expect(p.asr?.params).not.toHaveProperty("key");
     });
 
     test("MicrosoftSTT serializes key, region, language in params", () => {
@@ -914,6 +947,48 @@ describe("ASR vendor coverage", () => {
 
         expect(p.asr?.vendor).toBe("sarvam");
         expect((p.asr?.params as Record<string, unknown>)?.api_key).toBe("sarvam-key");
+    });
+
+    test("RTZRSTT serializes generated params and keeps provider language nested", () => {
+        const p = new Agent({ client: TEST_AGENT_CLIENT })
+            .withStt(
+                new RTZRSTT({
+                    clientId: "rtzr-client",
+                    clientSecret: "rtzr-secret",
+                    apiBase: "wss://rtzr.example/v1",
+                    modelName: "soma-2",
+                    language: "ko",
+                    sampleRate: 16_000,
+                    encoding: "LINEAR16",
+                    useItn: true,
+                    useDisfluencyFilter: false,
+                    useProfanityFilter: true,
+                    usePunctuation: true,
+                    keywords: ["Agora"],
+                }),
+            )
+            .withLlm(STUB_LLM)
+            .withTts(STUB_TTS)
+            .toProperties({ ...SESSION_OPTS });
+
+        expect(p.asr).toMatchObject({
+            vendor: "rtzr",
+            language: "en-US",
+            params: {
+                client_id: "rtzr-client",
+                client_secret: "rtzr-secret",
+                api_base: "wss://rtzr.example/v1",
+                model_name: "soma-2",
+                language: "ko",
+                sample_rate: 16_000,
+                encoding: "LINEAR16",
+                use_itn: true,
+                use_disfluency_filter: false,
+                use_profanity_filter: true,
+                use_punctuation: true,
+                keywords: ["Agora"],
+            },
+        });
     });
 
     test("ASR defaults to ares outside CN when no STT is set", () => {
@@ -1323,14 +1398,17 @@ describe("TTS vendor coverage", () => {
         });
     });
 
-    test("SarvamTTS serializes api_subscription_key, speaker, target_language_code", () => {
+    test("SarvamTTS serializes the generated v2.14 params", () => {
         const p = new Agent({ client: TEST_AGENT_CLIENT })
             .withLlm(STUB_LLM)
             .withTts(
                 new SarvamTTS({
                     key: "sarvam-tts-key",
                     speaker: "anushka",
-                    targetLanguageCode: "en-IN",
+                    targetLanguageCode: SarvamTTSLanguage.EnIn,
+                    speechSampleRate: 24_000,
+                    enablePreprocessing: true,
+                    model: "bulbul:v3",
                 }),
             )
             .toProperties({ ...SESSION_OPTS });
@@ -1339,6 +1417,10 @@ describe("TTS vendor coverage", () => {
         expect((p.tts?.params as Record<string, unknown>)?.api_subscription_key).toBe("sarvam-tts-key");
         expect((p.tts?.params as Record<string, unknown>)?.speaker).toBe("anushka");
         expect((p.tts?.params as Record<string, unknown>)?.target_language_code).toBe("en-IN");
+        expect((p.tts?.params as Record<string, unknown>)?.speech_sample_rate).toBe(24_000);
+        expect((p.tts?.params as Record<string, unknown>)?.enable_preprocessing).toBe(true);
+        expect((p.tts?.params as Record<string, unknown>)?.model).toBe("bulbul:v3");
+        expect(p.tts?.params).not.toHaveProperty("sample_rate");
     });
 
     test("MurfTTS serializes api_key", () => {
