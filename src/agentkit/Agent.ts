@@ -36,7 +36,6 @@ import type {
     SalConfig,
     SessionOptions,
     SessionParamsInput,
-    SpeakConfig,
     SttConfig,
     TtsConfig,
     TurnDetectionConfig,
@@ -474,16 +473,6 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
     withAudioScenario(audioScenario: ParametersAudioScenario): Agent<TTSSampleRate, TArea> {
         const newAgent = this._clone();
         newAgent._parameters = { ...newAgent._parameters, audio_scenario: audioScenario };
-        return newAgent;
-    }
-
-    /**
-     * Returns a new Agent with speak request sentence segmentation configured.
-     * Set `batch` to `false` to skip sentence segmentation; `true` preserves it.
-     */
-    withSpeakBatch(batch: NonNullable<SpeakConfig["batch"]>): Agent<TTSSampleRate, TArea> {
-        const newAgent = this._clone();
-        newAgent._parameters = { ...newAgent._parameters, speak: { batch } };
         return newAgent;
     }
 

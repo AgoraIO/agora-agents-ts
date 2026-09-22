@@ -75,9 +75,8 @@ Each method returns a new `Agent` instance with the updated configuration. Vendo
 | `withSal` | `withSal(config: SalConfig): Agent<TTSSampleRate, TArea>` | Set SAL configuration |
 | `withAdvancedFeatures` | `withAdvancedFeatures(features: AdvancedFeatures): Agent<TTSSampleRate, TArea>` | Set advanced features |
 | `withTools` | `withTools(enabled?: boolean): Agent<TTSSampleRate, TArea>` | Enable or disable MCP tool invocation |
-| `withParameters` | `withParameters(parameters: SessionParamsInput): Agent<TTSSampleRate, TArea>` | Set session parameters |
+| `withParameters` | `withParameters(parameters: SessionParamsInput): Agent<TTSSampleRate, TArea>` | Set session parameters, including `speak.batch` |
 | `withAudioScenario` | `withAudioScenario(audioScenario: ParametersAudioScenario): Agent<TTSSampleRate, TArea>` | Set `parameters.audio_scenario` |
-| `withSpeakBatch` | `withSpeakBatch(batch: boolean): Agent<TTSSampleRate, TArea>` | Set `parameters.speak.batch`; `false` skips sentence segmentation for speak requests |
 | `withFailureMessage` | `withFailureMessage(message: string): Agent<TTSSampleRate, TArea>` | Deprecated. Use LLM/MLLM vendor `failureMessage` instead. |
 | `withMaxHistory` | `withMaxHistory(maxHistory: number): Agent<TTSSampleRate, TArea>` | Deprecated. Use LLM vendor `maxHistory` instead. |
 | `withGeofence` | `withGeofence(geofence: GeofenceConfig): Agent<TTSSampleRate, TArea>` | Set geofence configuration |

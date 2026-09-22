@@ -188,14 +188,13 @@ describe("Session parameters defaults", () => {
         expect(properties.parameters?.audio_scenario).toBe(AudioScenario.Aiserver);
     });
 
-    test("withSpeakBatch preserves existing parameters and serializes false", () => {
+    test("withParameters serializes speak.batch=false", () => {
         const silenceConfig = { timeout_ms: 15_000, action: "think" as const };
         const properties = new Agent({ client: TEST_AGENT_CLIENT })
             .withStt(STUB_STT)
             .withLlm(STUB_LLM)
             .withTts(STUB_TTS)
-            .withParameters({ silence_config: silenceConfig })
-            .withSpeakBatch(false)
+            .withParameters({ silence_config: silenceConfig, speak: { batch: false } })
             .toProperties({ ...SESSION_OPTS });
 
         expect(properties.parameters).toMatchObject({

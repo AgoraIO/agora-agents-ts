@@ -122,7 +122,12 @@ Enable or disable MCP and inline REST tool invocation by setting `advanced_featu
 
 ### `withParameters(parameters: SessionParamsInput): Agent<TTSSampleRate, TArea>`
 
-Set session parameters (silence config, farewell config, data channel, etc.).
+Set session parameters (silence config, farewell config, data channel, etc.). The generated `speak.batch` setting is configured directly here; pass `false` to skip sentence segmentation for speak requests.
+
+<!-- snippet: fragment -->
+```typescript
+agent.withParameters({ speak: { batch: false } })
+```
 
 ### `withAudioScenario(audioScenario: ParametersAudioScenario): Agent<TTSSampleRate, TArea>`
 
@@ -132,10 +137,6 @@ Set `parameters.audio_scenario`. Use the exported `AudioScenario` constants for 
 ```typescript
 agent.withAudioScenario(AudioScenario.Aiserver)
 ```
-
-### `withSpeakBatch(batch: boolean): Agent<TTSSampleRate, TArea>`
-
-Set `parameters.speak.batch`. Pass `false` to skip sentence segmentation for speak requests; pass `true` to preserve it. The same field can be supplied through `withParameters({ speak: { batch } })`.
 
 ### `withFailureMessage(message: string): Agent<TTSSampleRate, TArea>`
 
