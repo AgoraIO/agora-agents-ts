@@ -18,7 +18,12 @@ import {
     SarvamTTS,
     SmallestAITTS,
 } from "../../../src/agentkit/vendors/tts.js";
-import { CredentialMode, type CredentialMode as CredentialModeType } from "../../../src/index.js";
+import {
+    CredentialMode,
+    type CredentialMode as CredentialModeType,
+    SarvamTTSLanguage,
+    type SarvamTTSLanguage as SarvamTTSLanguageType,
+} from "../../../src/index.js";
 
 describe("TTS vendor helpers", () => {
     test("serializes provider params using the generated core shapes", () => {
@@ -203,11 +208,12 @@ describe("TTS vendor helpers", () => {
             voice_name: "en-US-JennyNeural",
         });
 
+        const sarvamLanguage: SarvamTTSLanguageType = SarvamTTSLanguage.EnIn;
         expect(
             new SarvamTTS({
                 key: "sarvam-key",
                 speaker: "anushka",
-                targetLanguageCode: "en-IN",
+                targetLanguageCode: sarvamLanguage,
                 sampleRate: 24000,
                 enablePreprocessing: true,
                 model: "bulbul:v3",

@@ -375,6 +375,7 @@ export {
     SalModeValues,
     SarvamSTT,
     SarvamTTS,
+    SarvamTTSLanguage,
     SensetimeAvatar,
     SilenceActionValues,
     SmallestAISTT,

@@ -55,6 +55,7 @@ import {
     OpenAITTS,
     RimeTTS,
     SarvamTTS,
+    SarvamTTSLanguage,
     TypecastTTS,
     XAiTTS,
 } from "../../../src/agentkit/vendors/tts.js";
@@ -1404,7 +1405,7 @@ describe("TTS vendor coverage", () => {
                 new SarvamTTS({
                     key: "sarvam-tts-key",
                     speaker: "anushka",
-                    targetLanguageCode: "en-IN",
+                    targetLanguageCode: SarvamTTSLanguage.EnIn,
                     speechSampleRate: 24_000,
                     enablePreprocessing: true,
                     model: "bulbul:v3",

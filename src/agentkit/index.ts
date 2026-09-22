@@ -481,6 +481,7 @@ export {
     OpenAITTS,
     RimeTTS,
     SarvamTTS,
+    SarvamTTSLanguage,
     SmallestAITTS,
     TypecastTTS,
     XAiTTS,

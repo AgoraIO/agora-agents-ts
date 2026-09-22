@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - Added the global `RTZRSTT` AgentKit vendor and typed RTZR ASR aliases.
 - Added `SpeakConfig` and `withParameters()` support for the new `parameters.speak.batch` setting.
-- Added Sarvam TTS preprocessing, model, and speech sample-rate options.
+- Added Sarvam TTS preprocessing, model, speech sample-rate options, and the `SarvamTTSLanguage` enum.
 
 ### Changed
 

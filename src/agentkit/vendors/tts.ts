@@ -2,6 +2,7 @@
  * Type-safe TTS (Text-to-Speech) vendor classes.
  */
 
+import { SarvamTtsParams as SarvamTtsParamsNS } from "../../api/types/SarvamTtsParams.js";
 import { CredentialMode } from "../constants.js";
 import {
     type MiniMaxPresetModel,
@@ -918,13 +919,18 @@ export class MiniMaxTTS extends BaseTTS {
 /**
  * Constructor options for Sarvam TTS (Beta).
  */
+export const SarvamTTSLanguage: typeof SarvamTtsParamsNS.TargetLanguageCode = SarvamTtsParamsNS.TargetLanguageCode;
+
+/** Target language supported by Sarvam TTS. */
+export type SarvamTTSLanguage = (typeof SarvamTTSLanguage)[keyof typeof SarvamTTSLanguage];
+
 export interface SarvamTTSOptions<SR extends number = number> {
     /** Sarvam API subscription key */
     key: string;
     /** Speaker/voice ID (e.g., 'anushka', 'abhilash', 'karun', 'hitesh', 'manisha', 'vidya', 'arya') */
     speaker: string;
-    /** Target language code (e.g., 'en-IN', 'hi-IN', 'ta-IN') */
-    targetLanguageCode: import("../types.js").SarvamTtsParams["target_language_code"];
+    /** Target language code. Use `SarvamTTSLanguage` for discoverable values. */
+    targetLanguageCode: SarvamTTSLanguage;
     /** Pitch control for the `bulbul:v2` model. */
     pitch?: number;
     /** Speech speed. Defaults server-side to `1.0`. */
