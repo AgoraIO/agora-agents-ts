@@ -88,7 +88,10 @@ function _geminiTtsTypes(): void {
     const config = vendor.toConfig();
     const name: "gemini" = config.vendor;
     const key: string = config.params.api_key;
-    const typed: TtsConfig = { vendor: "gemini", params: { api_key: key, model: "gemini-3.8-flash-tts", voice: "Puck" } };
+    const typed: TtsConfig = {
+        vendor: "gemini",
+        params: { api_key: key, model: "gemini-3.8-flash-tts", voice: "Puck" },
+    };
     const agent = new Agent({ client: CLIENT }).withTts(vendor);
     if (agent.tts?.vendor === "gemini") {
         const style: string | undefined = agent.tts.params.style;
