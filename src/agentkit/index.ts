@@ -110,6 +110,8 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
+export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./preview/gemini-tts.js";
+export { GeminiTTS, GeminiTTSModels } from "./preview/gemini-tts.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,

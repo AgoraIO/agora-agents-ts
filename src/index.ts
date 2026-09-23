@@ -406,6 +406,8 @@ export {
     XfyunDialectSTT,
     XfyunSTT,
 } from "./agentkit/index.js";
+export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./agentkit/preview/gemini-tts.js";
+export { GeminiTTS, GeminiTTSModels } from "./agentkit/preview/gemini-tts.js";
 export * as Agora from "./api/index.js";
 export type { BaseClientOptions, BaseRequestOptions } from "./BaseClient.js";
 export { Area } from "./core/domain/index.js";
