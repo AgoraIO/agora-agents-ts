@@ -8,6 +8,29 @@ import * as environments from "../../../../environments.js";
 import * as errors from "../../../../errors/index.js";
 import type * as Agora from "../../../index.js";
 
+function normalizeSpeechmaticsCredential<T extends Omit<Agora.StartAgentsRequest, "appid">>(body: T): T {
+    const asr = body.properties.asr;
+    if (asr?.vendor !== "speechmatics" || asr.params == null) {
+        return body;
+    }
+
+    const params = asr.params as Record<string, unknown>;
+    const wireKey = params.key ?? params.api_key;
+    if (wireKey === undefined) {
+        return body;
+    }
+
+    const normalizedParams: Record<string, unknown> = { ...params, key: wireKey };
+    delete normalizedParams.api_key;
+    return {
+        ...body,
+        properties: {
+            ...body.properties,
+            asr: { ...asr, params: normalizedParams },
+        },
+    } as T;
+}
+
 export declare namespace AgentsClient {
     export interface Options extends BaseClientOptions {}
 
@@ -86,6 +109,7 @@ export class AgentsClient {
         requestOptions?: AgentsClient.RequestOptions,
     ): Promise<core.WithRawResponse<Agora.StartAgentsResponse>> {
         const { appid, ..._body } = request;
+        const _normalizedBody = normalizeSpeechmaticsCredential(_body);
         const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
             this._options?.headers,
             mergeOnlyDefinedHeaders({
@@ -106,7 +130,7 @@ export class AgentsClient {
             contentType: "application/json",
             queryParameters: requestOptions?.queryParams,
             requestType: "json",
-            body: _body,
+            body: _normalizedBody,
             timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
             maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
