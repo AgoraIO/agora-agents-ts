@@ -923,7 +923,8 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             this._stt !== undefined || !allowMissingAsr
                 ? (this._resolveAsrConfig(turnDetectionConfig) as Agora.Asr | undefined)
                 : undefined;
-        const ttsConfig = this._tts;
+        // Preview TTS extends the production schema; narrow only at the generated wire boundary.
+        const ttsConfig = this._tts as Agora.Tts | undefined;
 
         return {
             ...base,
