@@ -66,20 +66,20 @@ generations:
     cli_version: unknown
     generator_versions:
       fernapi/fern-typescript-node-sdk: 3.31.1
-  - commit_sha: 3c18713aada965099b0a427ea73c46f466b4a92d
-    tree_hash: 730bc8d872f56c915b1052256c866c6f3569ed02
-    timestamp: 2026-09-22T07:54:42.775Z
+  - commit_sha: 91c6e16d79bad75eafb197966c94de849ee71928
+    tree_hash: e2c8294bcb1764da98e561038fec41d2e81f20fc
+    timestamp: 2026-09-24T03:09:50.344Z
     cli_version: unknown
     generator_versions:
       fernapi/fern-typescript-node-sdk: 3.31.1
-current_generation: 3c18713aada965099b0a427ea73c46f466b4a92d
+current_generation: 91c6e16d79bad75eafb197966c94de849ee71928
 patches:
   - id: patch-fee3d812
     content_hash: sha256:a682f317c80be32b9fa689ae5d3584b7c9b1b2ada52a1560dcf51b0f3f82fbb7
     original_commit: fee3d8126a03bf95cb09c6b33ab2c32911ce8cf2
     original_message: "fix: update Anam avatar configuration to require avatar_id instead of persona_id"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 3c18713aada965099b0a427ea73c46f466b4a92d
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - pnpm-workspace.yaml
     patch_content: |
@@ -106,7 +106,7 @@ patches:
     original_commit: 8078c202c81fd5caf258ed5af174dc15d255ccdc
     original_message: "feat: implement internal fixed base URL support in AgoraClient"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 3c18713aada965099b0a427ea73c46f466b4a92d
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - tests/unit/AgoraPoolClient.test.ts
     patch_content: |
@@ -330,7 +330,7 @@ patches:
     original_commit: bf6e10d79516d17968d12c7aef0da2e40602a51f
     original_message: "refactor: update AgoraClient to use configurable API base URL"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: 3c18713aada965099b0a427ea73c46f466b4a92d
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - tests/unit/AgoraPoolClient.test.ts
     patch_content: |
@@ -554,7 +554,7 @@ patches:
     original_commit: d83a891bf5068e57afc8b3bcfb7e1ed8d15e8d6f
     original_message: "fix(vendors): send Speechmatics STT key instead of api_key"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 3c18713aada965099b0a427ea73c46f466b4a92d
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - src/api/resources/agents/client/Client.ts
       - src/api/types/SpeechmaticsAsrParams.ts
@@ -1561,11 +1561,11 @@ patches:
             );
     user_owned: true
   - id: patch-1c1e48ba
-    content_hash: sha256:8c31c499e418f0ceaa55a60b761e6ba0f8e18519ed4e53356dc18b6ed2899c9c
+    content_hash: sha256:c00e833f7c11dd686771a4875b2ba8e0a01db83581641bc9dc6542b2984210c3
     original_commit: 1c1e48ba9d7d8d45ed083dc87de9fa8cf6dcea65
     original_message: "feat(asr): add GeminiTranscribe STT"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 3c18713aada965099b0a427ea73c46f466b4a92d
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - tests/tsconfig.json
       - tests/unit/AgoraPoolClient.test.ts
@@ -1730,10 +1730,10 @@ patches:
       +    "exclude": ["src/**/__tests__/**"]
        }
       diff --git a/tsconfig.esm.json b/tsconfig.esm.json
-      index 6ce9097..ddb13dd 100644
+      index 6ce9097..2b99b12 100644
       --- a/tsconfig.esm.json
       +++ b/tsconfig.esm.json
-      @@ -2,9 +2,10 @@
+      @@ -2,9 +2,11 @@
            "extends": "./tsconfig.base.json",
            "compilerOptions": {
                "module": "esnext",
@@ -1745,6 +1745,7 @@ patches:
       -    "exclude": []
       +    "exclude": ["src/**/__tests__/**"]
        }
+      +
     theirs_snapshot:
       tests/tsconfig.json: |
         {
@@ -1889,7 +1890,7 @@ patches:
             "include": ["src"],
             "exclude": ["src/**/__tests__/**"]
         }
-      tsconfig.esm.json: |
+      tsconfig.esm.json: |+
         {
             "extends": "./tsconfig.base.json",
             "compilerOptions": {
@@ -1901,13 +1902,14 @@ patches:
             "include": ["src"],
             "exclude": ["src/**/__tests__/**"]
         }
+
     user_owned: true
   - id: patch-d7de22fa
     content_hash: sha256:1a6c590c0b1515065b544ab6f245e374fde3c04e2d171fb8ca4eae98f365e2aa
     original_commit: d7de22fa6a20444593c9bc750df26332beed090d
     original_message: "fix: address v2.8.0 release review findings"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 3c18713aada965099b0a427ea73c46f466b4a92d
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - src/api/resources/agents/client/requests/StartAgentsRequest.ts
     patch_content: |+
@@ -2774,11 +2776,11 @@ patches:
         }
     user_owned: true
   - id: patch-b142ce71
-    content_hash: sha256:72bfdeca6a113af476520d29832acd53194d0c83d9bd89afa67813f23e72480f
+    content_hash: sha256:97c094b0be931bc29e1ec99a90dd6aed23f2393c11a14a4f5b876a69e11d09b1
     original_commit: b142ce7171699b149d70cf7730955b8a3d477639
     original_message: "chore: finalize v2.8.0 release packaging"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: 3c18713aada965099b0a427ea73c46f466b4a92d
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - tsconfig.cjs.json
       - tsconfig.esm.json
@@ -2800,10 +2802,10 @@ patches:
       +    "exclude": ["src/**/__tests__/**"]
        }
       diff --git a/tsconfig.esm.json b/tsconfig.esm.json
-      index 6ce9097..ddb13dd 100644
+      index 6ce9097..2b99b12 100644
       --- a/tsconfig.esm.json
       +++ b/tsconfig.esm.json
-      @@ -2,9 +2,10 @@
+      @@ -2,9 +2,11 @@
            "extends": "./tsconfig.base.json",
            "compilerOptions": {
                "module": "esnext",
@@ -2815,6 +2817,7 @@ patches:
       -    "exclude": []
       +    "exclude": ["src/**/__tests__/**"]
        }
+      +
       diff --git a/tsconfig.json b/tsconfig.json
       index d77fdf0..7e4e226 100644
       --- a/tsconfig.json
@@ -2839,7 +2842,7 @@ patches:
             "include": ["src"],
             "exclude": ["src/**/__tests__/**"]
         }
-      tsconfig.esm.json: |
+      tsconfig.esm.json: |+
         {
             "extends": "./tsconfig.base.json",
             "compilerOptions": {
@@ -2851,6 +2854,7 @@ patches:
             "include": ["src"],
             "exclude": ["src/**/__tests__/**"]
         }
+
       tsconfig.json: |
         {
             "extends": "./tsconfig.base.json",
@@ -2867,15 +2871,23 @@ dismissals:
     original_message: "chore: prepare v2.8.1 release"
     content_hashes:
       - sha256:e9af44e820182df6ca13e5a967b5f3f531727ea9e50081bc26d0aaa0149914a2
-    dismissed_at: 2026-09-22T09:19:19.108Z
+    dismissed_at: 2026-09-24T03:38:34.994Z
     via: forget
   - patch_id: patch-ef28f9d0
     original_commit: ef28f9d069c515f9459a4e5ae53e75935300bc5b
     original_message: "chore: prepare v2.9.0 release"
     content_hashes:
       - sha256:3496d94bb82b0ca0d69c32fa67dda76b476ffc8f653fa589c821a927321bd4f4
-    dismissed_at: 2026-09-22T09:19:19.128Z
+    dismissed_at: 2026-09-24T03:38:35.015Z
+    via: forget
+  - patch_id: patch-fc57b197
+    original_commit: fc57b1970a947b3a82aa470625c839e577780779
+    original_message: "feat(agentkit): add Gemini TTS preview for v2.11.0"
+    content_hashes:
+      - sha256:090d0188bfd564e49e7a89bbf53568e3dceec6826c8b33ff0ee7cdfa5ee2aa0e
+    dismissed_at: 2026-09-24T03:44:15.407Z
     via: forget
 forgotten_hashes:
   - sha256:e9af44e820182df6ca13e5a967b5f3f531727ea9e50081bc26d0aaa0149914a2
   - sha256:3496d94bb82b0ca0d69c32fa67dda76b476ffc8f653fa589c821a927321bd4f4
+  - sha256:090d0188bfd564e49e7a89bbf53568e3dceec6826c8b33ff0ee7cdfa5ee2aa0e
