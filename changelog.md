@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2.12.0] — 2026-10-07
+
+### Added
+
+- **Tavus and Protoface avatars** — Added AgentKit `Tavus` and `Protoface` aliases of `GenericAvatar`, with `TavusOptions` and `ProtofaceOptions` available from AgentKit and the package root. Both share the generic constructor, validation, session field and token auto-fill behavior, and serialize with `vendor: "generic"`.
+- **Avatar guide examples** — Documented both branded aliases, including the Tavus Agora conversation endpoint.
+
 ## [v2.11.0] — 2026-09-23
 
 ### Added

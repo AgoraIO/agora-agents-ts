@@ -277,6 +277,8 @@ export type {
     GenericAvatarOptions,
     HeyGenAvatarOptions,
     LiveAvatarAvatarOptions,
+    ProtofaceOptions,
+    TavusOptions,
 } from "./vendors/avatar.js";
 // Avatar vendor classes
 export {
@@ -285,6 +287,8 @@ export {
     GenericAvatar,
     HeyGenAvatar,
     LiveAvatarAvatar,
+    Protoface,
+    Tavus,
 } from "./vendors/avatar.js";
 // Sample rate types
 export type {

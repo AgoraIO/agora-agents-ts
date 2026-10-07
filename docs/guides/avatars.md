@@ -15,6 +15,8 @@ Avatars attach a visual representation to the agent's audio output.
 | `AkoolAvatar` | Akool | **16,000 Hz** |
 | `AnamAvatar` | Anam | Consult provider docs |
 | `GenericAvatar` | Custom avatar provider | Consult provider docs |
+| `Tavus` | Tavus via generic avatar | Consult provider docs |
+| `Protoface` | Protoface via generic avatar | Consult provider docs |
 | `SensetimeAvatar` | SenseTime (CN) | Consult provider docs |
 | `SpatiusAvatar` | Spatius (CN) | Consult provider docs |
 
@@ -174,6 +176,34 @@ const agent = new Agent({ client })
     agoraUid: '200',
     // agoraAppId, agoraChannel, and agoraToken are filled from the session.
   }));
+```
+
+## Tavus and Protoface aliases
+
+`Tavus` and `Protoface` are branded aliases of `GenericAvatar`, with
+identical constructors and behavior. `TavusOptions` and
+`ProtofaceOptions` alias `GenericAvatarOptions`. Both serialize with
+`vendor: "generic"` and use the same session field and token auto-fill behavior.
+Supply your provider's API base URL; the aliases do not choose an endpoint or
+sample rate for you.
+
+```typescript
+import { Tavus, Protoface, type GenericAvatarOptions } from 'agora-agents';
+
+const tavusOptions: GenericAvatarOptions = {
+  apiKey: 'your-tavus-key',
+  apiBaseUrl: 'https://tavusapi.com/v2/conversations/agora',
+  avatarId: 'your-tavus-avatar-id',
+  agoraUid: '200',
+};
+const tavus = new Tavus(tavusOptions);
+const protoface = new Protoface({
+  apiKey: 'your-protoface-key',
+  apiBaseUrl: 'https://protoface-provider.example.com',
+  avatarId: 'your-protoface-avatar-id',
+  agoraUid: '200',
+});
+// Pass the avatar for your provider to agent.withAvatar().
 ```
 
 ## Example: Akool avatar with ElevenLabs at 16kHz
