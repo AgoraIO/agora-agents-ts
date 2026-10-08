@@ -72,20 +72,14 @@ generations:
     cli_version: unknown
     generator_versions:
       fernapi/fern-typescript-node-sdk: 3.31.1
-  - commit_sha: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
-    tree_hash: 53baddfe04e2de97421d11e4a4ffc6744c8c0768
-    timestamp: 2026-10-08T06:56:15.706Z
-    cli_version: unknown
-    generator_versions:
-      fernapi/fern-typescript-node-sdk: 3.31.1
-current_generation: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
+current_generation: 91c6e16d79bad75eafb197966c94de849ee71928
 patches:
   - id: patch-fee3d812
     content_hash: sha256:a682f317c80be32b9fa689ae5d3584b7c9b1b2ada52a1560dcf51b0f3f82fbb7
     original_commit: fee3d8126a03bf95cb09c6b33ab2c32911ce8cf2
     original_message: "fix: update Anam avatar configuration to require avatar_id instead of persona_id"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - pnpm-workspace.yaml
     patch_content: |
@@ -112,7 +106,7 @@ patches:
     original_commit: 8078c202c81fd5caf258ed5af174dc15d255ccdc
     original_message: "feat: implement internal fixed base URL support in AgoraClient"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - tests/unit/AgoraPoolClient.test.ts
     patch_content: |
@@ -336,7 +330,7 @@ patches:
     original_commit: bf6e10d79516d17968d12c7aef0da2e40602a51f
     original_message: "refactor: update AgoraClient to use configurable API base URL"
     original_author: seymourtang <tangxianmeng@live.com>
-    base_generation: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - tests/unit/AgoraPoolClient.test.ts
     patch_content: |
@@ -560,7 +554,7 @@ patches:
     original_commit: d83a891bf5068e57afc8b3bcfb7e1ed8d15e8d6f
     original_message: "fix(vendors): send Speechmatics STT key instead of api_key"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - src/api/resources/agents/client/Client.ts
       - src/api/types/SpeechmaticsAsrParams.ts
@@ -1571,7 +1565,7 @@ patches:
     original_commit: 1c1e48ba9d7d8d45ed083dc87de9fa8cf6dcea65
     original_message: "feat(asr): add GeminiTranscribe STT"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - tests/tsconfig.json
       - tests/unit/AgoraPoolClient.test.ts
@@ -1915,7 +1909,7 @@ patches:
     original_commit: d7de22fa6a20444593c9bc750df26332beed090d
     original_message: "fix: address v2.8.0 release review findings"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - src/api/resources/agents/client/requests/StartAgentsRequest.ts
     patch_content: |+
@@ -2786,7 +2780,7 @@ patches:
     original_commit: b142ce7171699b149d70cf7730955b8a3d477639
     original_message: "chore: finalize v2.8.0 release packaging"
     original_author: digitallysavvy <hermes.frangoudis@gmail.com>
-    base_generation: c7dcd5069653b1e3171b24b25fe1baacdf5e578c
+    base_generation: 91c6e16d79bad75eafb197966c94de849ee71928
     files:
       - tsconfig.cjs.json
       - tsconfig.esm.json
