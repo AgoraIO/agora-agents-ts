@@ -17,6 +17,7 @@ Avatars attach a visual representation to the agent's audio output.
 | `GenericAvatar` | Custom avatar provider | Consult provider docs |
 | `Tavus` | Tavus via generic avatar | Consult provider docs |
 | `Protoface` | Protoface via generic avatar | Consult provider docs |
+| `LemonSlice` | LemonSlice via generic avatar | Consult provider docs |
 | `SensetimeAvatar` | SenseTime (CN) | Consult provider docs |
 | `SpatiusAvatar` | Spatius (CN) | Consult provider docs |
 
@@ -178,17 +179,17 @@ const agent = new Agent({ client })
   }));
 ```
 
-## Tavus and Protoface aliases
+## Tavus, Protoface, and LemonSlice aliases
 
-`Tavus` and `Protoface` are branded aliases of `GenericAvatar`, with
-identical constructors and behavior. `TavusOptions` and
-`ProtofaceOptions` alias `GenericAvatarOptions`. Both serialize with
+`Tavus`, `Protoface`, and `LemonSlice` are branded aliases of `GenericAvatar`, with
+identical constructors and behavior. `TavusOptions`, `ProtofaceOptions`, and
+`LemonSliceOptions` alias `GenericAvatarOptions`. All serialize with
 `vendor: "generic"` and use the same session field and token auto-fill behavior.
 Supply your provider's API base URL; the aliases do not choose an endpoint or
 sample rate for you.
 
 ```typescript
-import { Tavus, Protoface, type GenericAvatarOptions } from 'agora-agents';
+import { Tavus, Protoface, LemonSlice, type GenericAvatarOptions } from 'agora-agents';
 
 const tavusOptions: GenericAvatarOptions = {
   apiKey: 'your-tavus-key',
@@ -201,6 +202,12 @@ const protoface = new Protoface({
   apiKey: 'your-protoface-key',
   apiBaseUrl: 'https://protoface-provider.example.com',
   avatarId: 'your-protoface-avatar-id',
+  agoraUid: '200',
+});
+const lemonSlice = new LemonSlice({
+  apiKey: 'your-lemonslice-key',
+  apiBaseUrl: 'https://lemonslice-provider.example.com',
+  avatarId: 'your-lemonslice-avatar-id',
   agoraUid: '200',
 });
 // Pass the avatar for your provider to agent.withAvatar().

@@ -436,8 +436,13 @@ export class GenericAvatar extends BaseAvatar<number> {
 export { GenericAvatar as Tavus };
 /** Protoface branding for GenericAvatar; uses the generic wire vendor. */
 export { GenericAvatar as Protoface };
+/** LemonSlice branding for GenericAvatar; uses the generic wire vendor. */
+export { GenericAvatar as LemonSlice };
 
 /** Constructor options shared with GenericAvatar. */
 export type TavusOptions = GenericAvatarOptions;
 /** Constructor options shared with GenericAvatar. */
 export type ProtofaceOptions = GenericAvatarOptions;
+
+/** Constructor options shared with GenericAvatar. */
+export type LemonSliceOptions = GenericAvatarOptions;

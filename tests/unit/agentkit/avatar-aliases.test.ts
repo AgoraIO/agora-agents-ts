@@ -19,6 +19,7 @@ const client = new SDK.AgoraClient({
 describe.each([
     { name: "Tavus", Avatar: SDK.Tavus, agentKitAlias: AgentKit.Tavus, vendorAlias: Vendors.Tavus },
     { name: "Protoface", Avatar: SDK.Protoface, agentKitAlias: AgentKit.Protoface, vendorAlias: Vendors.Protoface },
+    { name: "LemonSlice", Avatar: SDK.LemonSlice, agentKitAlias: AgentKit.LemonSlice, vendorAlias: Vendors.LemonSlice },
 ])("$name", ({ Avatar, agentKitAlias, vendorAlias }) => {
     it("exports the same constructor from the vendor, AgentKit, and package entrypoints", () => {
         expect(vendorAlias).toBe(Vendors.GenericAvatar);
@@ -83,6 +84,9 @@ describe.each([
 });
 
 it("exports identical option and instance types", () => {
+    expectTypeOf<SDK.LemonSliceOptions>().toEqualTypeOf<SDK.GenericAvatarOptions>();
+    expectTypeOf<AgentKit.LemonSliceOptions>().toEqualTypeOf<Vendors.LemonSliceOptions>();
+    expectTypeOf<SDK.LemonSlice>().toEqualTypeOf<SDK.GenericAvatar>();
     expectTypeOf<SDK.TavusOptions>().toEqualTypeOf<SDK.GenericAvatarOptions>();
     expectTypeOf<SDK.ProtofaceOptions>().toEqualTypeOf<SDK.GenericAvatarOptions>();
     expectTypeOf<AgentKit.TavusOptions>().toEqualTypeOf<Vendors.TavusOptions>();

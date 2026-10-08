@@ -11,6 +11,7 @@ const exportsToVerify = [
     "OpenAI",
     "Tavus",
     "Protoface",
+    "LemonSlice",
     "AgentPresets",
     "generateRtcToken",
 ];
