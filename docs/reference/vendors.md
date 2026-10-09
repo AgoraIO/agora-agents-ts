@@ -356,8 +356,12 @@ The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts`
 | `FishAudioTTS` | `key`, `referenceId`, `backend` |
 | `MiniMaxTTS` | `key?`, `groupId?`, `model`, `voiceId?`, `url?` |
 | `MurfTTS` | `key`, `voiceId?`, `baseUrl?`, `locale?`, `rate?`, `pitch?`, `model?`, `sampleRate?` |
-| `SarvamTTS` | `key`, `speaker`, `targetLanguageCode`, `pitch?`, `pace?`, `loudness?`, `sampleRate?` |
+| `SarvamTTS` | `key`, `speaker`, `targetLanguageCode: SarvamTTSLanguage`, `pitch?`, `pace?`, `loudness?`, `speechSampleRate?`, `enablePreprocessing?`, `model?`, `additionalParams?` |
 | `XAiTTS` | `apiKey`, `language`, `voiceId?`, `sampleRate?`, `additionalParams?` |
+
+`SarvamTTS.additionalParams` is flattened into `tts.params`; it is not sent as a nested `additional_params` field. Explicit Sarvam options override conflicting keys from `additionalParams`.
+
+Use `SarvamTTSLanguage` for discoverable target-language values, for example `SarvamTTSLanguage.EnIn`. Equivalent string literals such as `"en-IN"` remain accepted.
 
 `GenericTTS` is the public AgentKit wrapper for generic TTS integrations. It currently accepts only absolute HTTP(S) URLs and serializes them with the wire vendor `generic_http`. WebSocket URLs are rejected until the generated API exposes a corresponding WebSocket TTS vendor; AgentKit can then route the same public wrapper by URL protocol.
 
@@ -407,6 +411,7 @@ When `.withStt()` is omitted, AgentKit now selects the wire ASR vendor from `cli
 | `AssemblyAISTT` | `apiKey`, `language`, `ws_url?` |
 | `AresSTT` | `keywords?`, `additionalParams?` |
 | `SarvamSTT` | `apiKey`, `language` |
+| `RTZRSTT` | `clientId`, `clientSecret`, `apiBase?`, `modelName?`, `language?`, `sampleRate?`, filtering and punctuation options |
 | `XAiSTT` | `apiKey`, `language?`, `baseUrl?`, `sampleRate?`, `additionalParams?` |
 | `GeminiSTT` | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp`, `additionalParams` |
 
@@ -414,7 +419,7 @@ For both `AresSTT` and `FengmingSTT`, `keywords` is serialized at the ASR top le
 
 `GeminiSTT.model` defaults to `gemini-3.5-transcribe-live`, and `sampleRate` defaults to `16000`. `languageHints` serializes as `params.language_hints`; deprecated `languageCodes` is used only when `languageHints` is unset. Omitted arrays are not sent, while explicitly empty arrays are preserved. `customVocabulary` cannot be combined with `wordTimestamp: true`.
 
-`SpeechmaticsSTT` always serializes its credential as `asr.params.key`. The deprecated `apiKey` option remains accepted for backward compatibility and is normalized to `key`; when both are provided, `key` takes precedence.
+`SpeechmaticsSTT` always serializes its credential as `asr.params.key`. The deprecated `apiKey` option remains accepted for backward compatibility and is normalized to `key`; when both are provided, `key` takes precedence. `DeepgramSTT` keeps the public `apiKey` option and serializes it as the generated `asr.params.api_key` field.
 
 ### SmallestAISTT
 

@@ -91,6 +91,7 @@ The `sampleRate` is critical when using avatars. See [Avatar Integration](../gui
 | `AssemblyAISTT`   | AssemblyAI        | `apiKey`, `language`, `ws_url?`                  |
 | `AresSTT`         | Agora ARES        | `keywords?`, `additionalParams?`                 |
 | `SarvamSTT`       | Sarvam AI         | `apiKey`, `language`                             |
+| `RTZRSTT`         | RTZR              | `clientId`, `clientSecret`; optional model, language, audio, filtering, punctuation, and keyword options |
 | `XAiSTT`          | xAI               | `apiKey`, `language?`, `baseUrl?`, `sampleRate?` |
 | `GeminiSTT`       | Google Gemini     | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp` |
 | `SmallestAISTT`   | Smallest AI (global) | `apiKey`; optional `language`, `url`, `sampleRate`, timestamps, endpointing, formatting, and redaction options |
