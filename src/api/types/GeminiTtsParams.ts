@@ -11,7 +11,7 @@ export interface GeminiTtsParams {
     /** Gemini voice name. */
     voice: string;
     /** Style instruction for the generated speech. */
-    style: string;
+    style?: string;
     /** Accepts any additional properties */
     [key: string]: any;
 }
