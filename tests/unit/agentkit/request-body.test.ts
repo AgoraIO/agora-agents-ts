@@ -3,7 +3,7 @@ import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
 import { AudioScenario } from "../../../src/agentkit/constants.js";
 import type { SttConfig } from "../../../src/agentkit/types.js";
-import { AnamAvatar } from "../../../src/agentkit/vendors/avatar.js";
+import { AnamAvatar, LemonSlice, Protoface, Tavus } from "../../../src/agentkit/vendors/avatar.js";
 import { BaseSTT } from "../../../src/agentkit/vendors/base.js";
 import { SpatiusAvatar } from "../../../src/agentkit/vendors/cn.js";
 import {
@@ -329,6 +329,42 @@ describe("New OpenAPI high-level adapters", () => {
         });
         expect((request.properties.avatar?.params as Record<string, unknown>)?.agora_token).toEqual(expect.any(String));
     });
+
+    test.each([Tavus, Protoface, LemonSlice])(
+        "branded generic providers fill session fields and tokens: %s",
+        async (Avatar) => {
+            const { client, start } = createClient();
+            const typedClient = Object.assign(client, {
+                appId: "a".repeat(32),
+                appCertificate: "b".repeat(32),
+            }) as AgoraClient;
+            const avatar = new Avatar({
+                apiKey: "key",
+                avatarId: "id",
+                agoraUid: "200",
+                additionalParams: { agent_id: "agent" },
+            });
+            await new Agent({ client: typedClient })
+                .withStt(STUB_STT)
+                .withLlm(STUB_LLM)
+                .withTts(STUB_TTS)
+                .withAvatar(avatar)
+                .createSession({ ...SESSION_OPTS })
+                .start();
+            const request = start.mock.calls[0]?.[0] as Agora.StartAgentsRequest;
+            expect(request.properties.avatar).toMatchObject({
+                vendor: "generic",
+                params: {
+                    agora_appid: typedClient.appId,
+                    agora_channel: SESSION_OPTS.channel,
+                    agora_uid: "200",
+                    agent_id: "agent",
+                    agora_token: expect.any(String),
+                },
+            });
+            expect(avatar.toConfig().params).not.toHaveProperty("agora_token");
+        },
+    );
 
     test("AnamAvatar serializes avatar_id", () => {
         const properties = new Agent({ client: TEST_AGENT_CLIENT })
