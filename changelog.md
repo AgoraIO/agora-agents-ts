@@ -14,7 +14,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
-- Updated Deepgram STT credentials to serialize as `api_key` and Sarvam TTS sample rate to serialize as `speech_sample_rate`, matching the v2.14 generated API contract.
+ - Updated Deepgram STT credentials to serialize as `api_key` and Sarvam TTS sample rate to serialize as `speech_sample_rate`, matching the v2.14 generated API contract.
+
+## [v2.12.0] — 2026-10-07
+
+### Added
+
+- **Tavus, Protoface, and LemonSlice avatars** — Added AgentKit `Tavus`, `Protoface`, and `LemonSlice` aliases of `GenericAvatar`, with `TavusOptions`, `ProtofaceOptions`, and `LemonSliceOptions` available from AgentKit and the package root. All share the generic constructor, validation, session field and token auto-fill behavior, and serialize with `vendor: "generic"`.
+- **Avatar guide examples** — Documented all three branded aliases, including the Tavus Agora conversation endpoint.
 
 ## [v2.11.0] — 2026-09-23
 

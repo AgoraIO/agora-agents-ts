@@ -279,7 +279,10 @@ export type {
     AnamAvatarOptions,
     GenericAvatarOptions,
     HeyGenAvatarOptions,
+    LemonSliceOptions,
     LiveAvatarAvatarOptions,
+    ProtofaceOptions,
+    TavusOptions,
 } from "./vendors/avatar.js";
 // Avatar vendor classes
 export {
@@ -287,7 +290,10 @@ export {
     AnamAvatar,
     GenericAvatar,
     HeyGenAvatar,
+    LemonSlice,
     LiveAvatarAvatar,
+    Protoface,
+    Tavus,
 } from "./vendors/avatar.js";
 // Sample rate types
 export type {
