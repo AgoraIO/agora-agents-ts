@@ -432,17 +432,68 @@ export class GenericAvatar extends BaseAvatar<number> {
     }
 }
 
-/** Tavus branding for GenericAvatar; uses the generic wire vendor. */
-export { GenericAvatar as Tavus };
-/** Protoface branding for GenericAvatar; uses the generic wire vendor. */
-export { GenericAvatar as Protoface };
-/** LemonSlice branding for GenericAvatar; uses the generic wire vendor. */
-export { GenericAvatar as LemonSlice };
+/** Tavus options with an optional provider endpoint override. */
+export type TavusOptions = Omit<GenericAvatarOptions, "apiBaseUrl"> & { apiBaseUrl?: string };
+/** Protoface options with an optional provider endpoint override. */
+export type ProtofaceOptions = TavusOptions;
 
-/** Constructor options shared with GenericAvatar. */
-export type TavusOptions = GenericAvatarOptions;
-/** Constructor options shared with GenericAvatar. */
-export type ProtofaceOptions = GenericAvatarOptions;
+export class Tavus extends GenericAvatar {
+    constructor(options: TavusOptions) {
+        super({ ...options, apiBaseUrl: options.apiBaseUrl ?? "https://tavusapi.com/v2/conversations/agora" });
+    }
+}
 
-/** Constructor options shared with GenericAvatar. */
-export type LemonSliceOptions = GenericAvatarOptions;
+export class Protoface extends GenericAvatar {
+    constructor(options: ProtofaceOptions) {
+        super({ ...options, apiBaseUrl: options.apiBaseUrl ?? "https://api.protoface.com/v1/agora" });
+    }
+}
+
+export interface LemonSliceOptions extends Omit<TavusOptions, "avatarId"> {
+    /** Provider-recommended fixed ID is lemonslice. Explicit overrides remain supported. */
+    avatarId?: string;
+    agentImageUrl?: string;
+    agentId?: string;
+    agentImageBase64?: string;
+    /** Omit to use the provider default of 2x3. */
+    aspectRatio?: "2x3" | "9x16" | "1x1";
+}
+
+export class LemonSlice extends GenericAvatar {
+    constructor(options: LemonSliceOptions) {
+        const params = { ...options.additionalParams };
+        for (const [key, value] of [
+            ["agent_image_url", options.agentImageUrl],
+            ["agent_id", options.agentId],
+            ["agent_image_base64", options.agentImageBase64],
+            ["aspect_ratio", options.aspectRatio],
+        ] as const) {
+            if (value !== undefined) params[key] = value;
+        }
+        let selectors = 0;
+        for (const key of ["agent_id", "agent_image_url", "agent_image_base64"]) {
+            if (Object.keys(params).includes(key)) {
+                const value = params[key];
+                if (typeof value !== "string" || !value.trim()) {
+                    throw new Error(`LemonSlice ${key} must be a nonempty string`);
+                }
+                selectors++;
+            }
+        }
+        if (selectors !== 1) {
+            throw new Error("LemonSlice requires exactly one of agent_id, agent_image_url, agent_image_base64");
+        }
+        if (
+            Object.keys(params).includes("aspect_ratio") &&
+            !["2x3", "9x16", "1x1"].includes(params.aspect_ratio as string)
+        ) {
+            throw new Error("LemonSlice aspect_ratio must be 2x3, 9x16, or 1x1");
+        }
+        super({
+            ...options,
+            apiBaseUrl: options.apiBaseUrl ?? "https://lemonslice.com/api/liveai/agora",
+            avatarId: options.avatarId ?? "lemonslice",
+            additionalParams: params,
+        });
+    }
+}

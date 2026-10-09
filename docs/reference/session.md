@@ -51,7 +51,7 @@ Start the agent session. Validates avatar/TTS configuration, sends the start req
 - Applies explicit `preset` values when provided and sends Agora-managed configuration when supported vendor credentials are omitted
 - Resolves pipeline IDs as `session.pipelineId ?? agent.pipelineId`; sends the resolved value as the top-level `/join` field `pipeline_id`, not inside `properties`
 - Fills generic avatar `agora_appid` and `agora_channel` from the session when omitted
-- Generates avatar `agora_token` for `HeyGenAvatar`, `LiveAvatarAvatar`, `GenericAvatar`, `SensetimeAvatar`, and `SpatiusAvatar` when `agoraToken` is omitted and the client has an `appCertificate`. Other vendors (`AkoolAvatar`, `AnamAvatar`) never receive an auto-generated token.
+- Generates avatar `agora_token` for `HeyGenAvatar`, `LiveAvatarAvatar`, `GenericAvatar`, `Tavus`, `Protoface`, `LemonSlice`, `SensetimeAvatar`, and `SpatiusAvatar` when `agoraToken` is omitted and the client has an `appCertificate`. Other vendors (`AkoolAvatar`, `AnamAvatar`) never receive an auto-generated token.
 
 ### `stop(): Promise<void>`
 

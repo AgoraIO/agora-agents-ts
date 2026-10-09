@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2.13.0] — 2026-10-09
+
+### Changed
+
+- Tavus, Protoface, and LemonSlice now wrap GenericAvatar with provider endpoint defaults. Explicit endpoint overrides, generic wire serialization, and session/token handling remain supported.
+- LemonSlice defaults `avatarId` to the vendor-recommended fixed value `lemonslice`; explicit overrides remain supported. Typed `agentId`, `agentImageUrl`, `agentImageBase64`, and `aspectRatio` serialize directly as snake_case avatar parameters. Exactly one nonempty string selector is required in effective merged parameters; malformed selectors and invalid aspect ratios are rejected. Typed fields override additional parameters without mutating caller inputs. Ratios are `2x3`, `9x16`, or `1x1`; omitted ratios use the provider default `2x3`.
+- Source compatibility caveat: branded constructors are no longer exact aliases of GenericAvatar, and LemonSlice selector validation is now mandatory, including for existing additionalParams usage.
+
 ## [v2.12.0] — 2026-10-07
 
 ### Added
