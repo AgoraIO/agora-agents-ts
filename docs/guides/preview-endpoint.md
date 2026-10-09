@@ -1,14 +1,12 @@
 ---
 sidebar_position: 10
 title: Preview Endpoint
-description: Gemini TTS preview routing and production migration compatibility.
+description: Production migration compatibility and retained preview routing helpers.
 ---
 
 # Preview Endpoint
 
-Gemini TTS uses the preview gateway with `agora-feature: gemini-live`.
-
-Gemini 3.8 MLLMs, OpenAI GPT Live, and Gemini STT are served by the production Conversational AI gateway.
+Gemini TTS, Gemini 3.8 MLLMs, OpenAI GPT Live, and Gemini STT are served by the production Conversational AI gateway.
 Existing integrations require no routing changes: `AgentSession` sends them through the client's configured
 regional endpoint without a preview feature header.
 
@@ -34,8 +32,9 @@ The low-latency `models/gemini-3.8-live` model is the default. `thinkingLevel` i
 
 ## Compatibility
 
-Historical `agentkit/preview` imports for Gemini model constants and types, `GeminiSTT`, `GeminiSTTModels`, and
-`OpenAIGPTLive` remain available as aliases to production implementations. The old
+Historical `agentkit/preview` imports for Gemini model constants and types, `GeminiSTT`, `GeminiSTTModels`,
+`GeminiTTS`, `GeminiTTSModels`, and `OpenAIGPTLive` remain available as aliases to production implementations.
+The `agentkit/preview/gemini-tts` module re-exports the production TTS class, model constants, and config/options types. The old
 `GEMINI_PREVIEW_MLLM_URL` constant remains as an alias to `GEMINI_MLLM_URL`. These exports do not enable preview
 routing. A hand-written Gemini 3.8 config using the old `mllm.greeting` field is normalized to
 `mllm.greeting_message` before the production request is sent.
@@ -44,23 +43,24 @@ routing. A hand-written Gemini 3.8 config using the old `mllm.greeting` field is
 
 Preview detection uses the fully resolved request body, so hand-written configurations follow the same route as
 vendor class instances. Add the vendor detection, feature constant, routing tests, and resolved request-body tests
-together. Generated request types must continue to describe the GA API, while preview-only types remain under
-`agentkit/preview` until the provider is promoted.
+together. Generated request types describe the GA API; historical preview imports
+remain as aliases after a provider is promoted.
 
-## Gemini 3.8 Flash TTS preview
+## Gemini 3.8 Flash TTS production migration
 
 `GeminiTTS` emits `tts.vendor = "gemini"` with `api_key`, `model`, `voice`,
 and optional `style` inside `tts.params`. It defaults to `gemini-3.8-flash-tts`
-and `Puck`. Model names are sent unchanged; there is no automatic fallback
-or model rewriting.
-Model strings remain open for preview rollout changes. Blank keys are rejected.
+and `Puck`. Model names are sent unchanged; there is no automatic fallback or
+model rewriting.
+Model strings remain open for future model IDs. Blank keys are rejected.
 
-AgentSession detects the TTS vendor from the resolved request body, including
-handwritten configs, and uses the existing preview host with
-`agora-feature: gemini-live` throughout the session lifecycle. Use the retained
-session for stop/say/interrupt; the shared client remains on its normal route.
-Gemini ASR alone still uses the production route. No sample-rate or avatar
-compatibility is assumed by this preview provider.
+Existing v2.11.0 calls now use the client's configured regional production
+endpoint throughout the session lifecycle. Handwritten Gemini TTS configs follow
+the same route, and no preview feature header is added. `GeminiTTS`, its model
+constants, options, and config types now live in `agentkit/vendors/tts`; package-root
+and preview imports remain compatible. `additionalParams` is merged into
+`tts.params`, with named options taking precedence. `skipPatterns` maps to the generated
+top-level `tts.skip_patterns` field. The provider does not expose a configurable sample rate.
 
 ```typescript
 import { GeminiTTS, GeminiTTSModels } from "agora-agents";

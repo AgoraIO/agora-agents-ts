@@ -110,8 +110,6 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
-export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./preview/gemini-tts.js";
-export { GeminiTTS, GeminiTTSModels } from "./preview/gemini-tts.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,
@@ -456,6 +454,9 @@ export type {
     DeepgramTTSOptions,
     ElevenLabsTTSOptions,
     FishAudioTTSOptions,
+    GeminiTTSConfig,
+    GeminiTTSModel,
+    GeminiTTSOptions,
     GenericTTSOptions,
     GoogleTTSOptions,
     GradiumTTSOptions,
@@ -478,6 +479,8 @@ export {
     DeepgramTTS,
     ElevenLabsTTS,
     FishAudioTTS,
+    GeminiTTS,
+    GeminiTTSModels,
     GenericTTS,
     GoogleTTS,
     GradiumTTS,

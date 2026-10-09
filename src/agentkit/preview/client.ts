@@ -7,9 +7,9 @@
  * and binds that session to the preview host while ordinary AgoraClient calls
  * remain on the regional production endpoint.
  *
- * Everything under `agentkit/preview/` is temporary. When a provider ships on
- * the production gateway, remove its preview registration and move its class
- * into the corresponding production vendor module.
+ * Preview registrations are temporary. When a provider ships on the production
+ * gateway, remove its registration and move its class into the corresponding
+ * production vendor module, retaining historical imports as aliases.
  */
 
 import type { AgoraClient } from "../../AgoraPoolClient.js";
@@ -36,7 +36,7 @@ export const PREVIEW_FEATURE_HEADER = "agora-feature";
  * preview endpoint.
  */
 export const PreviewFeatures = {
-    /** Gemini TTS preview gate; Gemini ASR and Live use production. */
+    /** @deprecated Gemini ASR, Live, and TTS now use the production endpoint. */
     GeminiLive: "gemini-live",
     /** @deprecated GPT Live now uses the production endpoint. */
     LiveModels: "live-models",
@@ -86,8 +86,9 @@ export function createPreviewRoute(client: AgoraClient, features: readonly Previ
     };
 }
 
-export function requiredPreviewFeatures(properties: Agora.StartAgentsRequest.Properties): PreviewFeature[] {
-    return (properties.tts as { vendor?: string } | undefined)?.vendor === "gemini" ? [PreviewFeatures.GeminiLive] : [];
+/** Compatibility helper; all formerly registered providers now use production. */
+export function requiredPreviewFeatures(_properties: Agora.StartAgentsRequest.Properties): PreviewFeature[] {
+    return [];
 }
 
 const PRODUCTION_GEMINI_MLLM_MODELS: ReadonlySet<string> = new Set([

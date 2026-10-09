@@ -2,6 +2,7 @@
  * Type-safe TTS (Text-to-Speech) vendor classes.
  */
 
+import type { Tts as GeneratedTts } from "../../api/index.js";
 import { SarvamTtsParams as SarvamTtsParamsNS } from "../../api/types/SarvamTtsParams.js";
 import { CredentialMode } from "../constants.js";
 import {
@@ -13,6 +14,71 @@ import {
 import type { TtsConfig } from "../types.js";
 import type { CartesiaSampleRate, ElevenLabsSampleRate, GoogleTTSSampleRate, MicrosoftSampleRate } from "./base.js";
 import { BaseTTS } from "./base.js";
+
+/** Gemini 3.8 Flash TTS model. */
+export const GeminiTTSModels = {
+    Flash38: "gemini-3.8-flash-tts",
+} as const;
+
+export type GeminiTTSModel = (typeof GeminiTTSModels)[keyof typeof GeminiTTSModels] | (string & {});
+
+export interface GeminiTTSOptions {
+    apiKey: string;
+    /** Sent verbatim; defaults to Gemini 3.8 Flash TTS. */
+    model?: GeminiTTSModel;
+    /** Defaults to Puck. */
+    voice?: string;
+    /** Natural-language speaking instructions. Omitted unless supplied. */
+    style?: string;
+    /** Additional provider-specific parameters merged into `tts.params`. */
+    additionalParams?: Record<string, unknown>;
+    /** Skip patterns for bracketed content. */
+    skipPatterns?: number[];
+}
+
+/** Production Gemini TTS wire shape from the generated schema. */
+export type GeminiTTSConfig = GeneratedTts.Gemini;
+
+/** Gemini TTS uses the client's configured regional production endpoint. */
+export class GeminiTTS extends BaseTTS {
+    private readonly options: GeminiTTSOptions;
+
+    constructor(options: GeminiTTSOptions) {
+        super();
+        for (const field of ["apiKey", "model", "voice"] as const) {
+            const value = options[field];
+            if ((field === "apiKey" || value !== undefined) && (typeof value !== "string" || !value.trim())) {
+                throw new Error(`GeminiTTS requires ${field}`);
+            }
+        }
+        if (options.style !== undefined && typeof options.style !== "string") {
+            throw new Error("GeminiTTS style must be a string");
+        }
+        this.options = { ...options };
+    }
+
+    toConfig(): GeminiTTSConfig {
+        const {
+            apiKey,
+            model = GeminiTTSModels.Flash38,
+            voice = "Puck",
+            style,
+            additionalParams,
+            skipPatterns,
+        } = this.options;
+        return {
+            vendor: "gemini",
+            params: {
+                ...additionalParams,
+                api_key: apiKey,
+                model,
+                voice,
+                ...(style !== undefined && { style }),
+            },
+            ...(skipPatterns !== undefined && { skip_patterns: skipPatterns }),
+        };
+    }
+}
 
 function requireString(value: unknown, field: string, vendor: string): asserts value is string {
     if (typeof value !== "string" || value.length === 0) {
