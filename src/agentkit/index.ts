@@ -110,6 +110,8 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
+export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./preview/gemini-tts.js";
+export { GeminiTTS, GeminiTTSModels } from "./preview/gemini-tts.js";
 export type {
     AvatarVendor,
     CNAvatarVendor,
@@ -274,7 +276,10 @@ export type {
     AnamAvatarOptions,
     GenericAvatarOptions,
     HeyGenAvatarOptions,
+    LemonSliceOptions,
     LiveAvatarAvatarOptions,
+    ProtofaceOptions,
+    TavusOptions,
 } from "./vendors/avatar.js";
 // Avatar vendor classes
 export {
@@ -282,7 +287,10 @@ export {
     AnamAvatar,
     GenericAvatar,
     HeyGenAvatar,
+    LemonSlice,
     LiveAvatarAvatar,
+    Protoface,
+    Tavus,
 } from "./vendors/avatar.js";
 // Sample rate types
 export type {

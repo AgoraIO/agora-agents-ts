@@ -123,6 +123,7 @@ export type {
     InterruptionMode,
     InterruptMode,
     Labels,
+    LemonSliceOptions,
     LiveAvatarAvatarConfig,
     LiveAvatarAvatarOptions,
     LiveAvatarSampleRate,
@@ -175,6 +176,7 @@ export type {
     PresetInput,
     PreviewFeature,
     PreviewRoute,
+    ProtofaceOptions,
     QwenOmniOptions,
     RimeTTSOptions,
     RimeTts,
@@ -222,6 +224,7 @@ export type {
     StrictAvatarConfig,
     SttConfig,
     SttVendor,
+    TavusOptions,
     TencentLLMOptions,
     TencentSTTOptions,
     TencentTTSOptions,
@@ -336,6 +339,7 @@ export {
     isLiveAvatarAvatar,
     isSensetimeAvatar,
     isSpatiusAvatar,
+    LemonSlice,
     LiveAvatarAvatar,
     MAX_EXPIRY_SECONDS,
     MicrosoftCNSTT,
@@ -361,6 +365,7 @@ export {
     PREVIEW_API_BASE_URL,
     PREVIEW_FEATURE_HEADER,
     PreviewFeatures,
+    Protoface,
     previewRequestHeaders,
     QwenOmni,
     REDACTED,
@@ -382,6 +387,7 @@ export {
     // STT vendors
     SpeechmaticsSTT,
     StepFunTTS,
+    Tavus,
     TencentLLM,
     TencentSTT,
     TencentTTS,
@@ -406,6 +412,8 @@ export {
     XfyunDialectSTT,
     XfyunSTT,
 } from "./agentkit/index.js";
+export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./agentkit/preview/gemini-tts.js";
+export { GeminiTTS, GeminiTTSModels } from "./agentkit/preview/gemini-tts.js";
 export * as Agora from "./api/index.js";
 export type { BaseClientOptions, BaseRequestOptions } from "./BaseClient.js";
 export { Area } from "./core/domain/index.js";

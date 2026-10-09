@@ -8,8 +8,8 @@
 import { AgoraClient } from "../../AgoraPoolClient.js";
 import { Area } from "../../core/domain/index.js";
 import { Agent } from "../Agent.js";
-import { GeminiSTT, OpenAIGPTLive } from "../preview/index.js";
-import type { MllmVendor, SttConfig } from "../types.js";
+import { GeminiSTT, GeminiTTS, OpenAIGPTLive } from "../preview/index.js";
+import type { MllmVendor, SttConfig, TtsConfig } from "../types.js";
 import { OpenAIRealtime } from "../vendors/mllm.js";
 
 const CLIENT = new AgoraClient({
@@ -81,3 +81,22 @@ const _asrRequiresModel: SttConfig = {
     vendor: "gemini",
     params: { api_key: "test" },
 };
+
+// Gemini TTS must remain accurately typed before crossing the generated wire boundary.
+function _geminiTtsTypes(): void {
+    const vendor = new GeminiTTS({ apiKey: "test" });
+    const config = vendor.toConfig();
+    const name: "gemini" = config.vendor;
+    const key: string = config.params.api_key;
+    const typed: TtsConfig = {
+        vendor: "gemini",
+        params: { api_key: key, model: "gemini-3.8-flash-tts", voice: "Puck" },
+    };
+    const agent = new Agent({ client: CLIENT }).withTts(vendor);
+    if (agent.tts?.vendor === "gemini") {
+        const style: string | undefined = agent.tts.params.style;
+        void style;
+    }
+    void name;
+    void typed;
+}

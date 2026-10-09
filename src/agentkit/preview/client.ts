@@ -36,7 +36,7 @@ export const PREVIEW_FEATURE_HEADER = "agora-feature";
  * preview endpoint.
  */
 export const PreviewFeatures = {
-    /** @deprecated Gemini Live now uses the production endpoint. */
+    /** Gemini TTS preview gate; Gemini ASR and Live use production. */
     GeminiLive: "gemini-live",
     /** @deprecated GPT Live now uses the production endpoint. */
     LiveModels: "live-models",
@@ -86,8 +86,8 @@ export function createPreviewRoute(client: AgoraClient, features: readonly Previ
     };
 }
 
-export function requiredPreviewFeatures(_properties: Agora.StartAgentsRequest.Properties): PreviewFeature[] {
-    return [];
+export function requiredPreviewFeatures(properties: Agora.StartAgentsRequest.Properties): PreviewFeature[] {
+    return (properties.tts as { vendor?: string } | undefined)?.vendor === "gemini" ? [PreviewFeatures.GeminiLive] : [];
 }
 
 const PRODUCTION_GEMINI_MLLM_MODELS: ReadonlySet<string> = new Set([

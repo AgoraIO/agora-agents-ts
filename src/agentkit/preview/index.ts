@@ -21,6 +21,8 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./client.js";
+export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./gemini-tts.js";
+export { GeminiTTS, GeminiTTSModels } from "./gemini-tts.js";
 export type {
     GeminiLiveModel,
     GeminiLiveVoice,
