@@ -339,6 +339,24 @@ new SmallestAITTS(options: SmallestAITTSOptions)
 | `additionalParams` | `Partial<SmallestAiTtsParams>` | No | Additional provider parameters; explicit options take precedence |
 | `skipPatterns` | `number[]` | No | Skip patterns for bracketed content |
 
+### GeminiTTS
+
+`GeminiTTS` uses the configured regional production endpoint with `tts.vendor = "gemini"`.
+Package-root and historical preview imports alias the production TTS implementation.
+
+| Option | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `apiKey` | `string` | Yes | — | Google Gemini API key |
+| `model` | `GeminiTTSModel` | No | `GeminiTTSModels.Flash38` | Model identifier, sent verbatim |
+| `voice` | `string` | No | `Puck` | Voice name |
+| `style` | `string` | No | omitted | Natural-language speaking instruction |
+| `additionalParams` | `Record<string, unknown>` | No | omitted | Provider-specific parameters merged into `tts.params`; named options take precedence |
+| `skipPatterns` | `number[]` | No | omitted | Patterns to skip in TTS output |
+
+Options serialize inside `tts.params`, including `api_key`. Blank credentials,
+model, or voice are rejected. v2.11.0 calls and raw configs remain compatible;
+no preview feature header is added and no sample rate option is exposed.
+
 ### Other TTS vendors
 
 The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts` for the full constructor options:

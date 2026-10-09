@@ -43,6 +43,7 @@ const llm = new OpenAI({
 | `OpenAITTS`     | OpenAI TTS       | Fixed at 24000                          |
 | `CartesiaTTS`   | Cartesia         | 8000, 16000, 22050, 24000, 44100, 48000 |
 | `GoogleTTS`     | Google Cloud TTS | Configurable                            |
+| `GeminiTTS`     | Google Gemini TTS | Not configurable; production routing   |
 | `AmazonTTS`     | Amazon Polly     | Configurable                            |
 | `HumeAITTS`     | Hume AI          | Configurable                            |
 | `RimeTTS`       | Rime             | Configurable                            |

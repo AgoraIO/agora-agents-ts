@@ -71,7 +71,6 @@ import type {
 } from "../api/index.js";
 import type { AgentThinkAgentManagementRequest } from "../api/resources/agentManagement/client/requests/AgentThinkAgentManagementRequest.js";
 import type { PresetInput } from "./presets.js";
-import type { GeminiTTSConfig } from "./preview/gemini-tts.js";
 
 // =============================================================================
 // Core Configuration Types
@@ -117,7 +116,7 @@ export type AsrConfig = SttConfig;
 export type AsrVendorName = string;
 
 /** TTS (Text-to-Speech) configuration - discriminated union */
-export type TtsConfig = Tts | GeminiTTSConfig;
+export type TtsConfig = Tts;
 
 /** Inline synchronous REST tool exposed to a standard text LLM. */
 export type LlmTool = LlmToolType;
