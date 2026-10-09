@@ -44,7 +44,7 @@ The agent and the avatar publish with separate RTC identities:
 AgentKit auto-fills `agora_token` for avatar vendors that publish a separate RTC video identity:
 
 - `LiveAvatarAvatar` (and the deprecated `HeyGenAvatar` alias)
-- `GenericAvatar`
+- `GenericAvatar` and its `Tavus`, `Protoface`, and `LemonSlice` wrappers
 - `SensetimeAvatar` (CN)
 - `SpatiusAvatar` (CN)
 
