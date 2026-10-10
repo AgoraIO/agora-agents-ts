@@ -2,6 +2,8 @@
  * Type-safe TTS (Text-to-Speech) vendor classes.
  */
 
+import type { Tts as GeneratedTts } from "../../api/index.js";
+import { SarvamTtsParams as SarvamTtsParamsNS } from "../../api/types/SarvamTtsParams.js";
 import { CredentialMode } from "../constants.js";
 import {
     type MiniMaxPresetModel,
@@ -12,6 +14,71 @@ import {
 import type { TtsConfig } from "../types.js";
 import type { CartesiaSampleRate, ElevenLabsSampleRate, GoogleTTSSampleRate, MicrosoftSampleRate } from "./base.js";
 import { BaseTTS } from "./base.js";
+
+/** Gemini 3.8 Flash TTS model. */
+export const GeminiTTSModels = {
+    Flash38: "gemini-3.8-flash-tts",
+} as const;
+
+export type GeminiTTSModel = (typeof GeminiTTSModels)[keyof typeof GeminiTTSModels] | (string & {});
+
+export interface GeminiTTSOptions {
+    apiKey: string;
+    /** Sent verbatim; defaults to Gemini 3.8 Flash TTS. */
+    model?: GeminiTTSModel;
+    /** Defaults to Puck. */
+    voice?: string;
+    /** Natural-language speaking instructions. Omitted unless supplied. */
+    style?: string;
+    /** Additional provider-specific parameters merged into `tts.params`. */
+    additionalParams?: Record<string, unknown>;
+    /** Skip patterns for bracketed content. */
+    skipPatterns?: number[];
+}
+
+/** Production Gemini TTS wire shape from the generated schema. */
+export type GeminiTTSConfig = GeneratedTts.Gemini;
+
+/** Gemini TTS uses the client's configured regional production endpoint. */
+export class GeminiTTS extends BaseTTS {
+    private readonly options: GeminiTTSOptions;
+
+    constructor(options: GeminiTTSOptions) {
+        super();
+        for (const field of ["apiKey", "model", "voice"] as const) {
+            const value = options[field];
+            if ((field === "apiKey" || value !== undefined) && (typeof value !== "string" || !value.trim())) {
+                throw new Error(`GeminiTTS requires ${field}`);
+            }
+        }
+        if (options.style !== undefined && typeof options.style !== "string") {
+            throw new Error("GeminiTTS style must be a string");
+        }
+        this.options = { ...options };
+    }
+
+    toConfig(): GeminiTTSConfig {
+        const {
+            apiKey,
+            model = GeminiTTSModels.Flash38,
+            voice = "Puck",
+            style,
+            additionalParams,
+            skipPatterns,
+        } = this.options;
+        return {
+            vendor: "gemini",
+            params: {
+                ...additionalParams,
+                api_key: apiKey,
+                model,
+                voice,
+                ...(style !== undefined && { style }),
+            },
+            ...(skipPatterns !== undefined && { skip_patterns: skipPatterns }),
+        };
+    }
+}
 
 function requireString(value: unknown, field: string, vendor: string): asserts value is string {
     if (typeof value !== "string" || value.length === 0) {
@@ -918,21 +985,34 @@ export class MiniMaxTTS extends BaseTTS {
 /**
  * Constructor options for Sarvam TTS (Beta).
  */
-export interface SarvamTTSOptions {
+export const SarvamTTSLanguage: typeof SarvamTtsParamsNS.TargetLanguageCode = SarvamTtsParamsNS.TargetLanguageCode;
+
+/** Target language supported by Sarvam TTS. */
+export type SarvamTTSLanguage = (typeof SarvamTTSLanguage)[keyof typeof SarvamTTSLanguage];
+
+export interface SarvamTTSOptions<SR extends number = number> {
     /** Sarvam API subscription key */
     key: string;
     /** Speaker/voice ID (e.g., 'anushka', 'abhilash', 'karun', 'hitesh', 'manisha', 'vidya', 'arya') */
     speaker: string;
-    /** Target language code (e.g., 'en-IN', 'hi-IN', 'ta-IN') */
-    targetLanguageCode: import("../types.js").SarvamTtsParams["target_language_code"];
-    /** Pitch adjustment for the voice */
+    /** Target language code. Use `SarvamTTSLanguage` for discoverable values. */
+    targetLanguageCode: SarvamTTSLanguage;
+    /** Pitch control for the `bulbul:v2` model. */
     pitch?: number;
-    /** Speed of speech */
+    /** Speech speed. Defaults server-side to `1.0`. */
     pace?: number;
-    /** Volume level of the speech */
+    /** Audio loudness control for the `bulbul:v2` model. */
     loudness?: number;
-    /** Audio sample rate in Hz */
-    sampleRate?: number;
+    /** Output speech sample rate in Hz. Defaults server-side to 24000. */
+    speechSampleRate?: SR;
+    /** @deprecated Use `speechSampleRate` instead. */
+    sampleRate?: SR;
+    /** Whether to normalize English words and numeric entities. */
+    enablePreprocessing?: boolean;
+    /** TTS model to use. Defaults server-side to `bulbul:v3`. */
+    model?: string;
+    /** Additional vendor-specific parameters. Explicit options take precedence. */
+    additionalParams?: Record<string, unknown>;
     /** Skip patterns for bracketed content */
     skipPatterns?: number[];
 }
@@ -949,27 +1029,44 @@ export interface SarvamTTSOptions {
  * });
  * ```
  */
-export class SarvamTTS extends BaseTTS {
-    private readonly options: SarvamTTSOptions;
+export class SarvamTTS<SR extends number = number> extends BaseTTS<SR> {
+    private readonly options: SarvamTTSOptions<SR>;
 
-    constructor(options: SarvamTTSOptions) {
+    constructor(options: SarvamTTSOptions<SR>) {
         super();
         this.options = options;
     }
 
     toConfig(): TtsConfig {
-        const { key, speaker, targetLanguageCode, pitch, pace, loudness, sampleRate, skipPatterns } = this.options;
+        const {
+            key,
+            speaker,
+            targetLanguageCode,
+            pitch,
+            pace,
+            loudness,
+            speechSampleRate,
+            sampleRate,
+            enablePreprocessing,
+            model,
+            additionalParams,
+            skipPatterns,
+        } = this.options;
+        const resolvedSampleRate = speechSampleRate ?? sampleRate;
 
         return {
             vendor: "sarvam",
             params: {
+                ...additionalParams,
                 api_subscription_key: key,
                 speaker,
                 target_language_code: targetLanguageCode,
                 ...(pitch !== undefined && { pitch }),
                 ...(pace !== undefined && { pace }),
                 ...(loudness !== undefined && { loudness }),
-                ...(sampleRate !== undefined && { sample_rate: sampleRate }),
+                ...(resolvedSampleRate !== undefined && { speech_sample_rate: resolvedSampleRate }),
+                ...(enablePreprocessing !== undefined && { enable_preprocessing: enablePreprocessing }),
+                ...(model !== undefined && { model }),
             },
             ...(skipPatterns && { skip_patterns: skipPatterns }),
         };

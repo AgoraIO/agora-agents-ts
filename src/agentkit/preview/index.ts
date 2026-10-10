@@ -7,10 +7,11 @@
 
 export type { OpenAIGPTLiveOptions } from "../vendors/mllm.js";
 export { OpenAIGPTLive } from "../vendors/mllm.js";
-// The preview namespace keeps its historical names. Gemini ASR and GPT Live
-// now use production implementations without requiring caller changes.
+// The preview namespace keeps its historical names as production aliases.
 export type { GeminiSTTModel, GeminiSTTOptions } from "../vendors/stt.js";
 export { GeminiSTT, GeminiSTTModels, GeminiTranscriptionMode } from "../vendors/stt.js";
+export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "../vendors/tts.js";
+export { GeminiTTS, GeminiTTSModels } from "../vendors/tts.js";
 export type { PreviewFeature, PreviewRoute } from "./client.js";
 export {
     applyPreviewShape,
@@ -21,8 +22,6 @@ export {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./client.js";
-export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./gemini-tts.js";
-export { GeminiTTS, GeminiTTSModels } from "./gemini-tts.js";
 export type {
     GeminiLiveModel,
     GeminiLiveVoice,

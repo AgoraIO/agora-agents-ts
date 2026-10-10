@@ -43,6 +43,7 @@ const llm = new OpenAI({
 | `OpenAITTS`     | OpenAI TTS       | Fixed at 24000                          |
 | `CartesiaTTS`   | Cartesia         | 8000, 16000, 22050, 24000, 44100, 48000 |
 | `GoogleTTS`     | Google Cloud TTS | Configurable                            |
+| `GeminiTTS`     | Google Gemini TTS | Not configurable; production routing   |
 | `AmazonTTS`     | Amazon Polly     | Configurable                            |
 | `HumeAITTS`     | Hume AI          | Configurable                            |
 | `RimeTTS`       | Rime             | Configurable                            |
@@ -91,6 +92,7 @@ The `sampleRate` is critical when using avatars. See [Avatar Integration](../gui
 | `AssemblyAISTT`   | AssemblyAI        | `apiKey`, `language`, `ws_url?`                  |
 | `AresSTT`         | Agora ARES        | `keywords?`, `additionalParams?`                 |
 | `SarvamSTT`       | Sarvam AI         | `apiKey`, `language`                             |
+| `RTZRSTT`         | RTZR              | `clientId`, `clientSecret`; optional model, language, audio, filtering, punctuation, and keyword options |
 | `XAiSTT`          | xAI               | `apiKey`, `language?`, `baseUrl?`, `sampleRate?` |
 | `GeminiSTT`       | Google Gemini     | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp` |
 | `SmallestAISTT`   | Smallest AI (global) | `apiKey`; optional `language`, `url`, `sampleRate`, timestamps, endpointing, formatting, and redaction options |

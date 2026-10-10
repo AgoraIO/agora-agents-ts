@@ -394,10 +394,14 @@ export class AgentSession {
 
         // Validate TTS sample rate against avatar requirements
         // Note: tts can be a string (shorthand) or an object with params
-        // sample_rate may not exist on all TTS vendor params, so we check dynamically
+        // Sample-rate fields vary by provider, so check the generated wire names dynamically.
         const ttsParams = tts && typeof tts !== "string" ? tts.params : undefined;
         const sampleRate =
-            ttsParams && "sample_rate" in ttsParams ? (ttsParams as { sample_rate?: number }).sample_rate : undefined;
+            ttsParams && "sample_rate" in ttsParams
+                ? (ttsParams as { sample_rate?: number }).sample_rate
+                : ttsParams && "speech_sample_rate" in ttsParams
+                  ? (ttsParams as { speech_sample_rate?: number }).speech_sample_rate
+                  : undefined;
 
         if (typeof sampleRate === "number") {
             if (isHeyGenAvatar(strictAvatar) || isLiveAvatarAvatar(strictAvatar) || isAkoolAvatar(strictAvatar)) {

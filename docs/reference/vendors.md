@@ -339,6 +339,24 @@ new SmallestAITTS(options: SmallestAITTSOptions)
 | `additionalParams` | `Partial<SmallestAiTtsParams>` | No | Additional provider parameters; explicit options take precedence |
 | `skipPatterns` | `number[]` | No | Skip patterns for bracketed content |
 
+### GeminiTTS
+
+`GeminiTTS` uses the configured regional production endpoint with `tts.vendor = "gemini"`.
+Package-root and historical preview imports alias the production TTS implementation.
+
+| Option | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `apiKey` | `string` | Yes | — | Google Gemini API key |
+| `model` | `GeminiTTSModel` | No | `GeminiTTSModels.Flash38` | Model identifier, sent verbatim |
+| `voice` | `string` | No | `Puck` | Voice name |
+| `style` | `string` | No | omitted | Natural-language speaking instruction |
+| `additionalParams` | `Record<string, unknown>` | No | omitted | Provider-specific parameters merged into `tts.params`; named options take precedence |
+| `skipPatterns` | `number[]` | No | omitted | Patterns to skip in TTS output |
+
+Options serialize inside `tts.params`, including `api_key`. Blank credentials,
+model, or voice are rejected. v2.11.0 calls and raw configs remain compatible;
+no preview feature header is added and no sample rate option is exposed.
+
 ### Other TTS vendors
 
 The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts` for the full constructor options:
@@ -356,8 +374,12 @@ The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts`
 | `FishAudioTTS` | `key`, `referenceId`, `backend` |
 | `MiniMaxTTS` | `key?`, `groupId?`, `model`, `voiceId?`, `url?` |
 | `MurfTTS` | `key`, `voiceId?`, `baseUrl?`, `locale?`, `rate?`, `pitch?`, `model?`, `sampleRate?` |
-| `SarvamTTS` | `key`, `speaker`, `targetLanguageCode`, `pitch?`, `pace?`, `loudness?`, `sampleRate?` |
+| `SarvamTTS` | `key`, `speaker`, `targetLanguageCode: SarvamTTSLanguage`, `pitch?`, `pace?`, `loudness?`, `speechSampleRate?`, `enablePreprocessing?`, `model?`, `additionalParams?` |
 | `XAiTTS` | `apiKey`, `language`, `voiceId?`, `sampleRate?`, `additionalParams?` |
+
+`SarvamTTS.additionalParams` is flattened into `tts.params`; it is not sent as a nested `additional_params` field. Explicit Sarvam options override conflicting keys from `additionalParams`.
+
+Use `SarvamTTSLanguage` for discoverable target-language values, for example `SarvamTTSLanguage.EnIn`. Equivalent string literals such as `"en-IN"` remain accepted.
 
 `GenericTTS` is the public AgentKit wrapper for generic TTS integrations. It currently accepts only absolute HTTP(S) URLs and serializes them with the wire vendor `generic_http`. WebSocket URLs are rejected until the generated API exposes a corresponding WebSocket TTS vendor; AgentKit can then route the same public wrapper by URL protocol.
 
@@ -407,6 +429,7 @@ When `.withStt()` is omitted, AgentKit now selects the wire ASR vendor from `cli
 | `AssemblyAISTT` | `apiKey`, `language`, `ws_url?` |
 | `AresSTT` | `keywords?`, `additionalParams?` |
 | `SarvamSTT` | `apiKey`, `language` |
+| `RTZRSTT` | `clientId`, `clientSecret`, `apiBase?`, `modelName?`, `language?`, `sampleRate?`, filtering and punctuation options |
 | `XAiSTT` | `apiKey`, `language?`, `baseUrl?`, `sampleRate?`, `additionalParams?` |
 | `GeminiSTT` | `apiKey`; optional `model`, `language`, `languageHints`, deprecated `languageCodes`, `customVocabulary`, `sampleRate`, `wordTimestamp`, `additionalParams` |
 
@@ -414,7 +437,7 @@ For both `AresSTT` and `FengmingSTT`, `keywords` is serialized at the ASR top le
 
 `GeminiSTT.model` defaults to `gemini-3.5-transcribe-live`, and `sampleRate` defaults to `16000`. `languageHints` serializes as `params.language_hints`; deprecated `languageCodes` is used only when `languageHints` is unset. Omitted arrays are not sent, while explicitly empty arrays are preserved. `customVocabulary` cannot be combined with `wordTimestamp: true`.
 
-`SpeechmaticsSTT` always serializes its credential as `asr.params.key`. The deprecated `apiKey` option remains accepted for backward compatibility and is normalized to `key`; when both are provided, `key` takes precedence.
+`SpeechmaticsSTT` always serializes its credential as `asr.params.key`. The deprecated `apiKey` option remains accepted for backward compatibility and is normalized to `key`; when both are provided, `key` takes precedence. `DeepgramSTT` keeps the public `apiKey` option and serializes it as the generated `asr.params.api_key` field.
 
 ### SmallestAISTT
 
@@ -719,6 +742,9 @@ new AnamAvatar(options: AnamAvatarOptions)
 |---|---|---|---|
 | `apiKey` | `string` | Yes | Anam API key |
 | `avatarId` | `string` | No | Anam avatar ID |
+| `avatarModel` | `string` | No | Anam model, such as `cara_mk4` for Cara 4 portrait mode |
+| `videoWidth` | `number` | No | Output width in pixels; set together with `videoHeight` |
+| `videoHeight` | `number` | No | Output height in pixels; set together with `videoWidth` |
 | `enable` | `boolean` | No | Enable/disable the avatar (default: true) |
 
 ### SpatiusAvatar
