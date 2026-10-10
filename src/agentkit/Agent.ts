@@ -810,9 +810,8 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
                 appCertificate: string;
                 expiresIn?: number;
             };
-            // Use buildTokenWithRtm (RTC + RTM) so the token works whether or not
-            // the caller enables advanced_features.enable_rtm. The account string
-            // works for both numeric and string UIDs.
+            // Build the ConvoAI-specific Token007 with RTC, RTM, and ConvoAI
+            // services. The account string works for numeric UIDs.
             token = generateConvoAIToken({
                 appId,
                 appCertificate,

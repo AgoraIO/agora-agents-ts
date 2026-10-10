@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       agora-token:
-        specifier: ^2.0.5
-        version: 2.0.5
+        specifier: ^2.0.6
+        version: 2.0.6
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.1
@@ -592,8 +592,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  agora-token@2.0.5:
-    resolution: {integrity: sha512-0NcbzC3iuutlksv3b4bCMKHrW3pko6gdiGEMRo6APDice24kfXAuWyAlG9hRBrrPBVDShwm9/GUz2Scd3zuZQw==}
+  agora-token@2.0.6:
+    resolution: {integrity: sha512-IndnG81dFxdTEj9G14FykEEilxrjPo92crGwB8ip5K/pwKNrd1pI98HZppCNNnHPhIwmAWiLmjmdBpgGB4UqKA==}
 
   ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
@@ -1810,7 +1810,7 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  agora-token@2.0.5:
+  agora-token@2.0.6:
     dependencies:
       crc-32: 1.2.2
       cuint: 0.2.2

@@ -3,8 +3,8 @@
  *
  * - RTC tokens authenticate a specific (appId, channel, uid) combination with
  *   the Agora RTC network.
- * - ConvoAI tokens are combined RTC + RTM tokens used to authenticate ConvoAI
- *   REST API calls via `Authorization: agora token=<token>`.
+ * - ConvoAI tokens are RTC + RTM + ConvoAI tokens used to authenticate
+ *   ConvoAI REST API calls via `Authorization: agora token=<token>`.
  *
  * The `agora-token` library handles the JWT signing.
  */
@@ -212,12 +212,13 @@ export interface GenerateConvoAITokenOptions {
 }
 
 /**
- * Builds a combined RTC + RTM token for ConvoAI REST API authentication.
+ * Builds a ConvoAI token carrying RTC, RTM, and ConvoAI services for REST API authentication.
  *
  * The resulting token is used as: `Authorization: agora token=<token>`
  *
- * Uses `buildTokenWithRtm` which bundles both RTC channel access and RTM
- * messaging privileges in a single AccessToken2 token.
+ * Uses `ConvoAITokenBuilder.buildToken`, which adds the ConvoAI service marker
+ * required by the ConvoAI REST API alongside RTC channel access and RTM login
+ * privileges in a single AccessToken2 token.
  */
 export function generateConvoAIToken(opts: GenerateConvoAITokenOptions): string {
     const tokenExpire = opts.tokenExpire ?? DEFAULT_EXPIRY_SECONDS;
@@ -227,13 +228,18 @@ export function generateConvoAIToken(opts: GenerateConvoAITokenOptions): string 
     const privilegeExpire = configuredPrivilegeExpire === 0 ? tokenExpire : configuredPrivilegeExpire;
     const account = _uidToAccount(opts.uid);
     return _requireBuiltToken(
-        agoraToken.RtcTokenBuilder.buildTokenWithRtm(
+        agoraToken.ConvoAITokenBuilder.buildToken(
             opts.appId,
             opts.appCertificate,
             opts.channelName,
             account,
             agoraToken.RtcRole.PUBLISHER,
             tokenExpire,
+            privilegeExpire,
+            privilegeExpire,
+            privilegeExpire,
+            privilegeExpire,
+            account,
             privilegeExpire,
         ),
         opts.appId,
