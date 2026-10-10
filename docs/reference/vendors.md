@@ -742,6 +742,9 @@ new AnamAvatar(options: AnamAvatarOptions)
 |---|---|---|---|
 | `apiKey` | `string` | Yes | Anam API key |
 | `avatarId` | `string` | No | Anam avatar ID |
+| `avatarModel` | `string` | No | Anam model, such as `cara_mk4` for Cara 4 portrait mode |
+| `videoWidth` | `number` | No | Output width in pixels; set together with `videoHeight` |
+| `videoHeight` | `number` | No | Output height in pixels; set together with `videoWidth` |
 | `enable` | `boolean` | No | Enable/disable the avatar (default: true) |
 
 ### SpatiusAvatar

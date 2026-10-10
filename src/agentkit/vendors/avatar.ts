@@ -281,6 +281,12 @@ export interface AnamAvatarOptions {
     apiKey: string;
     /** Anam avatar ID */
     avatarId?: string;
+    /** Anam avatar model, such as `cara_mk4` for Cara 4 portrait mode */
+    avatarModel?: string;
+    /** Output video width in pixels. Set together with `videoHeight`. */
+    videoWidth?: number;
+    /** Output video height in pixels. Set together with `videoWidth`. */
+    videoHeight?: number;
     /** Enable avatar (default: true) */
     enable?: boolean;
     /** Additional vendor-specific parameters */
@@ -322,19 +328,41 @@ export class AnamAvatar extends BaseAvatar<number> {
         if (!options.apiKey) {
             throw new Error("Anam avatar requires apiKey");
         }
+        const hasVideoWidth = options.videoWidth !== undefined || options.additionalParams?.video_width != null;
+        const hasVideoHeight = options.videoHeight !== undefined || options.additionalParams?.video_height != null;
+        if (hasVideoWidth !== hasVideoHeight) {
+            throw new Error("Anam avatar requires videoWidth and videoHeight together");
+        }
     }
 
     toConfig(): AvatarConfig {
-        const { apiKey, avatarId, enable = true, additionalParams } = this.options;
+        const {
+            apiKey,
+            avatarId,
+            avatarModel,
+            videoWidth,
+            videoHeight,
+            enable = true,
+            additionalParams,
+        } = this.options;
+        const params = {
+            ...additionalParams,
+            api_key: apiKey,
+            ...(avatarId && { avatar_id: avatarId }),
+            ...(avatarModel && { avatar_model: avatarModel }),
+            ...(videoWidth !== undefined && { video_width: videoWidth }),
+            ...(videoHeight !== undefined && { video_height: videoHeight }),
+        };
+        const hasVideoWidth = params.video_width != null;
+        const hasVideoHeight = params.video_height != null;
+        if (hasVideoWidth !== hasVideoHeight) {
+            throw new Error("Anam avatar requires videoWidth and videoHeight together");
+        }
 
         return {
             enable,
             vendor: "anam",
-            params: {
-                ...additionalParams,
-                api_key: apiKey,
-                ...(avatarId && { avatar_id: avatarId }),
-            },
+            params,
         };
     }
 }

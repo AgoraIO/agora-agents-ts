@@ -369,6 +369,47 @@ describe("New OpenAPI high-level adapters", () => {
         });
         expect((properties.avatar?.params as Record<string, unknown>)?.persona_id).toBeUndefined();
     });
+
+    test("AnamAvatar serializes portrait options and overrides additional params", () => {
+        const properties = new Agent({ client: TEST_AGENT_CLIENT })
+            .withStt(STUB_STT)
+            .withLlm(STUB_LLM)
+            .withTts(STUB_TTS)
+            .withAvatar(
+                new AnamAvatar({
+                    apiKey: "anam-key",
+                    avatarModel: "cara_mk4",
+                    videoWidth: 720,
+                    videoHeight: 1280,
+                    additionalParams: {
+                        avatar_model: "overridden-model",
+                        video_width: 1,
+                        video_height: 2,
+                    },
+                }),
+            )
+            .toProperties({ ...SESSION_OPTS });
+
+        expect(properties.avatar).toMatchObject({
+            vendor: "anam",
+            params: {
+                api_key: "anam-key",
+                avatar_model: "cara_mk4",
+                video_width: 720,
+                video_height: 1280,
+            },
+        });
+    });
+
+    test("AnamAvatar rejects incomplete video dimensions", () => {
+        expect(
+            () =>
+                new AnamAvatar({
+                    apiKey: "anam-key",
+                    videoWidth: 720,
+                }),
+        ).toThrow("Anam avatar requires videoWidth and videoHeight together");
+    });
 });
 
 // ---------------------------------------------------------------------------
