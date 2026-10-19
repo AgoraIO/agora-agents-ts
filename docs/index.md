@@ -25,7 +25,7 @@ The `agora-agents` package lets you build real-time voice AI agents on the [Agor
 | Layer | What it does | When to use |
 |---|---|---|
 | **AgentKit** (`Agent`, `AgentSession`, vendor classes) | High-level builder pattern, lifecycle, typed vendors | Most use cases |
-| **v3 preview** (`client.v3`, `Agent.deploy`, `DeployedAgent`) | Stored agents, secrets, numbers, and read-only sessions | Preview checkout; see the [setup guide](./guides/v3-preview.md) |
+| **Saved agents** (`Agent.save`, `SavedAgent`, `client.secrets`, `client.numbers`) | Save configurations and manage their number assignments | Preview checkout; see [Saving agents](./guides/saved-agents.md) |
 | **Generated REST clients** (`client.agents`, `client.telephony`) | Typed access to REST APIs not covered by AgentKit | Advanced use cases |
 
 ## Install
@@ -48,6 +48,7 @@ npm install agora-agents
 | [Vendors](./concepts/vendors.md) | LLM, TTS, STT, MLLM, and Avatar provider catalog |
 | [Cascading Flow Guide](./guides/cascading-flow.md) | Step-by-step ASR -> LLM -> TTS |
 | [MLLM Flow Guide](./guides/mllm-flow.md) | Global MLLM providers and Chinese mainland Qwen Omni |
+| [Saving agents](./guides/saved-agents.md) | Configure once, then create a session or save an agent |
 | [v3 Preview Guide](./guides/v3-preview.md) | Staging setup, stored-agent deployment, secrets, numbers, and v2 migration |
 | [v3 Preview Reference](./reference/v3.md) | All 20 operations, pagination, ETags, errors, and AgentKit helpers |
 | [Preview Endpoint](./guides/preview-endpoint.md) | Legacy preview routing and production migration compatibility |

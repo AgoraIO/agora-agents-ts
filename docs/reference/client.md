@@ -89,3 +89,7 @@ The client exposes Fern-generated sub-clients for direct API access:
 | `client.phoneNumbers` | Phone number management |
 
 See the [API Reference](../../reference.md) for the full sub-client method signatures.
+
+## Project provisioning (preview)
+
+`client.secrets` manages project secret sets and keys. `client.numbers` registers, lists, retrieves, updates, and deletes project numbers. These accessors share the exact underlying instances, transport, and auth of `client.v3.secrets` and `client.v3.numbers`; existing `client.agents` and `client.phoneNumbers` keep their meanings. See [Saving agents](../guides/saved-agents.md) and [operation signatures](./v3.md).

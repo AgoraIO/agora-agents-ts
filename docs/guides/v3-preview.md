@@ -5,13 +5,15 @@ description: Configure staging, deploy stored agents, manage secrets and numbers
 
 # Conversational AI v3 preview
 
+For the everyday configuration → session or saved-agent lifecycle, start with [Saving agents](./saved-agents.md). This page covers staging and advanced transport details.
+
 The preview adds stored agents, secrets, project-scoped numbers, and read-only sessions through `client.v3`. Existing v2 resources and `Agent.createSession()` retain their behavior. This guide applies to the preview branch/package build; it does not announce a published release.
 
 | Task | API |
 |---|---|
 | Start an RTC conversation now | `Agent.createSession(...).start()` — existing v2 |
-| Save or redeploy a configuration | `Agent.deploy(...)` — new v3 |
-| Assign an existing number to a stored agent | `DeployedAgent.assignNumber(...)` — v3 |
+| Save or redeploy a configuration | `Agent.save(...)` — new v3 |
+| Assign an existing number to a stored agent | `SavedAgent.assignNumber(...)` — v3 |
 | Read sessions already available in the project | `client.v3.sessions.list/get` |
 | Start/stop/update v3 sessions, outbound calls, campaigns | Not implemented; backend schemas are pending |
 
@@ -34,7 +36,7 @@ The examples below are successive fragments of one async server-side flow; they 
 
 ```ts
 import {
-  Agent, AgoraClient, Area, DeployedAgent, OpenAI, OpenAIRealtime,
+  Agent, AgoraClient, Area, SavedAgent, OpenAI, OpenAIRealtime,
   PreconditionFailedError, V3Error, secretRef,
 } from 'agora-agents';
 
@@ -86,7 +88,7 @@ A v3 stored-agent ID cannot be passed to this flow as if it were a v2 running-ag
 Create the secret set once. Secret values are write-only; GET returns names and key names, not their values. Choose a set name you own in the project:
 
 ```ts
-await client.v3.secrets.create({
+await client.secrets.create({
   name: 'support-preview',
   secrets: { openai: required('OPENAI_API_KEY') },
   idempotencyKey: 'support-preview-initial-secrets',
@@ -104,7 +106,7 @@ const storedConfig = new Agent({ client })
     type: 'bool', extract: true, description: 'Was the caller’s issue resolved?',
   });
 
-const deployed = await storedConfig.deploy({ name: 'Support preview' });
+const deployed = await storedConfig.save({ name: 'Support preview' });
 console.log(deployed.id); // Persist this ID for future redeployments.
 ```
 
@@ -120,11 +122,11 @@ For cascaded deploys, `turnDetection.language` maps to `pipeline.asr.language` r
 
 ## 4. Redeploy and handle conflicts
 
-Names are not unique upsert keys. Every `deploy()` without `agentId` creates a new stored agent. Update a known ID explicitly:
+Names are not unique upsert keys. Every `save()` without `agentId` creates a new stored agent. Use the returned handle to save a revised configuration to the same identity; `update` preserves its name unless you supply `{name}`:
 
 ```ts
-const updated = await storedConfig.deploy({ name: 'Support preview', agentId: deployed.id });
-const loaded = await DeployedAgent.get(client, updated.id);
+const updated = await deployed.update(storedConfig);
+const loaded = await SavedAgent.get(client, updated.id);
 console.log(loaded.id, loaded.name, loaded.etag);
 // loaded.raw is client.v3.agents, for operations the handle does not wrap.
 ```
@@ -161,7 +163,7 @@ The conflict error preserves the raw response and parsed error body. `latest()` 
 Register the number and its real SIP trunk in the same project first. Use the hostname supplied by your provider:
 
 ```ts
-const registered = await client.v3.numbers.create({
+const registered = await client.numbers.create({
   number: '+12025550123',
   description: 'Support staging line',
   sip_trunk: { hostname: required('SIP_TRUNK_HOSTNAME'), transport: 'tls', port: 5061 },

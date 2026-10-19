@@ -7,16 +7,13 @@
 
 The Agora Agents SDK for TypeScript lets you build real-time voice agents on Agora Conversational AI with a high-level `Agent` / `AgentSession` API and a generated REST client.
 
-## Conversational AI v3 preview
+## Configure once, then run or save
 
-This checkout adds `client.v3` and stored-agent workflows. **These features require a build of the preview branch; they are not a published npm release.** Existing v2 resources and `Agent.createSession()` keep their behavior.
+`Agent` is the configuration builder. Choose `config.createSession(...).start()` for a running conversation, or `await config.save({name})` for a `SavedAgent`. Continue with the returned session or saved handle: `saved.update(revisedConfig)`, `assignNumber()`, `unassignNumber()`, `listNumbers()`, and `delete()`.
 
-- Deploy a stored configuration with `Agent.deploy()`; redeploy by ID with ETag conflict protection.
-- Reference project secrets with `secretRef()` and define template/extraction variables with `withVariable()`.
-- Assign or unassign registered numbers; `DeployedAgent.listNumbers()` scans project pages and filters assignments locally.
-- Use all 20 low-level agent, secret, number, and session operations, with raw response headers, ETags, and cursor pagination. Sessions support project-wide reads only; session writes and agent-specific session filtering are unavailable.
+**Saving agents and project provisioning require this preview checkout; they are not announced as a published npm release.** Existing session behavior is unchanged. Use `client.secrets` and `secretRef()` for stored credentials, `withVariable()` for template/extraction definitions, and `client.numbers` to register numbers. Number listing scans project pages and filters assignments locally.
 
-Follow the [v3 preview guide](docs/guides/v3-preview.md) for staging setup, migration, supported mappings, and redeploy limits. The [v3 API reference](docs/reference/v3.md) documents every operation and helper. `secretRef()` is for v3 deployment; v2 sessions still use inline credentials.
+Start with [Saving agents](docs/guides/saved-agents.md). Saved-agent session startup is pending the new endpoint and request schema; a saved ID is not a published pipeline ID. Secret references work when saving configurations; direct sessions still need inline credentials. Advanced users can access all 20 operations, ETags, raw headers, pagination, and read-only project sessions through the [transport reference](docs/reference/v3.md). [Staging setup and mapping limits](docs/guides/v3-preview.md) remain documented separately.
 
 ## Installation
 
@@ -272,6 +269,7 @@ See the [Avatar Integration guide](./docs/guides/avatars.md) for sample-rate req
 - [BYOK Guide](./docs/guides/byok.md)
 - [MLLM Flow](./docs/guides/mllm-flow.md)
 - [Low-Level API](./docs/guides/low-level-api.md)
+- [Saving agents](./docs/guides/saved-agents.md)
 - [v3 Preview Guide](./docs/guides/v3-preview.md)
 - [v3 Preview Reference](./docs/reference/v3.md)
 
