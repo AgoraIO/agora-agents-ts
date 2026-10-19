@@ -571,6 +571,34 @@ describe("configuration lifecycle", () => {
         expect(DeployedAgent).toBe(SavedAgent);
         expect(fetch).toHaveBeenCalledTimes(4);
     });
+    it("snapshots the save target while the current configuration is being fetched", async () => {
+        const { client, fetch } = setup([response(saved())]);
+        let releaseGet!: () => void;
+        let getStarted!: () => void;
+        const pendingGet = new Promise<void>((resolve) => {
+            releaseGet = resolve;
+        });
+        const started = new Promise<void>((resolve) => {
+            getStarted = resolve;
+        });
+        fetch.mockImplementationOnce(async () => {
+            getStarted();
+            await pendingGet;
+            return response(saved(), 200, '"original-etag"');
+        });
+        const options: SaveOptions = { name: "Original", agentId: "agent-1" };
+        const pendingSave = new Agent({ client }).save(options);
+        await started;
+        options.agentId = "different-agent";
+        options.name = "Changed";
+        releaseGet();
+        await pendingSave;
+        expect(request(fetch, 0).url).toMatch(/\/agents\/agent-1$/);
+        expect(request(fetch, 1).url).toMatch(/\/agents\/agent-1$/);
+        expect(request(fetch, 1).init.method).toBe("PATCH");
+        expect(new Headers(request(fetch, 1).init.headers).get("if-match")).toBe('"original-etag"');
+        expect(body(fetch, 1).agent_name).toBe("Original");
+    });
     it("rejects cross-client updates before a request", async () => {
         const first = setup([response(saved())]);
         const second = setup();

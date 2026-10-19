@@ -410,11 +410,12 @@ export async function deployAgent(
     options: DeployOptions,
 ): Promise<SavedAgent> {
     if (client.area === Area.CN) throw new Error("v3 deployment in CN is pending backend confirmation");
+    const agentId = options.agentId;
     let response: WithRawResponse<V3.AgentResponse>;
-    if (options.agentId !== undefined) {
-        const current = await client.v3.agents.get({ id: options.agentId }).withRawResponse();
+    if (agentId !== undefined) {
+        const current = await client.v3.agents.get({ id: agentId }).withRawResponse();
         response = await client.v3.agents
-            .update({ ...redeployPatch(current.data, body), id: options.agentId, ifMatch: etag(current) })
+            .update({ ...redeployPatch(current.data, body), id: agentId, ifMatch: etag(current) })
             .withRawResponse();
     } else response = await client.v3.agents.create(body).withRawResponse();
     return new SavedAgent(client, response.data, etag(response));
