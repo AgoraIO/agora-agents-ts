@@ -37,6 +37,7 @@ const client = new AgoraClient<TArea>(options: AgoraClient.Options<TArea>);
 | `timeoutInSeconds` | `number` | No | Request timeout in seconds |
 | `maxRetries` | `number` | No | Max retry attempts (default from Fern config) |
 | `logging` | `LogConfig \| Logger` | No | SDK logger configuration |
+| `v3` | `V3Options` | No | Preview host/header overrides; see the [v3 reference](./v3.md) |
 | `fetch` | `typeof fetch` | No | Custom fetch implementation |
 
 Authentication mode is determined by which options you provide:

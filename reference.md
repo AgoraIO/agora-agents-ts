@@ -1,4 +1,7 @@
 # Reference
+
+For the additive stored-agent API, see the [v3 preview reference](docs/reference/v3.md) and [setup guide](docs/guides/v3-preview.md). The resources below describe the existing v2 API.
+
 ## Agents
 <details><summary><code>client.agents.<a href="/src/api/resources/agents/client/Client.ts">start</a>({ ...params }) -> Agora.StartAgentsResponse</code></summary>
 <dl>
