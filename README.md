@@ -13,7 +13,7 @@ The Agora Agents SDK for TypeScript lets you build real-time voice agents on Ago
 
 **Saving agents and project provisioning require this preview checkout; they are not announced as a published npm release.** Existing session behavior is unchanged. Use `client.secrets` and `secretRef()` for stored credentials, `withVariable()` for template/extraction definitions, and `client.numbers` to register numbers. Number listing scans project pages and filters assignments locally.
 
-Start with [Saving agents](docs/guides/saved-agents.md). Saved-agent session startup is pending the new endpoint and request schema; a saved ID is not a published pipeline ID. Secret references work when saving configurations; direct sessions still need inline credentials. Advanced users can access all 20 operations, ETags, raw headers, pagination, and read-only project sessions through the [transport reference](docs/reference/v3.md). [Staging setup and mapping limits](docs/guides/v3-preview.md) remain documented separately.
+Start with [Saving agents](docs/guides/saved-agents.md). Use `saved.createSession(...).start()` to run a saved configuration. Builders with secret references or variable definitions automatically start an ephemeral session without saving first. These sessions support start, stop, and get-info; conversation actions await backend support. Advanced users can access 23 operations, ETags, raw headers, pagination, and project session reads and start/stop through the [transport reference](docs/reference/v3.md). [Staging setup and mapping limits](docs/guides/v3-preview.md) remain documented separately.
 
 ## Installation
 

@@ -269,4 +269,4 @@ Think value constants: `ThinkOnListeningActionInject`, `ThinkOnListeningActionIn
 
 `SavedAgent.get(client, id)` loads a handle. `saved.update(config)` preserves its ID and name, requires the same client instance, and uses a fresh ETag for a conditional update. It returns a new snapshot. The builder and previous handle remain unchanged. `Agent.deploy` and `DeployedAgent` remain compatibility aliases.
 
-See [Saving agents](../guides/saved-agents.md) for the lifecycle and [the full signatures and transport behavior](./v3.md#agentkit-surface). Saved handles do not yet expose session startup; do not treat their IDs as published pipeline IDs.
+See [Saving agents](../guides/saved-agents.md) for the lifecycle and [the full signatures and transport behavior](./v3.md#agentkit-surface). Saved handles expose `createSession(options)`; start, stop and get-info are supported through the new session adapter. Builder configurations containing secret references or variables automatically use ephemeral startup. See the guide for unsupported session controls/options.

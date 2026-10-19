@@ -7,7 +7,7 @@ description: Configure staging, deploy stored agents, manage secrets and numbers
 
 For the everyday configuration → session or saved-agent lifecycle, start with [Saving agents](./saved-agents.md). This page covers staging and advanced transport details.
 
-The preview adds stored agents, secrets, project-scoped numbers, and read-only sessions through `client.v3`. Existing v2 resources and `Agent.createSession()` retain their behavior. This guide applies to the preview branch/package build; it does not announce a published release.
+The preview adds stored agents, secrets, project-scoped numbers, and session lifecycle operations through `client.v3`. Existing v2 resources retain their behavior. Ordinary inline `Agent.createSession()` uses its established transport; secret references, variables, or new session options select ephemeral startup. This guide applies to the preview branch/package build; it does not announce a published release.
 
 | Task | API |
 |---|---|
@@ -15,9 +15,10 @@ The preview adds stored agents, secrets, project-scoped numbers, and read-only s
 | Save or redeploy a configuration | `Agent.save(...)` — new v3 |
 | Assign an existing number to a stored agent | `SavedAgent.assignNumber(...)` — v3 |
 | Read sessions already available in the project | `client.v3.sessions.list/get` |
-| Start/stop/update v3 sessions, outbound calls, campaigns | Not implemented; backend schemas are pending |
+| Start a saved or inline stored-config session | `SavedAgent.createSession(...).start()` or automatic ephemeral `Agent.createSession(...).start()` |
+| Update/action operations on new sessions, outbound calls, campaigns | Not implemented in this SDK |
 
-The complete [v3 reference](../reference/v3.md) lists all 20 REST operations, request fields, headers, and return types.
+The complete [v3 reference](../reference/v3.md) lists 23 REST operations, request fields, headers, and return types.
 
 ## 1. Configure staging
 
@@ -112,7 +113,7 @@ console.log(deployed.id); // Persist this ID for future redeployments.
 
 This saves an LLM configuration; it does **not** start a conversation or provide a complete ASR/TTS phone pipeline. Configure those modules before using the agent to answer calls. The backend remains authoritative for supported providers and endpoint settings.
 
-`secretRef(set, key)` returns `$secrets.<set>.<key>` as a branded string. Both components must contain 1–64 letters, digits, underscores, or hyphens. It does not create or resolve the secret. Calling `createSession()` or `toProperties()` with a secret reference throws `SecretRefNotSupportedError` locally; use a separate inline-credential builder for v2.
+`secretRef(set, key)` returns `$secrets.<set>.<key>` as a branded string. Both components must contain 1–64 letters, digits, underscores, or hyphens. It does not create or resolve the secret. `createSession()` with a secret reference uses ephemeral startup. Explicit `toProperties()` conversion to the older inline wire format still throws `SecretRefNotSupportedError`.
 
 `withVariable(name, definition)` returns a new Agent and performs no network call. Names match `^[a-z][a-z0-9_]{0,63}$`; types are `str`, `int`, `float`, `bool`, `date`, or `datetime`. Optional fields are `required`, `options`, `extract`, and `description`. `extract: true` requires a nonblank description. These are definitions, not runtime values; v2 `templateVariables` cannot be migrated as variable defaults because v3 has no default field. Extraction results, when available, are read through the low-level session response’s `analysis` field; there is no AgentKit `getAnalysis()` method in this phase.
 
@@ -210,8 +211,10 @@ Provider URLs are preserved from configuration; the SDK invents none. Staging re
 2. Create project secrets and separate stored-agent builders; remove unsupported session-only configuration from those builders.
 3. Save each new `agent_id` and pass it on redeploy. Register numbers per project before assignment.
 4. Use low-level session reads only for IDs available through v3. Do not assume that a v2 ID is interchangeable.
-5. Keep session writes, outbound calls, and campaigns on hold until their schemas and SDK support exist.
+5. Use the new session adapter for start/stop/get. Conversation actions, outbound calls, and campaigns require additional SDK support.
 
 The SDK package version is separate from API v3; this branch does not automatically bump a release version or deprecate v2 telephony.
 
 The checked-in [staging snapshot](../../src/v3/openapi.json) drives a **custom preview generator, not Fern**. `python3 scripts/generate-v3-preview.py` regenerates wire types, resource methods, and the mapping contract; run the repository formatter afterward. `.fernignore` protects the preview until shared Fern generation is integrated. See the [generator](../../scripts/generate-v3-preview.py) and [resource implementation](../../src/v3/resources.ts). Examples are type-checked and transport tests are mocked; no live staging verification is claimed.
+
+Session start/ephemeral start/stop are implemented from the refreshed 2026-10-19 Bruno requests in a [handwritten supplement](../../src/v3/session-lifecycle.ts). The older OpenAPI snapshot does not describe them; the generator preserves the supplement. See [session lifecycle options and limits](./saved-agents.md#start-saved-and-ephemeral-sessions).

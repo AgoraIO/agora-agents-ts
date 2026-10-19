@@ -8,7 +8,7 @@ description: Configure an agent, create a live session or save its configuration
 `Agent` is an immutable configuration builder. Configure providers once, then choose a lifecycle:
 
 - `config.createSession(options)` returns an idle `AgentSession`. Call `session.start()`, then use the session for conversation controls and `stop()`.
-- `await config.save({name})` returns a `SavedAgent`. Use that handle to update the saved configuration, assign numbers, list its number assignments, or delete it.
+- `await config.save({name})` returns a `SavedAgent`. Use that handle to update the saved configuration, start a session, assign numbers, list its number assignments, or delete it.
 
 Saving and project provisioning are available in this preview checkout, not an announced package release. Configure your client using the [staging setup](./v3-preview.md#1-configure-staging) before running these examples. The snippets below form one async server-side workflow; supply a configured `client` and your provider key.
 
@@ -39,7 +39,7 @@ const saved = await config.save({ name: 'Support' });
 console.log(saved.id);
 ```
 
-The builder remains reusable and unchanged. The running session ID and saved configuration ID represent different objects. A saved handle currently has no `createSession()` or `start()` method: the new session-start API will accept a saved agent ID, but its endpoint and request schema are still pending. A saved agent ID is not a published pipeline ID; do not substitute one for the other. Existing published-pipeline sessions remain supported by their established configuration.
+The builder remains reusable and unchanged. The running session ID and saved configuration ID represent different objects. `saved.createSession(options)` creates an idle session backed by that saved identity. Its `start()` returns a new session ID; a saved agent ID is not a published pipeline ID. Existing published-pipeline sessions remain supported by their established configuration.
 
 ## Update or reload the saved agent
 
@@ -75,7 +75,7 @@ const storedConfig = config.withMllm(new OpenAIRealtime({
 await saved.update(storedConfig);
 ```
 
-Secret values are write-only. `secretRef()` references an existing set/key; it does not create or fetch credentials. Configurations containing secret references can be saved, but direct session creation rejects them because the existing session backend requires inline credentials. Variable definitions describe templates/extraction; they do not add runtime defaults or automatically expose analysis on existing sessions. See [supported mappings](./v3-preview.md#mapping-supported-by-deployment) for validation and unsupported settings.
+Secret values are write-only. `secretRef()` references an existing set/key; it does not create or fetch credentials. Configurations containing secret references or variable definitions can be saved or started directly: `config.createSession()` automatically selects an ephemeral session, without persisting the agent. Variable definitions describe templates/extraction; they do not add runtime defaults or automatically expose analysis on existing sessions. See [supported mappings](./v3-preview.md#mapping-supported-by-deployment) for validation and unsupported settings.
 
 ## Register and assign a number
 
@@ -94,4 +94,31 @@ await loaded.delete();
 
 Use a real, authorized number and SIP trunk, and save a complete supported phone pipeline before assignment. Assignment never registers a missing number. `listNumbers()` scans all project number pages and filters assignments locally, making one list request per page. Sessions can be listed project-wide through the advanced resource API, but their responses lack a reliable saved-agent association; there is no `saved.listSessions()`.
 
-`client.secrets` and `client.numbers` share the same resource objects, authentication, pagination, and raw-response options as their advanced counterparts. `client.v3` remains available for all 20 transport operations and read-only session records. See the [API reference](../reference/v3.md) for details. Existing `deploy()` and `DeployedAgent` names are compatibility aliases for `save()` and `SavedAgent`.
+`client.secrets` and `client.numbers` share the same resource objects, authentication, pagination, and raw-response options as their advanced counterparts. `client.v3` remains available for 23 transport operations, including session start, ephemeral start, stop, and reads. See the [API reference](../reference/v3.md) for details. Existing `deploy()` and `DeployedAgent` names are compatibility aliases for `save()` and `SavedAgent`.
+
+## Start saved and ephemeral sessions
+
+```ts
+const savedSession = saved.createSession({
+  channel: 'saved-room', agentUid: '1002', remoteUids: ['1001'],
+  clientReference: 'support-123', labels: { owner: 'support' },
+  idleTimeout: 60, maxDuration: 120,
+});
+const sessionId = await savedSession.start();
+const info = await savedSession.getInfo();
+console.log(sessionId, info.agent_session_id, info.status, info.analysis);
+await savedSession.stop();
+
+// Secret references/variables select an ephemeral session with inline configuration.
+const ephemeral = storedConfig.createSession({
+  channel: 'ephemeral-room', agentUid: '1002', remoteUids: ['1001'], idleTimeout: 60,
+});
+await ephemeral.start();
+await ephemeral.stop();
+```
+
+`idleTimeout` and `maxDuration` use seconds and are converted to integer milliseconds. `name` is a fallback for `clientReference`. Labels are supported for saved-agent starts; ephemeral labels are rejected until their contract is confirmed. The new backend does not document `token`, `expiresIn`, `enableStringUid`, `preset`, or `pipelineId`, so these options fail locally on saved/ephemeral sessions.
+
+The same `AgentSession` status and events apply to both lifecycles. Started/stopped events retain the compatibility `agentId` payload key and also expose `sessionId` for these new sessions; both contain the actual session ID. `start()` returns the new session ID; `getInfo()` preserves `agent_session_id` and does not invent a running-agent `agent_id`. Start reports lowercase `running` on the wire; retrieve reports uppercase statuses. `stop()` accepts an already-ended `TaskNotFound` response, while unrelated errors propagate. A GET immediately after stop may temporarily return `TaskNotFound`.
+
+On saved/ephemeral sessions, `say`, `interrupt`, `think`, `update`, history, turns, and legacy raw-client access throw `UnsupportedSessionOperationError` before any request. Use `client.v3.sessions` for raw responses. Existing ordinary inline sessions retain their established transport and controls. Supplying `clientReference` or `maxDuration` also selects ephemeral startup for an inline builder; no version flag is needed.
