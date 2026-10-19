@@ -348,7 +348,7 @@ export type AgentConfigUpdate = UpdateAgentsRequest.Properties;
 export interface SessionOptions {
     /** Correlation reference for stored/ephemeral sessions. */
     clientReference?: string;
-    /** Labels for stored/ephemeral sessions. */
+    /** Labels for saved-agent sessions; not supported for ephemeral sessions. */
     labels?: Record<string, string>;
     /** Maximum duration in seconds; selects the stored/ephemeral session backend. */
     maxDuration?: number;
