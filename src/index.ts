@@ -431,3 +431,5 @@ export { AgoraError, AgoraTimeoutError } from "./errors/index.js";
 export * from "./exports.js";
 export type { V3, V3Options } from "./v3/index.js";
 export { PreconditionFailedError, V3Client, V3Error } from "./v3/index.js";
+
+export { UnsupportedSessionOperationError } from "./agentkit/session-backend.js";

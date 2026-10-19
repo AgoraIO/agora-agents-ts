@@ -498,3 +498,5 @@ export {
     SecretRefNotSupportedError,
     UnsupportedFieldError,
 } from "./v3.js";
+
+export { UnsupportedSessionOperationError } from "./session-backend.js";

@@ -1,5 +1,7 @@
+import { createStoredSession } from "./session-backend.js";
 import {
     assertNoSecretRefs,
+    SecretRefNotSupportedError,
     buildV3Agent,
     type DeployedAgent,
     type DeployOptions,
@@ -787,7 +789,32 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
 
     createSession(options: SessionOptions): AgentSession {
         const { client: _client, ...config } = this.config;
-        assertNoSecretRefs(config);
+        let requiresStoredSession =
+            Object.keys(this._variables).length > 0 ||
+            options.clientReference !== undefined ||
+            options.labels !== undefined ||
+            options.maxDuration !== undefined;
+        try {
+            assertNoSecretRefs(config);
+        } catch (error) {
+            if (error instanceof SecretRefNotSupportedError) requiresStoredSession = true;
+            else throw error;
+        }
+        if (requiresStoredSession) {
+            const normalized = this.config;
+            if (
+                normalized.mllm === undefined &&
+                (normalized.stt !== undefined || normalized.turnDetection?.language !== undefined)
+            ) {
+                normalized.stt = this._resolveAsrConfig(this._resolveTurnDetectionConfig());
+            }
+            const { agent_name: _name, ...agent } = buildV3Agent(
+                normalized,
+                this._variables,
+                options.name ?? "ephemeral",
+            );
+            return createStoredSession(this._client, options, { agent }, this);
+        }
         const name = options.name ?? `agent-${Date.now()}`;
         return new AgentSession({
             client: this._client,

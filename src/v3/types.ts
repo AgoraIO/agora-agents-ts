@@ -706,3 +706,10 @@ export type Contract_AgoraVadTurnDetection = {
 export type Contract_FunctionToolExecution = { mode: "sync" };
 export type Contract_JsonSchema = Record<string, unknown> | boolean;
 export type AgentCreateRequest = Contract_AgentCreateInput & AgentCreateModel;
+
+export type {
+    EphemeralSessionStartRequest,
+    SessionStartOptions,
+    SessionStartRequest,
+    SessionStartResponse,
+} from "./session-lifecycle.js";

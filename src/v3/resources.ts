@@ -2,6 +2,7 @@
 
 import type { BaseRequestOptions } from "../BaseClient.js";
 import type { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
+import { SessionLifecycleResource } from "./session-lifecycle.js";
 import { omit, segment, type V3Transport } from "./transport.js";
 import type * as T from "./types.js";
 export class AgentsResource {
@@ -325,8 +326,7 @@ export class NumbersResource {
         );
     }
 }
-export class SessionsResource {
-    constructor(private transport: V3Transport) {}
+export class SessionsResource extends SessionLifecycleResource {
     list(
         request: {
             appid?: string;

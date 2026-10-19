@@ -1,3 +1,6 @@
+import { createStoredSession } from "./session-backend.js";
+import type { AgentSession } from "./AgentSession.js";
+import type { SessionOptions } from "./types.js";
 import type { AgoraClient } from "../AgoraPoolClient.js";
 import { Area } from "../core/domain/index.js";
 import type { WithRawResponse } from "../core/fetcher/RawResponse.js";
@@ -440,6 +443,9 @@ export class SavedAgent {
     static async get(client: AgoraClient, agentId: string): Promise<SavedAgent> {
         const response = await client.v3.agents.get({ id: agentId }).withRawResponse();
         return new SavedAgent(client, response.data, etag(response));
+    }
+    createSession(options: SessionOptions): AgentSession {
+        return createStoredSession(this.client, options, { agent_id: this.id });
     }
     /** Save a revised configuration to this stored identity, preserving its name by default. */
     update(config: Agent, options: { name?: string } = {}): Promise<SavedAgent> {

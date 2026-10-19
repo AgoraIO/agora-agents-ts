@@ -7,6 +7,8 @@ import {
     DeepgramSTT,
     DeployedAgent,
     SavedAgent,
+    AgentSession,
+    UnsupportedSessionOperationError,
     type SaveOptions,
     OpenAI,
     OpenAIRealtime,
@@ -158,7 +160,8 @@ describe("v3 preview", () => {
                 asr: { credential: { mode: "byok", api_key: "asr" } },
             },
         });
-        expect(() => base.createSession({ channel: "room", agentUid: "1", remoteUids: ["*"] })).toThrow(
+        expect(base.createSession({ channel: "room", agentUid: "1", remoteUids: ["*"] })).toBeInstanceOf(AgentSession);
+        expect(() => base.toProperties({ channel: "room", agentUid: "1", remoteUids: ["*"], token: "rtc" })).toThrow(
             SecretRefNotSupportedError,
         );
         expect(() => agent.withVariable("Bad", { type: "str" })).toThrow();
@@ -552,7 +555,7 @@ describe("configuration lifecycle", () => {
         expect(config.config).toEqual(original);
         expect(session.id).toBe("running-1");
         expect("start" in stored).toBe(false);
-        expect("createSession" in stored).toBe(false);
+        expect(typeof stored.createSession).toBe("function");
     });
     it("shares provisioning resources and keeps compatibility aliases", async () => {
         const { client, fetch } = setup([
@@ -625,5 +628,144 @@ describe("configuration lifecycle", () => {
             expect((error as UnsupportedFieldError).fields).toContain("turnDetection.language");
         }
         expect(fetch).not.toHaveBeenCalled();
+    });
+});
+
+describe("stored and ephemeral session adapters", () => {
+    it("starts a saved identity, reads its real session ID, and stops with no body", async () => {
+        const { client, fetch } = setup([
+            response(saved()),
+            response({ agent_session_id: "session/a", status: "running", created_at: 123 }, 201),
+            response({
+                agent_session_id: "session/a",
+                status: "RUNNING",
+                start_ts: 123,
+                analysis: { result: { resolved: true } },
+            }),
+            response({}),
+        ]);
+        const stored = await SavedAgent.get(client, "agent-1");
+        const options = {
+            channel: "room",
+            agentUid: "1002",
+            remoteUids: ["1001"],
+            name: "reference",
+            labels: { owner: "test" },
+            idleTimeout: 60,
+            maxDuration: 120,
+        };
+        const session = stored.createSession(options);
+        options.remoteUids.push("changed");
+        options.labels.owner = "changed";
+        expect(fetch).toHaveBeenCalledTimes(1);
+        const started = vi.fn(),
+            stopped = vi.fn();
+        session.on("started", started);
+        session.on("stopped", stopped);
+        expect(await session.start()).toBe("session/a");
+        expect(session.status).toBe("running");
+        expect(session.id).toBe("session/a");
+        expect(body(fetch, 1)).toEqual({
+            agent_id: "agent-1",
+            client_reference: "reference",
+            labels: { owner: "test" },
+            transport: { type: "rtc", channel: "room", uid: "1002", subscribe_uids: ["1001"] },
+            lifecycle: { idle_timeout_ms: 60000, max_duration_ms: 120000 },
+        });
+        expect(request(fetch, 1).url).toMatch(/\/sessions$/);
+        const info = await session.getInfo();
+        expect(info.agent_session_id).toBe("session/a");
+        expect(info).not.toHaveProperty("agent_id");
+        expect(request(fetch, 2).url).toMatch(/\/sessions\/session%2Fa$/);
+        await session.stop();
+        expect(request(fetch, 3).url).toMatch(/\/sessions\/session%2Fa\/stop$/);
+        expect(request(fetch, 3).init.body).toBeUndefined();
+        expect(session.status).toBe("stopped");
+        expect(started).toHaveBeenCalledOnce();
+        expect(stopped).toHaveBeenCalledOnce();
+    });
+    it("automatically starts an unsaved configuration with secrets and variables inline", async () => {
+        const { client, fetch } = setup([
+            response({ agent_session_id: "ephemeral", status: "running", created_at: 123 }, 201),
+            response({}),
+        ]);
+        const config = new Agent({ client })
+            .withMllm(
+                new OpenAIRealtime({
+                    apiKey: secretRef("support", "key"),
+                    model: "gpt-realtime",
+                    instructions: "Help",
+                }),
+            )
+            .withVariable("resolved", { type: "bool" });
+        const before = config.config;
+        const session = config.createSession({ channel: "room", agentUid: "1", remoteUids: ["2"] });
+        expect(fetch).not.toHaveBeenCalled();
+        expect(await session.start()).toBe("ephemeral");
+        expect(request(fetch).url).toMatch(/\/sessions\/ephemeral$/);
+        expect(body(fetch).agent).not.toHaveProperty("agent_name");
+        expect(body(fetch)).not.toHaveProperty("agent_id");
+        expect(body(fetch).agent.variables).toEqual({ resolved: { type: "bool" } });
+        expect(body(fetch).agent.pipeline.mllm.credential.api_key).toBe("$secrets.support.key");
+        expect(config.config).toEqual(before);
+        for (const call of [
+            () => session.say("Hi"),
+            () => session.interrupt(),
+            () => session.think("Hi"),
+            () => session.update({}),
+            () => session.getHistory(),
+            () => session.getTurns(),
+            () => session.getAllTurns(),
+        ])
+            await expect(call()).rejects.toBeInstanceOf(UnsupportedSessionOperationError);
+        expect(() => session.raw).toThrow(UnsupportedSessionOperationError);
+        expect(() => session.rawAgentManagement).toThrow(UnsupportedSessionOperationError);
+        expect(fetch).toHaveBeenCalledTimes(1);
+        await session.stop();
+    });
+    it("does not retry session creation and preserves failures/events", async () => {
+        const { client, fetch } = setup([response({ reason: "Busy" }, 503)]);
+        const session = new Agent({ client })
+            .withVariable("choice", { type: "bool" })
+            .createSession({ channel: "room", agentUid: "1", remoteUids: ["2"] });
+        const error = vi.fn();
+        session.on("error", error);
+        await expect(session.start()).rejects.toMatchObject({ statusCode: 503 });
+        expect(session.status).toBe("error");
+        expect(session.id).toBeNull();
+        expect(error).toHaveBeenCalledOnce();
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+    it("rejects unsupported session options without silently losing them", () => {
+        const { client, fetch } = setup();
+        const config = new Agent({ client }).withVariable("choice", { type: "bool" });
+        for (const extra of [
+            { labels: { owner: "test" } },
+            { token: "rtc" },
+            { preset: "x" },
+            { pipelineId: "published" },
+            { expiresIn: 60 },
+            { enableStringUid: true },
+            { idleTimeout: -1 },
+            { maxDuration: NaN },
+        ]) {
+            expect(() =>
+                config.createSession({ channel: "room", agentUid: "1", remoteUids: ["2"], ...extra }),
+            ).toThrow();
+        }
+        expect(fetch).not.toHaveBeenCalled();
+    });
+    it("treats only TaskNotFound stop responses as an already-ended session", async () => {
+        const { client, fetch } = setup([
+            response({ agent_session_id: "s", status: "running", created_at: 1 }, 201),
+            response({ reason: "TaskNotFound" }, 404),
+        ]);
+        const session = new Agent({ client })
+            .withVariable("choice", { type: "bool" })
+            .createSession({ channel: "room", agentUid: "1", remoteUids: ["2"] });
+        await session.start();
+        await session.stop();
+        expect(session.status).toBe("stopped");
+        expect(fetch).toHaveBeenCalledTimes(2);
     });
 });

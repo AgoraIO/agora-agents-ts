@@ -346,6 +346,12 @@ export type AgentConfigUpdate = UpdateAgentsRequest.Properties;
 
 /** Options for creating a session via {@link Agent.createSession} */
 export interface SessionOptions {
+    /** Correlation reference for stored/ephemeral sessions. */
+    clientReference?: string;
+    /** Labels for stored/ephemeral sessions. */
+    labels?: Record<string, string>;
+    /** Maximum duration in seconds; selects the stored/ephemeral session backend. */
+    maxDuration?: number;
     /** Unique agent instance name sent to the Agora API. Omit to auto-generate `agent-{timestamp}`. */
     name?: string;
     /** The channel to join */
@@ -380,7 +386,11 @@ export interface SessionOptions {
 export type SessionStatus = ListAgentsResponse.Data.List.Item.Status;
 
 /** Session info (from get endpoint) */
-export type SessionInfo = GetAgentsResponse;
+export type SessionInfo = GetAgentsResponse & {
+    agent_session_id?: string;
+    agent_name?: string;
+    analysis?: import("../v3/types.js").SessionAnalysis | null;
+};
 
 /** Session list response */
 export type SessionListResponse = ListAgentsResponse;
