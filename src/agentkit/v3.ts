@@ -4,7 +4,7 @@ import type { WithRawResponse } from "../core/fetcher/RawResponse.js";
 import { contract } from "../v3/contract.js";
 import { PreconditionFailedError } from "../v3/transport.js";
 import type * as V3 from "../v3/types.js";
-import type { AgentOptions } from "./Agent.js";
+import type { Agent, AgentOptions } from "./Agent.js";
 import type { LlmConfig, MllmConfig, SttConfig, TtsConfig } from "./types.js";
 
 export type SecretRef = string & { readonly __secretRef: unique symbol };
@@ -15,7 +15,7 @@ export function secretRef(set: string, key: string): SecretRef {
 }
 export class SecretRefNotSupportedError extends Error {
     constructor() {
-        super("secretRef requires deploy()");
+        super("secretRef requires save()");
         this.name = "SecretRefNotSupportedError";
     }
 }
@@ -269,6 +269,7 @@ export function buildV3Agent(
         if (config[key] !== undefined) errors.push(key);
     if (config.parameters) leftovers(config.parameters, ["silence_config"], "parameters", errors);
     const realtime = config.mllm !== undefined;
+    if (realtime && config.turnDetection?.language !== undefined) errors.push("turnDetection.language");
     if (realtime) for (const key of ["stt", "llm", "tts"] as const) if (config[key] !== undefined) errors.push(key);
     const pipeline: Map = { mode: realtime ? "realtime" : "cascaded" };
     for (const [key, kind] of [
@@ -397,15 +398,17 @@ function etag(response: WithRawResponse<unknown>): string {
     if (!tag) throw new Error("v3 response is missing ETag");
     return tag;
 }
-export interface DeployOptions {
+export interface SaveOptions {
     name?: string;
     agentId?: string;
 }
+/** Compatibility name for save options. */
+export type DeployOptions = SaveOptions;
 export async function deployAgent(
     client: AgoraClient,
     body: V3.AgentCreateRequest,
     options: DeployOptions,
-): Promise<DeployedAgent> {
+): Promise<SavedAgent> {
     if (client.area === Area.CN) throw new Error("v3 deployment in CN is pending backend confirmation");
     let response: WithRawResponse<V3.AgentResponse>;
     if (options.agentId !== undefined) {
@@ -414,13 +417,13 @@ export async function deployAgent(
             .update({ ...redeployPatch(current.data, body), id: options.agentId, ifMatch: etag(current) })
             .withRawResponse();
     } else response = await client.v3.agents.create(body).withRawResponse();
-    return new DeployedAgent(client, response.data, etag(response));
+    return new SavedAgent(client, response.data, etag(response));
 }
 export interface AssignNumberOptions {
     maxCallDurationSeconds?: number;
     maxSilenceDurationMs?: number;
 }
-export class DeployedAgent {
+export class SavedAgent {
     readonly id: string;
     readonly name: string;
     readonly raw: AgoraClient["v3"]["agents"];
@@ -433,9 +436,16 @@ export class DeployedAgent {
         this.name = data.agent_name;
         this.raw = client.v3.agents;
     }
-    static async get(client: AgoraClient, agentId: string): Promise<DeployedAgent> {
+    static async get(client: AgoraClient, agentId: string): Promise<SavedAgent> {
         const response = await client.v3.agents.get({ id: agentId }).withRawResponse();
-        return new DeployedAgent(client, response.data, etag(response));
+        return new SavedAgent(client, response.data, etag(response));
+    }
+    /** Save a revised configuration to this stored identity, preserving its name by default. */
+    update(config: Agent, options: { name?: string } = {}): Promise<SavedAgent> {
+        if (config.config.client !== this.client) {
+            throw new Error("SavedAgent.update requires a configuration bound to the same client");
+        }
+        return config.save({ agentId: this.id, name: options.name ?? this.name });
     }
     async delete(): Promise<void> {
         await this.raw.delete({ id: this.id });
@@ -490,3 +500,6 @@ export class DeployedAgent {
         }
     }
 }
+
+/** Compatibility alias; save() and deploy() return the same handle type. */
+export { SavedAgent as DeployedAgent };

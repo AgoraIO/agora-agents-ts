@@ -3,6 +3,8 @@ import {
     buildV3Agent,
     type DeployedAgent,
     type DeployOptions,
+    type SaveOptions,
+    type SavedAgent,
     deployAgent,
     type VariableDefinition,
     validateVariable,
@@ -764,7 +766,8 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         return next;
     }
 
-    deploy(options: DeployOptions = {}): Promise<DeployedAgent> {
+    /** Persist this configuration and return a stored-agent handle. Does not start a session. */
+    save(options: SaveOptions = {}): Promise<SavedAgent> {
         const config = this.config;
         if (config.mllm === undefined && (config.stt !== undefined || config.turnDetection?.language !== undefined)) {
             // Reuse v2's ASR language precedence only when ASR or language was configured.
@@ -775,6 +778,11 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             buildV3Agent(config, this._variables, options.name ?? `agent-${Date.now()}`),
             options,
         );
+    }
+
+    /** Compatibility alias for save(). */
+    deploy(options: DeployOptions = {}): Promise<DeployedAgent> {
+        return this.save(options);
     }
 
     createSession(options: SessionOptions): AgentSession {

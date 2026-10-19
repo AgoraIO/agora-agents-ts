@@ -6,6 +6,8 @@ import {
     Area,
     DeepgramSTT,
     DeployedAgent,
+    SavedAgent,
+    type SaveOptions,
     OpenAI,
     OpenAIRealtime,
     PreconditionFailedError,
@@ -508,5 +510,92 @@ describe("v3 preview", () => {
             expect(new URL(call.url).searchParams.get("limit")).toBe("100");
         }
         expect(new URL(request(fetch, 2).url).searchParams.get("cursor")).toBe("next");
+    });
+});
+
+describe("configuration lifecycle", () => {
+    it("forks one immutable configuration into a running session or a saved handle", async () => {
+        const { client, fetch } = setup([
+            response({ agent_id: "running-1" }),
+            response(saved()),
+            response(saved()),
+            response(saved({ greeting: { mode: "text", text: "Updated" } })),
+            response(number()),
+            response({ ...number(), inbound: { agent: "agent-1" } }),
+            response(page([{ ...number(), inbound: { agent: "agent-1" } }])),
+        ]);
+        const config = new Agent({ client }).withMllm(
+            new OpenAIRealtime({
+                apiKey: "inline-key",
+                model: "gpt-realtime",
+                instructions: "Help callers",
+            }),
+        );
+        const original = config.config;
+        const session = config.createSession({ channel: "room", agentUid: "1", remoteUids: ["*"], token: "rtc-token" });
+        expect(await session.start()).toBe("running-1");
+        expect(request(fetch).url).toContain("/join");
+        const options: SaveOptions = { name: "Support" };
+        const stored = await config.save(options);
+        expect(stored).toBeInstanceOf(SavedAgent);
+        expect(stored).toBeInstanceOf(DeployedAgent);
+        expect(stored.id).toBe("agent-1");
+        expect(stored.raw).toBe(client.v3.agents);
+        const updated = await stored.update(config.withGreeting("Updated"));
+        expect(updated.id).toBe(stored.id);
+        expect(body(fetch, 3).agent_name).toBe(stored.name);
+        expect(body(fetch, 3).greeting).toEqual({ mode: "text", text: "Updated" });
+        expect(new Headers(request(fetch, 3).init.headers).get("if-match")).toBe('"v1"');
+        await updated.assignNumber("num-1");
+        expect(body(fetch, 5).inbound.agent).toBe(stored.id);
+        expect(await updated.listNumbers()).toHaveLength(1);
+        expect(config.config).toEqual(original);
+        expect(session.id).toBe("running-1");
+        expect("start" in stored).toBe(false);
+        expect("createSession" in stored).toBe(false);
+    });
+    it("shares provisioning resources and keeps compatibility aliases", async () => {
+        const { client, fetch } = setup([
+            response({ name: "keys" }),
+            response(number()),
+            response(saved()),
+            response(saved()),
+        ]);
+        expect(client.secrets).toBe(client.v3.secrets);
+        expect(client.numbers).toBe(client.v3.numbers);
+        await client.secrets.create({ name: "keys", secrets: { key: "secret" } });
+        await client.numbers.create({ number: "+12025550123", sip_trunk: { hostname: "sip.example" } });
+        const config = new Agent({ client });
+        expect(await config.deploy({ name: "Legacy" })).toBeInstanceOf(SavedAgent);
+        expect(await SavedAgent.get(client, "agent-1")).toBeInstanceOf(DeployedAgent);
+        expect(DeployedAgent).toBe(SavedAgent);
+        expect(fetch).toHaveBeenCalledTimes(4);
+    });
+    it("rejects cross-client updates before a request", async () => {
+        const first = setup([response(saved())]);
+        const second = setup();
+        const stored = await new Agent({ client: first.client }).save({ name: "Support" });
+        expect(() => stored.update(new Agent({ client: second.client }))).toThrow("same client");
+        expect(first.fetch).toHaveBeenCalledTimes(1);
+        expect(second.fetch).not.toHaveBeenCalled();
+    });
+    it("rejects realtime interaction language even when vendor turn settings override it", () => {
+        const { client, fetch } = setup();
+        const config = new Agent({ client })
+            .withMllm(
+                new OpenAIRealtime({
+                    apiKey: "key",
+                    model: "gpt-realtime",
+                    turnDetection: { mode: "server_vad" },
+                }),
+            )
+            .withTurnDetection({ language: "ja-JP" });
+        expect(() => config.save()).toThrow(UnsupportedFieldError);
+        try {
+            config.save();
+        } catch (error) {
+            expect((error as UnsupportedFieldError).fields).toContain("turnDetection.language");
+        }
+        expect(fetch).not.toHaveBeenCalled();
     });
 });

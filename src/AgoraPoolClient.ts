@@ -148,6 +148,14 @@ export declare namespace AgoraClient {
 export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraClient {
     protected readonly _pool: Pool;
     public readonly v3: V3Client;
+    /** Project secrets shared with the advanced resource client. */
+    public get secrets(): V3Client["secrets"] {
+        return this.v3.secrets;
+    }
+    /** Registered project numbers shared with the advanced resource client. */
+    public get numbers(): V3Client["numbers"] {
+        return this.v3.numbers;
+    }
     /** Agora App ID */
     public readonly appId: string;
     /** Agora App Certificate (used for RTC token signing) */

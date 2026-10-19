@@ -488,3 +488,13 @@ export {
     TypecastTTS,
     XAiTTS,
 } from "./vendors/tts.js";
+
+export type { AssignNumberOptions, DeployOptions, SaveOptions, SecretRef, VariableDefinition } from "./v3.js";
+export {
+    SavedAgent,
+    DeployedAgent,
+    secretRef,
+    NumberNotFoundError,
+    SecretRefNotSupportedError,
+    UnsupportedFieldError,
+} from "./v3.js";

@@ -412,9 +412,10 @@ export {
     XfyunDialectSTT,
     XfyunSTT,
 } from "./agentkit/index.js";
-export type { AssignNumberOptions, DeployOptions, SecretRef, VariableDefinition } from "./agentkit/v3.js";
+export type { AssignNumberOptions, DeployOptions, SaveOptions, SecretRef, VariableDefinition } from "./agentkit/v3.js";
 export {
     DeployedAgent,
+    SavedAgent,
     NumberNotFoundError,
     SecretRefNotSupportedError,
     secretRef,
