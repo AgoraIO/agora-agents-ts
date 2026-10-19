@@ -7,6 +7,17 @@
 
 The Agora Agents SDK for TypeScript lets you build real-time voice agents on Agora Conversational AI with a high-level `Agent` / `AgentSession` API and a generated REST client.
 
+## Conversational AI v3 preview
+
+This checkout adds `client.v3` and stored-agent workflows. **These features require a build of the preview branch; they are not a published npm release.** Existing v2 resources and `Agent.createSession()` keep their behavior.
+
+- Deploy a stored configuration with `Agent.deploy()`; redeploy by ID with ETag conflict protection.
+- Reference project secrets with `secretRef()` and define template/extraction variables with `withVariable()`.
+- Assign or unassign registered numbers; `DeployedAgent.listNumbers()` scans project pages and filters assignments locally.
+- Use all 20 low-level agent, secret, number, and session operations, with raw response headers, ETags, and cursor pagination. Sessions support project-wide reads only; session writes and agent-specific session filtering are unavailable.
+
+Follow the [v3 preview guide](docs/guides/v3-preview.md) for staging setup, migration, supported mappings, and redeploy limits. The [v3 API reference](docs/reference/v3.md) documents every operation and helper. `secretRef()` is for v3 deployment; v2 sessions still use inline credentials.
+
 ## Installation
 
 ```sh
@@ -261,16 +272,10 @@ See the [Avatar Integration guide](./docs/guides/avatars.md) for sample-rate req
 - [BYOK Guide](./docs/guides/byok.md)
 - [MLLM Flow](./docs/guides/mllm-flow.md)
 - [Low-Level API](./docs/guides/low-level-api.md)
+- [v3 Preview Guide](./docs/guides/v3-preview.md)
+- [v3 Preview Reference](./docs/reference/v3.md)
 
 ## Reference
 
 - [SDK Reference](./reference.md)
 - [Agora Conversational AI Docs](https://docs.agora.io/en/conversational-ai/overview)
-
-### Conversational AI v3 preview
-
-The additive [v3 preview guide](docs/guides/v3-preview.md) covers stored agents,
-secrets, project-scoped numbers, read-only sessions, and AgentKit `deploy()`.
-Existing v2 sessions and resources retain their current behavior. See the
-[v3 API reference](docs/reference/v3.md) for all 20 operations, ETags, pagination,
-and AgentKit helpers, including `DeployedAgent.listNumbers()`.

@@ -190,15 +190,15 @@ There is no `deployed.listSessions()` helper: session list items contain only se
 | Provider single API key, including `secretRef` | `credential: {mode:'byok', api_key}` |
 | Provider without a key | `credential: {mode:'managed'}` |
 | Vendor system/messages | System text joined into `instructions`; other messages retained |
-| Realtime vendor `params.instructions` | Top-level instructions, unless explicit vendor messages are supplied |
+| Realtime vendor `params.instructions` | Top-level instructions unless vendor system messages supply instructions; user/assistant messages do not suppress this fallback |
 | Deprecated Agent instructions/greeting/history/failure | Fallback when the corresponding vendor configuration is absent |
-| Greeting text/audio and supported playback settings | Top-level structured `greeting` |
+| Greeting text/audio and supported playback settings | Top-level structured `greeting`; `single_every` → `each_join`, `single_first` → `first_join`, with explicit `on` taking precedence |
 | Modern turn boundaries and cascaded interruption | Flattened `turn_detection` boundaries/interruption |
 | `parameters.silence_config` | Cascaded `silence_config`, with `enabled: true` |
 | Static/generated filler words | Flattened trigger/content; generated prompt becomes instructions |
 | Supported avatars | Avatar module with `enabled` |
 
-Deployment collects unsupported settings into `UnsupportedFieldError.fields` before a request. Examples include `sal`, `advancedFeatures`, `geofence`, `labels`, `rtc`, `pipelineId`, parameters other than `silence_config`, unsupported avatar vendors, unrepresentable legacy turn settings, realtime interruption/silence overrides, multi-part provider credentials, numeric TTS skip patterns, and greeting policies absent from v3. It also rejects v2 template-variable values. Use the typed low-level API when configuring v3 shapes that the builder does not represent.
+Deployment collects unsupported settings into `UnsupportedFieldError.fields` before a request. Examples include `sal`, `advancedFeatures`, `geofence`, `labels`, `rtc`, `pipelineId`, parameters other than `silence_config`, unsupported avatar vendors, unrepresentable legacy turn settings, realtime interaction-language/interruption/silence overrides, multi-part provider credentials, numeric TTS skip patterns, and greeting policies absent from v3. It also rejects v2 template-variable values. Use the typed low-level API when configuring v3 shapes that the builder does not represent.
 
 Provider URLs are preserved from configuration; the SDK invents none. Staging requires a vendor-approved URL for managed modules, so some managed builders need low-level v3 configuration. Managed mode is not a promise that a provider is available. Structural/basic constraint checks run locally; vendor-specific validation remains the backend’s responsibility. Tools/MCP/custom-provider fields appear in the contract but remain deferred on staging.
 

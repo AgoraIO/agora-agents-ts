@@ -25,6 +25,7 @@ The `agora-agents` package lets you build real-time voice AI agents on the [Agor
 | Layer | What it does | When to use |
 |---|---|---|
 | **AgentKit** (`Agent`, `AgentSession`, vendor classes) | High-level builder pattern, lifecycle, typed vendors | Most use cases |
+| **v3 preview** (`client.v3`, `Agent.deploy`, `DeployedAgent`) | Stored agents, secrets, numbers, and read-only sessions | Preview checkout; see the [setup guide](./guides/v3-preview.md) |
 | **Generated REST clients** (`client.agents`, `client.telephony`) | Typed access to REST APIs not covered by AgentKit | Advanced use cases |
 
 ## Install
@@ -49,7 +50,6 @@ npm install agora-agents
 | [MLLM Flow Guide](./guides/mllm-flow.md) | Global MLLM providers and Chinese mainland Qwen Omni |
 | [v3 Preview Guide](./guides/v3-preview.md) | Staging setup, stored-agent deployment, secrets, numbers, and v2 migration |
 | [v3 Preview Reference](./reference/v3.md) | All 20 operations, pagination, ETags, errors, and AgentKit helpers |
-| [Preview Endpoint](./guides/preview-endpoint.md) | OpenAI GPT Live preview routing and compatibility imports |
 | [Avatar Integration](./guides/avatars.md) | LiveAvatar, Generic Avatar, Anam, Akool, SenseTime (CN), and HeyGen integration |
 | [Agent Builder Features](./guides/agent-builder-features.md) | Turn detection, SAL, filler words, and advanced agent options |
 | [Regional Routing](./guides/regional-routing.md) | Area enum, domain pool, failover |
