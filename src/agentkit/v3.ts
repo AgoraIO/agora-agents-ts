@@ -297,9 +297,11 @@ export function buildV3Agent(
         }
         if (system.length) body.instructions = system.join("\n");
         if (other.length) body.messages = other;
-    } else if (realtime && typeof vendor.params?.instructions === "string")
-        body.instructions = vendor.params.instructions;
-    else if (config.instructions !== undefined) body.instructions = config.instructions;
+    }
+    if (body.instructions === undefined) {
+        if (realtime && typeof vendor.params?.instructions === "string") body.instructions = vendor.params.instructions;
+        else if (config.instructions !== undefined) body.instructions = config.instructions;
+    }
     const vars: Map = {};
     if (vendor.template_variables && Object.keys(vendor.template_variables).length)
         errors.push("llm.template_variables (v3 has no variable defaults)");

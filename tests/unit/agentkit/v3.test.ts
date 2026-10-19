@@ -226,6 +226,36 @@ describe("v3 preview", () => {
         expect(body(fetch, 1).pipeline.llm.params.instructions).toBe("Provider-specific setting");
         expect(body(fetch, 1).pipeline).not.toHaveProperty("asr");
     });
+    it("preserves realtime instructions alongside conversation messages", async () => {
+        const { client, fetch } = setup([response(saved()), response(saved())]);
+        const agent = new Agent({ client, instructions: "Agent fallback" }).withMllm(
+            new OpenAIRealtime({
+                apiKey: "key",
+                model: "gpt-realtime",
+                instructions: "Keep answers concise",
+                messages: [{ role: "user", content: "Hi" }],
+            }),
+        );
+        await agent.deploy({ name: "Conversation" });
+        expect(body(fetch).instructions).toBe("Keep answers concise");
+        expect(body(fetch).messages).toEqual([{ role: "user", content: "Hi" }]);
+        expect(body(fetch).pipeline.mllm.params ?? {}).not.toHaveProperty("instructions");
+        await new Agent({ client })
+            .withMllm(
+                new OpenAIRealtime({
+                    apiKey: "key",
+                    instructions: "Vendor fallback",
+                    messages: [
+                        { role: "system", content: "System wins" },
+                        { role: "user", content: "Hi" },
+                    ],
+                }),
+            )
+            .deploy({ name: "System" });
+        expect(body(fetch, 1).instructions).toBe("System wins");
+        expect(body(fetch, 1).messages).toEqual([{ role: "user", content: "Hi" }]);
+    });
+
     it("promotes public realtime vendor instructions without adding an ASR module", async () => {
         const { client, fetch } = setup([response(saved())]);
         await new Agent({ client, instructions: "Agent fallback" })
