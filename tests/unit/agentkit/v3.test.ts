@@ -374,4 +374,32 @@ describe("v3 preview", () => {
         expect(headers.get("X-Tenant")).toBe("tenant-1");
         for (const name of ["If-Match", "If-None-Match", "Idempotency-Key"]) expect(headers.has(name)).toBe(false);
     });
+    it("lists assigned numbers across project pages without fetching individual numbers", async () => {
+        const owned1 = { ...number("owned-1"), inbound: { agent: "agent-1" } };
+        const owned2 = { ...number("owned-2"), inbound: { agent: "agent-1" } };
+        const { client, fetch } = setup([
+            response(saved()),
+            response(
+                page(
+                    [
+                        owned1,
+                        { ...number("other"), inbound: { agent: "agent-2" } },
+                        { ...number("none"), inbound: null },
+                    ],
+                    "next",
+                ),
+            ),
+            response(page([number("missing"), { ...number("unassigned"), inbound: { agent: null } }, owned2])),
+        ]);
+        const deployed = await DeployedAgent.get(client, "agent-1");
+        expect(await deployed.listNumbers()).toEqual([owned1, owned2]);
+        expect(fetch).toHaveBeenCalledTimes(3);
+        for (const index of [1, 2]) {
+            const call = request(fetch, index);
+            expect(call.init.method).toBe("GET");
+            expect(new URL(call.url).pathname).toBe("/conversational-ai/v3/projects/app/numbers");
+            expect(new URL(call.url).searchParams.get("limit")).toBe("100");
+        }
+        expect(new URL(request(fetch, 2).url).searchParams.get("cursor")).toBe("next");
+    });
 });

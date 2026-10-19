@@ -431,6 +431,14 @@ export class DeployedAgent {
     async delete(): Promise<void> {
         await this.raw.delete({ id: this.id });
     }
+    /** Scan project number pages and return numbers assigned to this stored agent. */
+    async listNumbers(): Promise<V3.NumberResponse[]> {
+        const assigned: V3.NumberResponse[] = [];
+        for await (const number of this.client.v3.numbers.listAll({ limit: 100 })) {
+            if (number.inbound?.agent === this.id) assigned.push(number);
+        }
+        return assigned;
+    }
     assignNumber(number: string | V3.NumberResponse, options: AssignNumberOptions = {}): Promise<V3.NumberResponse> {
         return this.setNumber(number, this.id, options);
     }
