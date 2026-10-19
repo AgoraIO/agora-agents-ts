@@ -171,7 +171,7 @@ function turns(c: Map, realtime: boolean, errors: string[]): Map {
             semantic_vad_config: undefined,
         });
     }
-    leftovers(c, ["mode", "config"], "turnDetection", errors);
+    leftovers(c, ["mode", "config", "language"], "turnDetection", errors);
     const config = c.config ?? {},
         result: Map = clean({ speech_threshold: config.speech_threshold });
     leftovers(config, ["speech_threshold", "start_of_speech", "end_of_speech"], "turnDetection.config", errors);
@@ -279,6 +279,12 @@ export function buildV3Agent(
         ["avatar", "avatar"],
     ] as const)
         if (config[key]) pipeline[kind] = toV3Module(config[key]!, kind, errors);
+    if (!realtime && config.turnDetection?.language !== undefined) {
+        // Language controls the interaction ASR, while provider-specific language
+        // settings remain in params. Keep direct mapper callers lossless too.
+        pipeline.asr ??= toV3Module({ vendor: config.client.area === Area.CN ? "fengming" : "ares" }, "asr", errors);
+        pipeline.asr.language = config.turnDetection.language;
+    }
     const vendor: Map = config.mllm ?? config.llm ?? {};
     const body: Map = { agent_name: name, pipeline };
     const messages = vendor.system_messages ?? vendor.messages;
@@ -291,7 +297,8 @@ export function buildV3Agent(
         }
         if (system.length) body.instructions = system.join("\n");
         if (other.length) body.messages = other;
-    } else if (typeof vendor.params?.instructions === "string") body.instructions = vendor.params.instructions;
+    } else if (realtime && typeof vendor.params?.instructions === "string")
+        body.instructions = vendor.params.instructions;
     else if (config.instructions !== undefined) body.instructions = config.instructions;
     const vars: Map = {};
     if (vendor.template_variables && Object.keys(vendor.template_variables).length)

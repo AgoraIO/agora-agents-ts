@@ -116,6 +116,8 @@ This saves an LLM configuration; it does **not** start a conversation or provide
 
 To rotate an existing key, use `setKey({name,key,value})`, optionally with its key ETag. Use `ifNoneMatch: '*'` only when creating a new key. Set ETags and key ETags are distinct; retrieve the set again after key changes before conditional set replacement or deletion.
 
+For cascaded deploys, `turnDetection.language` maps to `pipeline.asr.language` rather than the v3 turn-detection object. With an STT vendor configured, the interaction language follows v2 precedence (`turnDetection.language`, otherwise `en-US`), while provider-specific languages remain in `asr.params`. Explicitly setting an interaction language without an STT vendor uses the existing managed default (`ares` globally; CN deployment remains unavailable). It does not invent a provider URL: if staging requires one, configure an approved STT vendor/endpoint explicitly. A partial builder with neither STT nor an interaction language keeps ASR absent. Only realtime vendor `params.instructions` becomes top-level instructions; cascaded provider params remain separate from Agent instructions.
+
 ## 4. Redeploy and handle conflicts
 
 Names are not unique upsert keys. Every `deploy()` without `agentId` creates a new stored agent. Update a known ID explicitly:

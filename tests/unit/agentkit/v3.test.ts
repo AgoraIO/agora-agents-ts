@@ -7,6 +7,7 @@ import {
     DeepgramSTT,
     DeployedAgent,
     OpenAI,
+    OpenAIRealtime,
     PreconditionFailedError,
     SecretRefNotSupportedError,
     secretRef,
@@ -160,6 +161,82 @@ describe("v3 preview", () => {
         );
         expect(() => agent.withVariable("Bad", { type: "str" })).toThrow();
         expect(() => agent.withVariable("missing", { type: "str", extract: true })).toThrow();
+    });
+    it("maps public interaction language to ASR without changing provider language", async () => {
+        const { client, fetch } = setup([response(saved())]);
+        const agent = new Agent({ client })
+            .withStt(new DeepgramSTT({ apiKey: "asr", model: "nova-3", language: "fr" }))
+            .withTurnDetection({
+                language: "de-DE",
+                mode: "default",
+                config: { start_of_speech: { mode: "vad", vad_config: { interrupt_duration_ms: 160 } } },
+            });
+        await agent.deploy({ name: "German" });
+        expect(body(fetch).pipeline.asr).toMatchObject({
+            vendor: "deepgram",
+            language: "de-DE",
+            params: { language: "fr" },
+            credential: { mode: "byok", api_key: "asr" },
+        });
+        expect(body(fetch).pipeline.turn_detection).toEqual({
+            start_of_speech: { type: "vad", interrupt_duration_ms: 160 },
+        });
+        const v2 = agent.toProperties({
+            channel: "room",
+            agentUid: "1",
+            remoteUids: ["*"],
+            token: "rtc",
+            allowMissingVendorCategories: new Set(["llm", "tts"]),
+        });
+        expect(v2.asr?.language).toBe(body(fetch).pipeline.asr.language);
+    });
+    it("uses default ASR for explicit interaction language without adding one to partial configs", async () => {
+        const { client, fetch } = setup([response(saved()), response(saved()), response(saved())]);
+        await new Agent({ client }).withTurnDetection({ language: "ja-JP" }).deploy({ name: "Japanese" });
+        expect(body(fetch).pipeline.asr).toEqual({
+            vendor: "ares",
+            language: "ja-JP",
+            credential: { mode: "managed" },
+        });
+        expect(body(fetch).pipeline.turn_detection).not.toHaveProperty("language");
+        await new Agent({ client }).deploy({ name: "Default" });
+        expect(body(fetch, 1).pipeline).not.toHaveProperty("asr");
+        await new Agent({ client })
+            .withStt(new DeepgramSTT({ apiKey: "key", model: "nova-3", language: "fr" }))
+            .deploy({ name: "Default interaction language" });
+        expect(body(fetch, 2).pipeline.asr).toMatchObject({ language: "en-US", params: { language: "fr" } });
+        expect(buildV3Agent({ client, turnDetection: { language: "es-ES" } }, {}, "Direct").pipeline).toMatchObject({
+            mode: "cascaded",
+            asr: { vendor: "ares", language: "es-ES" },
+        });
+    });
+    it("keeps cascaded provider instructions separate from Agent instructions", async () => {
+        const { client, fetch } = setup([response(saved()), response(saved())]);
+        const vendor = new OpenAI({
+            apiKey: "key",
+            url: "https://api.openai.com/v1/chat/completions",
+            model: "gpt-4o-mini",
+            params: { instructions: "Provider-specific setting" },
+        });
+        await new Agent({ client, instructions: "Agent fallback" }).withLlm(vendor).deploy({ name: "Cascaded" });
+        expect(body(fetch).instructions).toBe("Agent fallback");
+        expect(body(fetch).pipeline.llm.params.instructions).toBe("Provider-specific setting");
+        await new Agent({ client }).withLlm(vendor).deploy({ name: "No instructions" });
+        expect(body(fetch, 1)).not.toHaveProperty("instructions");
+        expect(body(fetch, 1).pipeline.llm.params.instructions).toBe("Provider-specific setting");
+        expect(body(fetch, 1).pipeline).not.toHaveProperty("asr");
+    });
+    it("promotes public realtime vendor instructions without adding an ASR module", async () => {
+        const { client, fetch } = setup([response(saved())]);
+        await new Agent({ client, instructions: "Agent fallback" })
+            .withMllm(
+                new OpenAIRealtime({ apiKey: "key", model: "gpt-realtime", instructions: "Realtime instructions" }),
+            )
+            .deploy({ name: "Realtime" });
+        expect(body(fetch).instructions).toBe("Realtime instructions");
+        expect(body(fetch).pipeline.mode).toBe("realtime");
+        expect(body(fetch).pipeline).not.toHaveProperty("asr");
+        expect(body(fetch).pipeline.mllm.params ?? {}).not.toHaveProperty("instructions");
     });
     it("maps realtime, greeting, turn detection, filler and silence", () => {
         const { client } = setup();

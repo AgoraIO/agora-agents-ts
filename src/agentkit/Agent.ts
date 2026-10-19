@@ -765,9 +765,14 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
     }
 
     deploy(options: DeployOptions = {}): Promise<DeployedAgent> {
+        const config = this.config;
+        if (config.mllm === undefined && (config.stt !== undefined || config.turnDetection?.language !== undefined)) {
+            // Reuse v2's ASR language precedence only when ASR or language was configured.
+            config.stt = this._resolveAsrConfig(this._resolveTurnDetectionConfig());
+        }
         return deployAgent(
             this._client,
-            buildV3Agent(this.config, this._variables, options.name ?? `agent-${Date.now()}`),
+            buildV3Agent(config, this._variables, options.name ?? `agent-${Date.now()}`),
             options,
         );
     }
