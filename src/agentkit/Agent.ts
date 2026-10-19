@@ -1,3 +1,12 @@
+import {
+    assertNoSecretRefs,
+    buildV3Agent,
+    type DeployedAgent,
+    type DeployOptions,
+    deployAgent,
+    type VariableDefinition,
+    validateVariable,
+} from "./v3.js";
 /**
  * Agent class - A reusable agent definition.
  *
@@ -183,6 +192,7 @@ export interface AgentOptions<TArea extends AgoraArea = AgoraArea> {
  * ```
  */
 export class Agent<TTSSampleRate extends number = number, TArea extends AgoraArea = AgoraArea> {
+    private _variables: Record<string, VariableDefinition> = {};
     private _client: AgoraClient<TArea>;
     private _pipelineId?: string;
     private _llm?: LlmConfig;
@@ -744,7 +754,27 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
      * const agentId = await session.start();
      * ```
      */
+    withVariable(name: string, definition: VariableDefinition): Agent<TTSSampleRate, TArea> {
+        validateVariable(name, definition);
+        const next = this._clone();
+        next._variables = {
+            ...this._variables,
+            [name]: { ...definition, ...(definition.options ? { options: [...definition.options] } : {}) },
+        };
+        return next;
+    }
+
+    deploy(options: DeployOptions = {}): Promise<DeployedAgent> {
+        return deployAgent(
+            this._client,
+            buildV3Agent(this.config, this._variables, options.name ?? `agent-${Date.now()}`),
+            options,
+        );
+    }
+
     createSession(options: SessionOptions): AgentSession {
+        const { client: _client, ...config } = this.config;
+        assertNoSecretRefs(config);
         const name = options.name ?? `agent-${Date.now()}`;
         return new AgentSession({
             client: this._client,
@@ -785,6 +815,8 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             | { token?: undefined; appId: string; appCertificate: string; expiresIn?: number }
         ),
     ): Agora.StartAgentsRequest.Properties {
+        const { client: _client, ...config } = this.config;
+        assertNoSecretRefs(config);
         // In MLLM mode the backend handles audio end-to-end; LLM, TTS, and ASR
         // are not required.
         const isMllmMode = this._mllm?.enable === true || this._mllm !== undefined;
@@ -945,6 +977,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
      */
     private _clone(): Agent<TTSSampleRate, TArea> {
         const newAgent = new Agent({ client: this._client }) as Agent<TTSSampleRate, TArea>;
+        newAgent._variables = { ...this._variables };
         newAgent._pipelineId = this._pipelineId;
         newAgent._llm = this._llm;
         newAgent._tts = this._tts;

@@ -266,3 +266,9 @@ See the [Avatar Integration guide](./docs/guides/avatars.md) for sample-rate req
 
 - [SDK Reference](./reference.md)
 - [Agora Conversational AI Docs](https://docs.agora.io/en/conversational-ai/overview)
+
+### Conversational AI v3 preview
+
+The additive [v3 preview guide](docs/guides/v3-preview.md) covers stored agents,
+secrets, project-scoped numbers, read-only sessions, and AgentKit `deploy()`.
+Existing v2 sessions and resources retain their current behavior.

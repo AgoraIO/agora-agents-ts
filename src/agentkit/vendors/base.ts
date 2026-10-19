@@ -1,3 +1,4 @@
+import { toV3Module, UnsupportedFieldError } from "../v3.js";
 /**
  * Base classes for type-safe vendor configurations.
  *
@@ -157,6 +158,14 @@ abstract class ScopedBaseLLM<TScope extends VendorScope> {
      * Converts the vendor configuration to the Agora API format.
      */
     abstract toConfig(): LlmConfig;
+
+    /** Internal v3 serialization; deployment performs complete contract validation. */
+    toV3Module(): Record<string, unknown> {
+        const errors: string[] = [];
+        const module = toV3Module(this.toConfig(), "llm", errors);
+        if (errors.length) throw new UnsupportedFieldError(errors);
+        return module;
+    }
 }
 
 export abstract class BaseLLM extends ScopedBaseLLM<"global"> {
@@ -199,6 +208,14 @@ abstract class ScopedBaseTTS<TScope extends VendorScope, _SR extends number = nu
      * Converts the vendor configuration to the Agora API format.
      */
     abstract toConfig(): TtsConfig;
+
+    /** Internal v3 serialization; deployment performs complete contract validation. */
+    toV3Module(): Record<string, unknown> {
+        const errors: string[] = [];
+        const module = toV3Module(this.toConfig(), "tts", errors);
+        if (errors.length) throw new UnsupportedFieldError(errors);
+        return module;
+    }
 }
 
 export abstract class BaseTTS<_SR extends number = number> extends ScopedBaseTTS<"global", _SR> {
@@ -227,6 +244,14 @@ abstract class ScopedBaseSTT<TScope extends VendorScope> {
      * Converts the vendor configuration to the Agora API format.
      */
     abstract toConfig(): SttConfig;
+
+    /** Internal v3 serialization; deployment performs complete contract validation. */
+    toV3Module(): Record<string, unknown> {
+        const errors: string[] = [];
+        const module = toV3Module(this.toConfig(), "asr", errors);
+        if (errors.length) throw new UnsupportedFieldError(errors);
+        return module;
+    }
 }
 
 export abstract class BaseSTT extends ScopedBaseSTT<"global"> {
@@ -255,6 +280,14 @@ abstract class ScopedBaseMLLM<TScope extends VendorScope> {
      * Converts the vendor configuration to the Agora API format.
      */
     abstract toConfig(): MllmConfig;
+
+    /** Internal v3 serialization; deployment performs complete contract validation. */
+    toV3Module(): Record<string, unknown> {
+        const errors: string[] = [];
+        const module = toV3Module(this.toConfig(), "mllm", errors);
+        if (errors.length) throw new UnsupportedFieldError(errors);
+        return module;
+    }
 }
 
 /** Base class for global MLLM vendors. */
@@ -286,6 +319,14 @@ abstract class ScopedBaseAvatar<TScope extends VendorScope, RequiredSR extends n
      * Converts the vendor configuration to the Agora API format.
      */
     abstract toConfig(): AvatarConfig;
+
+    /** Internal v3 serialization; deployment performs complete contract validation. */
+    toV3Module(): Record<string, unknown> {
+        const errors: string[] = [];
+        const module = toV3Module(this.toConfig(), "avatar", errors);
+        if (errors.length) throw new UnsupportedFieldError(errors);
+        return module;
+    }
 
     /**
      * The TTS sample rate required by this avatar vendor.
