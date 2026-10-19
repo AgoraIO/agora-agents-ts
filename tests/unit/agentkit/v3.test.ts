@@ -350,4 +350,28 @@ describe("v3 preview", () => {
             UnsupportedFieldError,
         );
     });
+    it("retains per-call auth and headers when loading latest without write conditions", async () => {
+        const { client, fetch } = setup([response({ reason: "PreconditionFailed" }, 412), response(saved())]);
+        const error = await client.v3.agents
+            .update(
+                { id: "a", ifMatch: "stale" },
+                {
+                    authorization: "Bearer per-call",
+                    headers: {
+                        "X-Tenant": "tenant-1",
+                        "If-Match": "stale",
+                        "If-None-Match": "*",
+                        "Idempotency-Key": "write",
+                    },
+                },
+            )
+            .catch((error) => error);
+        await error.latest();
+        const latest = request(fetch, 1);
+        const headers = new Headers(latest.init.headers);
+        expect(latest.init.method).toBe("GET");
+        expect(headers.get("Authorization")).toBe("Bearer per-call");
+        expect(headers.get("X-Tenant")).toBe("tenant-1");
+        for (const name of ["If-Match", "If-None-Match", "Idempotency-Key"]) expect(headers.has(name)).toBe(false);
+    });
 });

@@ -86,7 +86,23 @@ export class V3Transport {
             const detail = "body" in error ? error.body : error;
             if (status === 412)
                 throw new PreconditionFailedError(detail, response.rawResponse, () =>
-                    this.request("GET", path.includes("/keys/") ? path.split("/keys/")[0]! : path, appid),
+                    this.request(
+                        "GET",
+                        path.includes("/keys/") ? path.split("/keys/")[0]! : path,
+                        appid,
+                        undefined,
+                        {},
+                        {},
+                        {
+                            ...requestOptions,
+                            headers: Object.fromEntries(
+                                Object.entries(requestOptions.headers ?? {}).filter(
+                                    ([key]) =>
+                                        !["if-match", "if-none-match", "idempotency-key"].includes(key.toLowerCase()),
+                                ),
+                            ),
+                        },
+                    ),
                 );
             throw new V3Error(status, detail, response.rawResponse);
         };
