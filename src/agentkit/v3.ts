@@ -111,6 +111,11 @@ export function toV3Module(
         result.model = c.model ?? params.model;
         delete params.model;
     }
+    if (kind === "mllm") {
+        if (params.instructions !== undefined && typeof params.instructions !== "string")
+            errors.push(`${path}.params.instructions`);
+        delete params.instructions;
+    }
     if (kind === "tts" && c._minimaxPresetModel !== undefined) params.model = c._minimaxPresetModel;
     if (kind === "avatar") {
         if (!["akool", "liveavatar", "anam", "generic"].includes(c.vendor)) errors.push(`${path}.vendor`);
@@ -286,7 +291,8 @@ export function buildV3Agent(
         }
         if (system.length) body.instructions = system.join("\n");
         if (other.length) body.messages = other;
-    } else if (config.instructions !== undefined) body.instructions = config.instructions;
+    } else if (typeof vendor.params?.instructions === "string") body.instructions = vendor.params.instructions;
+    else if (config.instructions !== undefined) body.instructions = config.instructions;
     const vars: Map = {};
     if (vendor.template_variables && Object.keys(vendor.template_variables).length)
         errors.push("llm.template_variables (v3 has no variable defaults)");

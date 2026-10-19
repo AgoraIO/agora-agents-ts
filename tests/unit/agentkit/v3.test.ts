@@ -169,12 +169,16 @@ describe("v3 preview", () => {
                 mllm: {
                     vendor: "openai",
                     api_key: "key",
-                    params: { model: "gpt-realtime" },
+                    params: { model: "gpt-realtime", instructions: "Realtime vendor instructions" },
                     turn_detection: { mode: "agora_vad", agora_vad_config: { threshold: 0.5 } },
                 },
             },
             {},
             "Live",
+        );
+        expect(realtime.instructions).toBe("Realtime vendor instructions");
+        expect((realtime.pipeline?.mode === "realtime" && realtime.pipeline.mllm?.params) || {}).not.toHaveProperty(
+            "instructions",
         );
         expect(realtime.pipeline).toMatchObject({
             mode: "realtime",
