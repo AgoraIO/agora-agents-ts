@@ -8,6 +8,7 @@ import {
     DeepgramSTT,
     GoogleSTT,
     OpenAISTT,
+    SmallestAISTT,
     SpeechmaticsSTT,
 } from "../../../src/agentkit/vendors/stt.js";
 import { ElevenLabsTTS } from "../../../src/agentkit/vendors/tts.js";
@@ -310,5 +311,59 @@ describe("STT language serialization", () => {
             },
         });
         expect(properties.turn_detection).toEqual({ language: "fr-FR" });
+    });
+
+    test("serializes Smallest AI provider params without promoting provider language", () => {
+        expect(
+            new SmallestAISTT({
+                apiKey: "smallest-key",
+                language: "zh",
+                url: "wss://api.us.smallest.ai/waves/v1/stt/live",
+                sampleRate: 16000,
+                encoding: "linear16",
+                wordTimestamps: true,
+                sentenceTimestamps: true,
+                diarize: true,
+                vadEvents: true,
+                endpointing: true,
+                eouTimeoutMs: 480,
+                format: true,
+                finalizeOnWords: true,
+                maxWords: "100",
+                punctuate: true,
+                capitalize: true,
+                itnNormalize: true,
+                fullTranscript: true,
+                keywords: "Codex:2,Smallest AI:2",
+                redactPii: false,
+                redactPci: false,
+            }).toConfig(),
+        ).toEqual({
+            vendor: "smallestai",
+            params: {
+                api_key: "smallest-key",
+                language: "zh",
+                url: "wss://api.us.smallest.ai/waves/v1/stt/live",
+                sample_rate: 16000,
+                encoding: "linear16",
+                word_timestamps: "true",
+                sentence_timestamps: "true",
+                diarize: "true",
+                vad_events: "true",
+                endpointing: "true",
+                eou_timeout_ms: 480,
+                format: "true",
+                finalize_on_words: "true",
+                max_words: "100",
+                punctuate: "true",
+                capitalize: "true",
+                itn_normalize: "true",
+                full_transcript: "true",
+                keywords: "Codex:2,Smallest AI:2",
+                redact_pii: "false",
+                redact_pci: "false",
+            },
+        });
+        expect(() => new SmallestAISTT({ apiKey: "" })).toThrow("SmallestAISTT requires apiKey");
     });
 });

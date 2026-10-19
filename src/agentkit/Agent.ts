@@ -21,7 +21,6 @@ import { Area } from "../core/domain/index.js";
 import { AgentSession } from "./AgentSession.js";
 import type { AgoraArea } from "./area.js";
 import { AudioScenario } from "./constants.js";
-import { isOpenAIGPTLiveConfig } from "./preview/vendors.js";
 import type {
     AvatarVendor,
     CNMllmVendor,
@@ -51,11 +50,12 @@ import type {
     TurnDetectionConfig,
     TurnDetectionLanguage,
 } from "./types.js";
+import { isOpenAIGPTLiveConfig } from "./vendors/mllm.js";
 
 const DEFAULT_TURN_DETECTION_LANGUAGE: TurnDetectionLanguage = "en-US";
 
 function toGeneratedMllm(config: MllmConfig | undefined): Agora.Mllm | undefined {
-    // The preview vendor predates its generated schema enum. Keep the assertion at
+    // GPT Live is not yet present in the generated schema enum. Keep the assertion at
     // this wire boundary so the public and builder APIs remain accurately typed.
     return config as Agora.Mllm | undefined;
 }
@@ -960,7 +960,8 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             this._stt !== undefined || !allowMissingAsr
                 ? (this._resolveAsrConfig(turnDetectionConfig) as Agora.Asr | undefined)
                 : undefined;
-        const ttsConfig = this._tts;
+        // Preview TTS extends the production schema; narrow only at the generated wire boundary.
+        const ttsConfig = this._tts as Agora.Tts | undefined;
 
         return {
             ...base,

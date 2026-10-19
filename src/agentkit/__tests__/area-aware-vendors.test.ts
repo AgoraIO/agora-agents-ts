@@ -12,8 +12,8 @@ import { AliyunLLM, FengmingSTT, MiniMaxCNTTS } from "../vendors/cn.js";
 import { OpenAI } from "../vendors/llm.js";
 import type { AzureOpenAIRealtimeOptions, AzureOpenAIRealtimeParams, QwenOmniOptions } from "../vendors/mllm.js";
 import { AzureOpenAIRealtime, QwenOmni } from "../vendors/mllm.js";
-import { DeepgramSTT, GeminiSTT } from "../vendors/stt.js";
-import { GenericTTS, MiniMaxTTS } from "../vendors/tts.js";
+import { DeepgramSTT, GeminiSTT, SmallestAISTT } from "../vendors/stt.js";
+import { GenericTTS, MiniMaxTTS, SmallestAITTS } from "../vendors/tts.js";
 
 const client = new AgoraClient({
     area: Area.US,
@@ -48,6 +48,9 @@ const globalGeminiStt: GlobalSttVendor = new GeminiSTT({
     language: "en-US",
 });
 new Agent({ client }).withStt(globalGeminiStt);
+const globalSmallestStt: GlobalSttVendor = new SmallestAISTT({ apiKey: "smallest-key" });
+const globalSmallestTts: GlobalTtsVendor = new SmallestAITTS({ apiKey: "smallest-key" });
+new Agent({ client }).withStt(globalSmallestStt).withTts(globalSmallestTts);
 const globalMllm: GlobalMllmVendor = new AzureOpenAIRealtime({
     apiKey: "azure-key",
     url: "wss://example.openai.azure.com/openai/realtime",
@@ -72,6 +75,8 @@ type _AzureOptionsExposeOnlySupportedFields = Assert<
         | "messages"
         | "params"
         | "turnDetection"
+        | "mcpServers"
+        | "tools"
     >
 >;
 type _AzureParamsExposeOnlySupportedFields = Assert<
@@ -80,6 +85,11 @@ type _AzureParamsExposeOnlySupportedFields = Assert<
 type _AzureTurnDetectionIsRequired = Assert<IsRequired<AzureOpenAIRealtimeOptions, "turnDetection">>;
 type _QwenUrlIsRequired = Assert<IsRequired<QwenOmniOptions, "url">>;
 type _QwenTurnDetectionIsOptional = Assert<IsExact<IsRequired<QwenOmniOptions, "turnDetection">, false>>;
+
+// @ts-expect-error Smallest AI STT is a global vendor.
+const _invalidCnSmallestStt: CNSttVendor = new SmallestAISTT({ apiKey: "smallest-key" });
+// @ts-expect-error Smallest AI TTS is a global vendor.
+const _invalidCnSmallestTts: CNTtsVendor = new SmallestAITTS({ apiKey: "smallest-key" });
 
 // @ts-expect-error Qwen Omni is a Chinese mainland MLLM vendor.
 const _invalidGlobalMllm: GlobalMllmVendor = new QwenOmni({

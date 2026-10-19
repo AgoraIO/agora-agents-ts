@@ -671,3 +671,78 @@ export class XAiSTT extends BaseSTT {
         };
     }
 }
+
+/** Constructor options for Smallest AI STT. */
+export interface SmallestAISTTOptions {
+    /** Smallest AI API key. */
+    apiKey: string;
+    /** Language code for speech recognition. */
+    language?: string;
+    /** WebSocket endpoint for the Smallest AI streaming STT API. */
+    url?: string;
+    /** Input audio sample rate in Hz. */
+    sampleRate?: number;
+    /** Input audio encoding. */
+    encoding?: string;
+    /** Boolean options are serialized as `"true"` or `"false"` for the Smallest AI wire protocol. */
+    wordTimestamps?: boolean;
+    sentenceTimestamps?: boolean;
+    diarize?: boolean;
+    vadEvents?: boolean;
+    endpointing?: boolean;
+    /** End-of-utterance timeout in milliseconds. */
+    eouTimeoutMs?: number;
+    format?: boolean;
+    finalizeOnWords?: boolean;
+    /** Maximum number of words per result. */
+    maxWords?: string;
+    punctuate?: boolean;
+    capitalize?: boolean;
+    itnNormalize?: boolean;
+    fullTranscript?: boolean;
+    /** Comma-separated keyword boosts in `keyword:weight` format. */
+    keywords?: string;
+    redactPii?: boolean;
+    redactPci?: boolean;
+    /** Additional Smallest AI parameters. Explicit options take precedence. */
+    additionalParams?: Partial<import("../types.js").SmallestAiAsrParams>;
+}
+
+/** Smallest AI streaming STT vendor. */
+export class SmallestAISTT extends BaseSTT {
+    constructor(private readonly options: SmallestAISTTOptions) {
+        super();
+        if (!options.apiKey) throw new Error("SmallestAISTT requires apiKey");
+    }
+
+    toConfig(): SttConfig {
+        const o = this.options;
+        return {
+            vendor: "smallestai",
+            params: {
+                ...o.additionalParams,
+                api_key: o.apiKey,
+                ...(o.language !== undefined && { language: o.language }),
+                ...(o.url !== undefined && { url: o.url }),
+                ...(o.sampleRate !== undefined && { sample_rate: o.sampleRate }),
+                ...(o.encoding !== undefined && { encoding: o.encoding }),
+                ...(o.wordTimestamps !== undefined && { word_timestamps: String(o.wordTimestamps) }),
+                ...(o.sentenceTimestamps !== undefined && { sentence_timestamps: String(o.sentenceTimestamps) }),
+                ...(o.diarize !== undefined && { diarize: String(o.diarize) }),
+                ...(o.vadEvents !== undefined && { vad_events: String(o.vadEvents) }),
+                ...(o.endpointing !== undefined && { endpointing: String(o.endpointing) }),
+                ...(o.eouTimeoutMs !== undefined && { eou_timeout_ms: o.eouTimeoutMs }),
+                ...(o.format !== undefined && { format: String(o.format) }),
+                ...(o.finalizeOnWords !== undefined && { finalize_on_words: String(o.finalizeOnWords) }),
+                ...(o.maxWords !== undefined && { max_words: o.maxWords }),
+                ...(o.punctuate !== undefined && { punctuate: String(o.punctuate) }),
+                ...(o.capitalize !== undefined && { capitalize: String(o.capitalize) }),
+                ...(o.itnNormalize !== undefined && { itn_normalize: String(o.itnNormalize) }),
+                ...(o.fullTranscript !== undefined && { full_transcript: String(o.fullTranscript) }),
+                ...(o.keywords !== undefined && { keywords: o.keywords }),
+                ...(o.redactPii !== undefined && { redact_pii: String(o.redactPii) }),
+                ...(o.redactPci !== undefined && { redact_pci: String(o.redactPci) }),
+            },
+        };
+    }
+}

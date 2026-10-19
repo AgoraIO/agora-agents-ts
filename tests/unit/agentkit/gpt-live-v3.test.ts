@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { OpenAIGPTLive } from "../../../src/agentkit/preview/vendors.js";
+import { OpenAIGPTLive } from "../../../src/agentkit/vendors/mllm.js";
 
 describe("GPT Live v3", () => {
     test("omits the alpha selector by default and normalizes MCP transport", () => {

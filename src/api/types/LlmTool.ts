@@ -9,8 +9,15 @@ import type * as Agora from "../index.js";
 export interface LlmTool {
     /** Tool type. Must be `function`. */
     type: "function";
+    /** Tool interface exposed to the model. `parameters` is the JSON Schema for LLM arguments, not the HTTP request shape. */
     function: Agora.LlmToolFunction;
+    /** Tool execution configuration. Defaults to `{"mode": "sync"}`. Phase 1a only allows `sync`. */
     execution?: Agora.LlmToolExecution;
+    /**
+     * Actual HTTP request configuration for this REST tool.
+     * Does not use top-level `parameters`, `path_params`, standalone `query`,
+     * `response`, `json_path`, or `max_chars`.
+     */
     server: Agora.LlmToolServer;
     /** Accepts any additional properties */
     [key: string]: any;

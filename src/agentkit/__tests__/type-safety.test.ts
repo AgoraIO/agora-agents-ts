@@ -17,7 +17,7 @@ import { Area } from "../../core/domain/index.js";
 import { Agent } from "../Agent.js";
 import { AkoolAvatar, LiveAvatarAvatar } from "../vendors/avatar.js";
 import { OpenAI } from "../vendors/llm.js";
-import { DeepgramSTT } from "../vendors/stt.js";
+import { DeepgramSTT, SmallestAISTT } from "../vendors/stt.js";
 import { CartesiaTTS, ElevenLabsTTS, MicrosoftTTS, MiniMaxTTS, OpenAITTS } from "../vendors/tts.js";
 
 const TEST_AGENT_CLIENT = new AgoraClient({
@@ -130,6 +130,7 @@ function _validExample5(): Agent<16000> {
 
 // Agora-managed models may omit credentials.
 new DeepgramSTT({ model: "nova-3" });
+new SmallestAISTT({ apiKey: "test", wordTimestamps: true, eouTimeoutMs: 480, maxWords: "100" });
 new OpenAI({ model: "gpt-5-mini" });
 new OpenAITTS({ voice: "alloy" });
 new OpenAI({
@@ -144,6 +145,8 @@ new MiniMaxTTS({
 
 // @ts-expect-error Missing apiKey is only allowed for Agora-managed Deepgram models.
 new DeepgramSTT({ model: "enhanced" });
+// @ts-expect-error Smallest AI boolean options use booleans in AgentKit, not wire-format strings.
+new SmallestAISTT({ apiKey: "test", wordTimestamps: "true" });
 // @ts-expect-error Missing apiKey is only allowed for Agora-managed OpenAI models.
 new OpenAI({ model: "gpt-4o" });
 // @ts-expect-error Missing apiKey cannot be combined with a custom vendor hint.

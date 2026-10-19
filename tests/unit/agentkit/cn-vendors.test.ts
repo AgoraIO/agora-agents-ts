@@ -23,25 +23,75 @@ import {
     XfyunSTT,
 } from "../../../src/index.js";
 
-describe("CN vendor helpers", () => {
-    test("serializes inline REST tools for CN LLM vendors", () => {
-        const tool = {
-            type: "function" as const,
-            function: {
-                name: "lookup_order",
-                parameters: { type: "object" as const, properties: { orderId: { type: "string" } } },
-            },
-            server: { method: "GET" as const, url: "https://example.com/orders/{{args.orderId}}" },
-        };
+const TOOL = {
+    type: "function" as const,
+    function: {
+        name: "lookup_order",
+        parameters: { type: "object" as const, properties: { orderId: { type: "string" } } },
+    },
+    server: { method: "GET" as const, url: "https://example.com/orders/{{args.orderId}}" },
+};
+const MCP_SERVER = { name: "orders", endpoint: "https://example.com/mcp" };
 
-        expect(
-            new AliyunLLM({
-                apiKey: "key",
-                model: "qwen-plus",
-                url: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-                tools: [tool],
-            }).toConfig().tools,
-        ).toEqual([tool]);
+const CN_LLM_TOOL_CASES = [
+    [
+        "AliyunLLM",
+        new AliyunLLM({
+            apiKey: "key",
+            model: "qwen-plus",
+            url: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+            tools: [TOOL],
+            mcpServers: [MCP_SERVER],
+        }),
+    ],
+    [
+        "BytedanceLLM",
+        new BytedanceLLM({
+            apiKey: "key",
+            model: "doubao",
+            url: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+            tools: [TOOL],
+            mcpServers: [MCP_SERVER],
+        }),
+    ],
+    [
+        "DeepSeekLLM",
+        new DeepSeekLLM({
+            apiKey: "key",
+            model: "deepseek-chat",
+            url: "https://api.deepseek.com/chat/completions",
+            tools: [TOOL],
+            mcpServers: [MCP_SERVER],
+        }),
+    ],
+    [
+        "TencentLLM",
+        new TencentLLM({
+            apiKey: "key",
+            model: "hunyuan-turbos-latest",
+            url: "https://api.hunyuan.cloud.tencent.com/v1/chat/completions",
+            tools: [TOOL],
+            mcpServers: [MCP_SERVER],
+        }),
+    ],
+    [
+        "CustomLLM",
+        new CustomLLM({
+            apiKey: "key",
+            model: "custom-model",
+            url: "https://llm.example.com/chat/completions",
+            tools: [TOOL],
+            mcpServers: [MCP_SERVER],
+        }),
+    ],
+] as const;
+
+describe("CN vendor helpers", () => {
+    test.each(CN_LLM_TOOL_CASES)("serializes tools and MCP servers for %s", (_name, vendor) => {
+        const config = vendor.toConfig();
+
+        expect(config.tools).toEqual([TOOL]);
+        expect(config.mcp_servers).toEqual([{ ...MCP_SERVER, transport: "streamable_http" }]);
     });
 
     test("serializes CN STT vendors", () => {
@@ -150,17 +200,31 @@ describe("CN vendor helpers", () => {
     });
 
     test("serializes the CN Qwen Omni MLLM vendor", () => {
+        const tool = {
+            type: "function" as const,
+            function: {
+                name: "lookup_order",
+                parameters: { type: "object" as const, properties: { orderId: { type: "string" } } },
+            },
+            server: { method: "GET" as const, url: "https://example.com/orders/{{args.orderId}}" },
+        };
+        const mcpServer = { name: "orders", endpoint: "https://example.com/mcp" };
+
         expect(
             new QwenOmni({
                 apiKey: "dashscope-key",
                 model: "qwen3.5-omni-plus-realtime",
                 url: "wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
+                tools: [tool],
+                mcpServers: [mcpServer],
             }).toConfig(),
         ).toMatchObject({
             vendor: "qwen_omni",
             api_key: "dashscope-key",
             url: "wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
             params: { model: "qwen3.5-omni-plus-realtime" },
+            tools: [tool],
+            mcp_servers: [{ ...mcpServer, transport: "streamable_http" }],
         });
     });
 

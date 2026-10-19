@@ -25,7 +25,8 @@ export type Tts =
     | Agora.Tts.Stepfun
     | Agora.Tts.Gradium
     | Agora.Tts.Mistral
-    | Agora.Tts.Typecast;
+    | Agora.Tts.Typecast
+    | Agora.Tts.Smallestai;
 
 export namespace Tts {
     export interface Tencent extends Agora.TencentTts {
@@ -118,5 +119,9 @@ export namespace Tts {
 
     export interface Typecast extends Agora.TypecastTts {
         vendor: "typecast";
+    }
+
+    export interface Smallestai extends Agora.SmallestAiTts {
+        vendor: "smallestai";
     }
 }

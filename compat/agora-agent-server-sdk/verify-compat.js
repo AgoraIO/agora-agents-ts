@@ -9,6 +9,9 @@ const exportsToVerify = [
     "Area",
     "DeepgramSTT",
     "OpenAI",
+    "Tavus",
+    "Protoface",
+    "LemonSlice",
     "AgentPresets",
     "generateRtcToken",
 ];

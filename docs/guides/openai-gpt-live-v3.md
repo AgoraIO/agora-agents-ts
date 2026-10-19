@@ -1,6 +1,6 @@
-# GPT Live v3 preview
+# GPT Live v3
 
-This preview targets `gpt-live-1` on `/v1/live/sessions`. Use an alpha-enabled OpenAI key. Do not use this alpha for production traffic.
+GPT Live targets `gpt-live-1` on `/v1/live/sessions` and is available through the production Conversational AI gateway.
 
 <!-- snippet: fragment -->
 ```typescript
@@ -31,7 +31,7 @@ GPT Live places MCP at `properties.mllm.mcp_servers`, the tool gate at `properti
     "mllm": {
       "enable": true,
       "vendor": "openai_gpt_live",
-      "api_key": "<alpha-enabled-key>",
+      "api_key": "<openai-key>",
       "url": "wss://api.openai.com/v1/live/sessions",
       "greeting_message": "Hello! I'm GPT Live. How can I help you today?",
       "params": {
@@ -51,13 +51,13 @@ GPT Live places MCP at `properties.mllm.mcp_servers`, the tool gate at `properti
 }
 ```
 
-This fragment omits the normal name, channel, token and UID fields populated by the SDK session. The preview route and `agora-feature: live-models` gate are selected automatically from the vendor.
+This fragment omits the normal name, channel, token and UID fields populated by the SDK session. GPT Live uses the client's configured regional production endpoint and does not require a preview feature header.
 
 The SDK omits `alphaSelector` by default. Set it only when a future preview contract requires an `OpenAI-Alpha` selector.
 
 ## Silence and backend rollout
 
-Keep silence settings in the existing agent parameters builder, never in vendor params. The public API spelling is `silence_config`, with `{timeout_ms, action, content}`. The supplied extension contract describes internal `parameters.main.silence` and supports `action: "think"`; the public documentation currently says `silence_config` does not apply to MLLM. Serialization is covered by tests, but the public documentation does not establish that the preview allocator maps it to GPT Live's internal MAIN setting. Confirm that backend mapping before relying on silence nudges. The SDK does not invent a new public `main` field.
+Keep silence settings in the existing agent parameters builder, never in vendor params. The public API spelling is `silence_config`, with `{timeout_ms, action, content}`. The supplied extension contract describes internal `parameters.main.silence` and supports `action: "think"`; the public documentation currently says `silence_config` does not apply to MLLM. Serialization is covered by tests, but the public documentation does not establish that the production allocator maps it to GPT Live's internal MAIN setting. Confirm that backend mapping before relying on silence nudges. The SDK does not invent a new public `main` field.
 
 ## Preview-only options
 
