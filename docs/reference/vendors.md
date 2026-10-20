@@ -275,13 +275,17 @@ new CartesiaTTS<SR extends CartesiaSampleRate>(options: CartesiaTTSOptions<SR>)
 
 | Option | Type | Required | Description |
 |---|---|---|---|
-| `apiKey` | `string` | Yes | Cartesia API key |
+| `credentialMode` | `CredentialMode` | No | `Managed` or `Byok`; defaults to BYOK when omitted |
+| `apiKey` | `string` | BYOK only | Cartesia API key; optional in managed mode |
 | `voiceId` | `string` | Yes | Voice ID (serialized as `{"mode": "id", "id": "..."}`) |
 | `modelId` | `string` | Yes | Model ID |
 | `baseUrl` | `string` | No | WebSocket URL for the Cartesia streaming API |
 | `language` | `string` | No | Target language for speech synthesis |
 | `sampleRate` | `8000 \| 16000 \| 22050 \| 24000 \| 44100 \| 48000` | No | Audio sample rate in Hz |
 | `skipPatterns` | `number[]` | No | Skip patterns for bracketed content |
+
+Set `credentialMode: CredentialMode.Managed` to use Agora-managed Cartesia credentials without an API key.
+Omitting the mode retains BYOK behavior. An explicit mode is serialized as top-level `tts.credential_mode`; an empty or omitted API key is excluded from `tts.params`.
 
 ### RimeTTS
 
@@ -371,11 +375,13 @@ The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts`
 | `TypecastTTS` | `apiKey`, `voiceId`, `model`, `additionalParams?`, `skipPatterns?` |
 | `GenericTTS` | `url`, `headers?`, `apiKey?`, `model?`, `voice?`, `speed?`, `sampleRate?`, `responseFormat?`, `instruction?`, `additionalParams?`, `skipPatterns?` |
 | `HumeAITTS` | `key`, `voiceId`, `provider`, `configId?`, `baseUrl?`, `speed?`, `trailingSilence?` |
-| `FishAudioTTS` | `key`, `referenceId`, `backend` |
+| `FishAudioTTS` | `referenceId`, `backend`, `credentialMode?`; `key` required unless `credentialMode: CredentialMode.Managed` |
 | `MiniMaxTTS` | `key?`, `groupId?`, `model`, `voiceId?`, `url?` |
 | `MurfTTS` | `key`, `voiceId?`, `baseUrl?`, `locale?`, `rate?`, `pitch?`, `model?`, `sampleRate?` |
 | `SarvamTTS` | `key`, `speaker`, `targetLanguageCode: SarvamTTSLanguage`, `pitch?`, `pace?`, `loudness?`, `speechSampleRate?`, `enablePreprocessing?`, `model?`, `additionalParams?` |
 | `XAiTTS` | `apiKey`, `language`, `voiceId?`, `sampleRate?`, `additionalParams?` |
+
+`FishAudioTTS` supports `credentialMode: CredentialMode.Managed` without a key and `CredentialMode.Byok` with a key. Omitting the mode retains BYOK behavior. An explicit mode is serialized as top-level `tts.credential_mode`; an empty or omitted API key is excluded from `tts.params`. `referenceId` and `backend` remain required in both modes.
 
 `SarvamTTS.additionalParams` is flattened into `tts.params`; it is not sent as a nested `additional_params` field. Explicit Sarvam options override conflicting keys from `additionalParams`.
 

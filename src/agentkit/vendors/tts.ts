@@ -339,9 +339,7 @@ export class OpenAITTS extends BaseTTS<24000> {
 /**
  * Constructor options for Cartesia TTS.
  */
-export interface CartesiaTTSOptions<SR extends CartesiaSampleRate = CartesiaSampleRate> {
-    /** Cartesia API key */
-    apiKey: string;
+type CartesiaTTSCommonOptions<SR extends CartesiaSampleRate> = {
     /** Voice ID */
     voiceId: string;
     /** Model ID */
@@ -357,7 +355,21 @@ export interface CartesiaTTSOptions<SR extends CartesiaSampleRate = CartesiaSamp
     sampleRate?: SR;
     /** Skip patterns for bracketed content */
     skipPatterns?: number[];
-}
+};
+
+export type CartesiaTTSOptions<SR extends CartesiaSampleRate = CartesiaSampleRate> = CartesiaTTSCommonOptions<SR> &
+    (
+        | {
+              /** Use Agora-managed credentials; the API key is optional. */
+              credentialMode: typeof CredentialMode.Managed;
+              apiKey?: string;
+          }
+        | {
+              /** Bring your own credentials (default when omitted). */
+              credentialMode?: typeof CredentialMode.Byok;
+              apiKey: string;
+          }
+    );
 
 /**
  * Cartesia TTS vendor.
@@ -367,6 +379,7 @@ export interface CartesiaTTSOptions<SR extends CartesiaSampleRate = CartesiaSamp
  * const tts = new CartesiaTTS({
  *   apiKey: process.env.CARTESIA_API_KEY,
  *   voiceId: 'voice-id-here',
+ *   modelId: 'sonic-2',
  *   sampleRate: 24000,
  * });
  * ```
@@ -376,24 +389,37 @@ export class CartesiaTTS<SR extends CartesiaSampleRate = CartesiaSampleRate> ext
 
     constructor(options: CartesiaTTSOptions<SR>) {
         super();
+        if (
+            options.credentialMode !== undefined &&
+            options.credentialMode !== CredentialMode.Managed &&
+            options.credentialMode !== CredentialMode.Byok
+        ) {
+            throw new Error("CartesiaTTS credentialMode must be one of: managed, byok");
+        }
+        if (options.credentialMode !== CredentialMode.Managed) {
+            requireString(options.apiKey, "apiKey", "CartesiaTTS");
+        }
+        requireString(options.voiceId, "voiceId", "CartesiaTTS");
+        requireString(options.modelId, "modelId", "CartesiaTTS");
         this.options = options;
     }
 
     toConfig(): TtsConfig {
-        const { apiKey, voiceId, modelId, baseUrl, language, sampleRate, skipPatterns } = this.options;
+        const { apiKey, credentialMode, voiceId, modelId, baseUrl, language, sampleRate, skipPatterns } = this.options;
 
         return {
             vendor: "cartesia",
+            ...(credentialMode !== undefined && { credential_mode: credentialMode }),
             params: {
-                api_key: apiKey,
+                ...(apiKey && { api_key: apiKey }),
                 voice: { mode: "id", id: voiceId },
                 model_id: modelId,
                 ...(baseUrl && { base_url: baseUrl }),
                 ...(sampleRate && { output_format: { container: "raw", sample_rate: sampleRate } }),
                 ...(language && { language }),
-            } as unknown as import("../types.js").CartesiaTtsParams,
+            },
             ...(skipPatterns && { skip_patterns: skipPatterns }),
-        } as TtsConfig;
+        };
     }
 }
 
@@ -855,16 +881,28 @@ export class RimeTTS extends BaseTTS {
 /**
  * Constructor options for Fish Audio TTS.
  */
-export interface FishAudioTTSOptions {
-    /** Fish Audio API key */
-    key: string;
+type FishAudioTTSCommonOptions = {
     /** Reference ID */
     referenceId: string;
     /** Backend used by Fish Audio */
     backend: string;
     /** Skip patterns for bracketed content */
     skipPatterns?: number[];
-}
+};
+
+export type FishAudioTTSOptions = FishAudioTTSCommonOptions &
+    (
+        | {
+              /** Use Agora-managed credentials; the API key is optional. */
+              credentialMode: typeof CredentialMode.Managed;
+              key?: string;
+          }
+        | {
+              /** Bring your own credentials (default when omitted). */
+              credentialMode?: typeof CredentialMode.Byok;
+              key: string;
+          }
+    );
 
 /**
  * Fish Audio TTS vendor.
@@ -883,16 +921,29 @@ export class FishAudioTTS extends BaseTTS {
 
     constructor(options: FishAudioTTSOptions) {
         super();
+        if (
+            options.credentialMode !== undefined &&
+            options.credentialMode !== CredentialMode.Managed &&
+            options.credentialMode !== CredentialMode.Byok
+        ) {
+            throw new Error("FishAudioTTS credentialMode must be one of: managed, byok");
+        }
+        if (options.credentialMode !== CredentialMode.Managed) {
+            requireString(options.key, "key", "FishAudioTTS");
+        }
+        requireString(options.referenceId, "referenceId", "FishAudioTTS");
+        requireString(options.backend, "backend", "FishAudioTTS");
         this.options = options;
     }
 
     toConfig(): TtsConfig {
-        const { key, referenceId, backend, skipPatterns } = this.options;
+        const { key, credentialMode, referenceId, backend, skipPatterns } = this.options;
 
         return {
             vendor: "fishaudio",
+            ...(credentialMode !== undefined && { credential_mode: credentialMode }),
             params: {
-                api_key: key,
+                ...(key && { api_key: key }),
                 reference_id: referenceId,
                 backend,
             },

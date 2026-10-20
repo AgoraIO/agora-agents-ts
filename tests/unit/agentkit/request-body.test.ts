@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
-import { AudioScenario } from "../../../src/agentkit/constants.js";
+import { AudioScenario, CredentialMode } from "../../../src/agentkit/constants.js";
 import type { SttConfig } from "../../../src/agentkit/types.js";
 import { AnamAvatar } from "../../../src/agentkit/vendors/avatar.js";
 import { BaseSTT } from "../../../src/agentkit/vendors/base.js";
@@ -1231,6 +1231,38 @@ describe("LLM vendor coverage", () => {
 // ---------------------------------------------------------------------------
 
 describe("TTS vendor coverage", () => {
+    test.each([
+        {
+            tts: new CartesiaTTS({ credentialMode: CredentialMode.Managed, voiceId: "voice", modelId: "sonic-2" }),
+            expected: {
+                vendor: "cartesia",
+                credential_mode: "managed",
+                params: { voice: { mode: "id", id: "voice" }, model_id: "sonic-2" },
+            },
+        },
+        {
+            tts: new FishAudioTTS({
+                credentialMode: CredentialMode.Managed,
+                referenceId: "ref",
+                backend: "speech-1.5",
+            }),
+            expected: {
+                vendor: "fishaudio",
+                credential_mode: "managed",
+                params: { reference_id: "ref", backend: "speech-1.5" },
+            },
+        },
+    ])("preserves managed $expected.vendor credentials in session requests", async ({ tts, expected }) => {
+        const { client, start } = createClient();
+        await new Agent({ client })
+            .withLlm(STUB_LLM)
+            .withTts(tts)
+            .createSession({ ...SESSION_OPTS, token: "test-token" })
+            .start();
+        const request = start.mock.calls[0]?.[0];
+        expect(JSON.parse(JSON.stringify(request?.properties.tts))).toEqual(expected);
+    });
+
     test("ElevenLabsTTS serializes key, model_id, voice_id, base_url", () => {
         const p = new Agent({ client: TEST_AGENT_CLIENT })
             .withLlm(STUB_LLM)
