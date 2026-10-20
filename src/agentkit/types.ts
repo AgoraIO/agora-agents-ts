@@ -49,6 +49,8 @@ import type {
     OpenAiTts as OpenAiTtsType,
     RimeTtsParams as RimeTtsParamsType,
     RimeTts as RimeTtsType,
+    RtzrAsrParams as RtzrAsrParamsType,
+    RtzrAsr as RtzrAsrType,
     SarvamTtsParams as SarvamTtsParamsType,
     SarvamTts as SarvamTtsType,
     SmallestAiAsrParams as SmallestAiAsrParamsType,
@@ -69,7 +71,6 @@ import type {
 } from "../api/index.js";
 import type { AgentThinkAgentManagementRequest } from "../api/resources/agentManagement/client/requests/AgentThinkAgentManagementRequest.js";
 import type { PresetInput } from "./presets.js";
-import type { GeminiTTSConfig } from "./preview/gemini-tts.js";
 
 // =============================================================================
 // Core Configuration Types
@@ -103,6 +104,7 @@ export type SttConfig =
     | { vendor: "assemblyai"; language?: TurnDetectionLanguage; params: AssemblyAiParams }
     | { vendor: "ares"; language?: TurnDetectionLanguage; keywords?: string[]; params?: AresParams }
     | { vendor: "sarvam"; language?: TurnDetectionLanguage; params: SarvamAsrParams }
+    | { vendor: "rtzr"; language?: TurnDetectionLanguage; params: RtzrAsrParamsType }
     | { vendor: "xai"; language?: TurnDetectionLanguage; params: XAiAsrParams }
     | { vendor: "gemini"; language?: TurnDetectionLanguage; params: GeminiAsrParams }
     | Asr; // Fallback for shorthand/untyped configs
@@ -114,7 +116,7 @@ export type AsrConfig = SttConfig;
 export type AsrVendorName = string;
 
 /** TTS (Text-to-Speech) configuration - discriminated union */
-export type TtsConfig = Tts | GeminiTTSConfig;
+export type TtsConfig = Tts;
 
 /** Inline synchronous REST tool exposed to a standard text LLM. */
 export type LlmTool = LlmToolType;
@@ -217,6 +219,9 @@ export type SessionParams = StartAgentsRequest.Properties.Parameters;
 
 /** RTC audio scenario for the session parameters object. */
 export type ParametersAudioScenario = StartAgentsRequest.Properties.Parameters.AudioScenario;
+
+/** Speak request sentence-segmentation behavior. */
+export type SpeakConfig = StartAgentsRequest.Properties.Parameters.Speak;
 
 /**
  * AgentKit session parameters input.
@@ -581,6 +586,8 @@ export interface SpeechmaticsParams {
  */
 export interface DeepgramParams {
     /** Deepgram API key */
+    api_key?: string;
+    /** @deprecated Use `api_key` instead. AgentKit normalizes this alias before sending. */
     key?: string;
     /** Model to use (e.g., 'nova-2', 'enhanced', 'base') */
     model?: string;
@@ -708,6 +715,8 @@ export type XAiAsr = XAiAsrType;
 export type XAiAsrParams = XAiAsrParamsType;
 export type SmallestAiAsr = SmallestAiAsrType;
 export type SmallestAiAsrParams = SmallestAiAsrParamsType;
+export type RtzrAsr = RtzrAsrType;
+export type RtzrAsrParams = RtzrAsrParamsType;
 
 /** Google Gemini STT parameters generated from the API schema. */
 export type GeminiAsrParams = GeminiAsrParamsType;

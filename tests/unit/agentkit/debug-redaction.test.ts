@@ -120,7 +120,7 @@ describe("debug output", () => {
                 client: new AgoraClient({
                     area: Area.US,
                     appId: "81190c52971d4004b7244bdcd93e2f34",
-                    appCertificate: "test-app-certificate-01234567890",
+                    appCertificate: "1".repeat(32),
                     fetch: fetchMock,
                 }),
             })

@@ -116,7 +116,7 @@ function omitUndefinedKeys<T extends Record<string, unknown>>(value: T): T | und
 }
 
 export function inferAsrPreset(asr?: Agora.Asr): AsrInference | undefined {
-    if (!asr || asr.vendor !== "deepgram" || asr.params?.key) return undefined;
+    if (!asr || asr.vendor !== "deepgram" || asr.params?.api_key || asr.params?.key) return undefined;
     const preset = deepgramModelToPreset[normalizeModelName(asr.params?.model) ?? ""];
     if (!preset) return undefined;
     return {

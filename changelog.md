@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- Added the global `RTZRSTT` AgentKit vendor and typed RTZR ASR aliases.
+- Added `SpeakConfig` and `withParameters()` support for the new `parameters.speak.batch` setting.
+- Added Sarvam TTS preprocessing, model, speech sample-rate options, and the `SarvamTTSLanguage` enum.
+
+### Changed
+
+ - Updated Deepgram STT credentials to serialize as `api_key` and Sarvam TTS sample rate to serialize as `speech_sample_rate`, matching the v2.14 generated API contract.
+
+- **Gemini TTS production routing** — `GeminiTTS` and raw `tts.vendor = "gemini"` configurations now use the configured regional production endpoint without the `gemini-live` preview gate for the full session lifecycle. The implementation and types live in the production TTS vendor module; package-root and historical preview exports alias the same implementation, with v2.11.0 options, defaults, validation, optional `style`, and `tts.params` wire fields preserved.
+- **Gemini TTS generated schema support** — The production vendor now uses the generated Gemini TTS shape and accepts `additionalParams` and `skipPatterns` while keeping preview-era calls compatible.
+
 ## [v2.12.0] — 2026-10-07
 
 ### Added

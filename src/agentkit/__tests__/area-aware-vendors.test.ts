@@ -12,7 +12,7 @@ import { AliyunLLM, FengmingSTT, MiniMaxCNTTS } from "../vendors/cn.js";
 import { OpenAI } from "../vendors/llm.js";
 import type { AzureOpenAIRealtimeOptions, AzureOpenAIRealtimeParams, QwenOmniOptions } from "../vendors/mllm.js";
 import { AzureOpenAIRealtime, QwenOmni } from "../vendors/mllm.js";
-import { DeepgramSTT, GeminiSTT, SmallestAISTT } from "../vendors/stt.js";
+import { DeepgramSTT, GeminiSTT, RTZRSTT, SmallestAISTT } from "../vendors/stt.js";
 import { GenericTTS, MiniMaxTTS, SmallestAITTS } from "../vendors/tts.js";
 
 const client = new AgoraClient({
@@ -49,8 +49,9 @@ const globalGeminiStt: GlobalSttVendor = new GeminiSTT({
 });
 new Agent({ client }).withStt(globalGeminiStt);
 const globalSmallestStt: GlobalSttVendor = new SmallestAISTT({ apiKey: "smallest-key" });
+const globalRtzrStt: GlobalSttVendor = new RTZRSTT({ clientId: "rtzr-client", clientSecret: "rtzr-secret" });
 const globalSmallestTts: GlobalTtsVendor = new SmallestAITTS({ apiKey: "smallest-key" });
-new Agent({ client }).withStt(globalSmallestStt).withTts(globalSmallestTts);
+new Agent({ client }).withStt(globalSmallestStt).withStt(globalRtzrStt).withTts(globalSmallestTts);
 const globalMllm: GlobalMllmVendor = new AzureOpenAIRealtime({
     apiKey: "azure-key",
     url: "wss://example.openai.azure.com/openai/realtime",
@@ -88,6 +89,8 @@ type _QwenTurnDetectionIsOptional = Assert<IsExact<IsRequired<QwenOmniOptions, "
 
 // @ts-expect-error Smallest AI STT is a global vendor.
 const _invalidCnSmallestStt: CNSttVendor = new SmallestAISTT({ apiKey: "smallest-key" });
+// @ts-expect-error RTZR STT is a global vendor.
+const _invalidCnRtzrStt: CNSttVendor = new RTZRSTT({ clientId: "rtzr-client", clientSecret: "rtzr-secret" });
 // @ts-expect-error Smallest AI TTS is a global vendor.
 const _invalidCnSmallestTts: CNTtsVendor = new SmallestAITTS({ apiKey: "smallest-key" });
 
