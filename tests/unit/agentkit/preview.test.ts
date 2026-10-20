@@ -100,8 +100,8 @@ describe("Gemini 3.8 production MLLM routing", () => {
 function createClient(fetchFn?: typeof fetch, headers?: Record<string, string>) {
     return new AgoraClient({
         area: Area.US,
-        appId: "test-app-id-0123456789abcdefghij",
-        appCertificate: "test-app-certificate-01234567890",
+        appId: "0".repeat(32),
+        appCertificate: "1".repeat(32),
         ...(fetchFn && { fetch: fetchFn }),
         ...(headers && { headers }),
     });
