@@ -6,7 +6,18 @@ import type * as Agora from "../index.js";
  * Fish Audio Text-to-Speech configuration (Beta).
  */
 export interface FishAudioTts {
+    /** Credential mode. When provided, must be "managed" (Agora managed mode) or "byok" (BYOK mode). */
+    credential_mode?: FishAudioTts.CredentialMode;
     params: Agora.FishAudioTtsParams;
     /** Controls whether the TTS module skips bracketed content when reading LLM response text. */
     skip_patterns?: number[];
+}
+
+export namespace FishAudioTts {
+    /** Credential mode. When provided, must be "managed" (Agora managed mode) or "byok" (BYOK mode). */
+    export const CredentialMode = {
+        Managed: "managed",
+        Byok: "byok",
+    } as const;
+    export type CredentialMode = (typeof CredentialMode)[keyof typeof CredentialMode];
 }
