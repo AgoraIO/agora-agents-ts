@@ -6,7 +6,18 @@ import type * as Agora from "../index.js";
  * Cartesia Text-to-Speech configuration (Beta).
  */
 export interface CartesiaTts {
+    /** Credential mode. When provided, must be "managed" (Agora managed mode) or "byok" (BYOK mode). */
+    credential_mode?: CartesiaTts.CredentialMode;
     params: Agora.CartesiaTtsParams;
     /** Controls whether the TTS module skips bracketed content when reading LLM response text. */
     skip_patterns?: number[];
+}
+
+export namespace CartesiaTts {
+    /** Credential mode. When provided, must be "managed" (Agora managed mode) or "byok" (BYOK mode). */
+    export const CredentialMode = {
+        Managed: "managed",
+        Byok: "byok",
+    } as const;
+    export type CredentialMode = (typeof CredentialMode)[keyof typeof CredentialMode];
 }
