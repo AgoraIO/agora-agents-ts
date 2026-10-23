@@ -144,8 +144,10 @@ export namespace GetTurnsAgentsResponse {
                  * Additional context about the turn end event. Included fields depend on the value of the `type` field.
                  */
                 export interface Metadata {
-                    /** The audio playback duration in milliseconds. Included only when `type` is `ok`. */
+                    /** The actual audio playback duration in milliseconds. Included when `type` is `ok` or `interrupted`. */
                     playback_duration_ms?: number;
+                    /** The intended audio playback duration in milliseconds. Included only when `type` is `interrupted`. */
+                    intended_playback_duration_ms?: number;
                     /**
                      * The cause of the turn ending.
                      *
