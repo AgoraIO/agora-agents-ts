@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- **Turn end playback metadata** — Turn analytics now expose optional `intended_playback_duration_ms` for interrupted turns. `playback_duration_ms` reports actual playback for both normal and interrupted turns. Session documentation, type assertions, and regression tests cover missing values, zero durations, and pagination.
  - Updated Deepgram STT credentials to serialize as `api_key` and Sarvam TTS sample rate to serialize as `speech_sample_rate`, matching the v2.14 generated API contract.
 
 - **Gemini TTS production routing** — `GeminiTTS` and raw `tts.vendor = "gemini"` configurations now use the configured regional production endpoint without the `gemini-live` preview gate for the full session lifecycle. The implementation and types live in the production TTS vendor module; package-root and historical preview exports alias the same implementation, with v2.11.0 options, defaults, validation, optional `style`, and `tts.params` wire fields preserved.

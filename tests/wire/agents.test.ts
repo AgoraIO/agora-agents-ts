@@ -416,7 +416,15 @@ describe("AgentsClient", () => {
                     channel: "channel_name",
                     turn_id: 1,
                     start: { start_at: 1737111452000, type: "voice_input" },
-                    end: { end_at: 1737111453500, type: "ok" },
+                    end: {
+                        end_at: 1737111453500,
+                        type: "interrupted",
+                        metadata: {
+                            playback_duration_ms: 120,
+                            intended_playback_duration_ms: 300,
+                            caused_by: "start_of_speech",
+                        },
+                    },
                     metrics: { e2e_latency_ms: 320 },
                 },
             ],
