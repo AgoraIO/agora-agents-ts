@@ -788,10 +788,17 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
     }
 
     createSession(options: SessionOptions): AgentSession {
+        if ("clientReference" in options || "client_reference" in options)
+            throw new Error("client_reference is being removed; use the returned session ID for correlation");
         const { client: _client, ...config } = this.config;
         let requiresStoredSession =
             Object.keys(this._variables).length > 0 ||
-            options.clientReference !== undefined ||
+            options.values !== undefined ||
+            options.idempotencyKey !== undefined ||
+            options.encryption !== undefined ||
+            options.audioScenario !== undefined ||
+            options.gracefulStop !== undefined ||
+            options.dataPolicy !== undefined ||
             options.labels !== undefined ||
             options.maxDuration !== undefined;
         try {
@@ -802,6 +809,33 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         }
         if (requiresStoredSession) {
             const normalized = this.config;
+            const sessionOptions = { ...options };
+            const params = { ...normalized.parameters };
+            if (params.opt_out !== undefined) {
+                sessionOptions.dataPolicy ??= { retention: params.opt_out ? "none" : "30_days" };
+                delete params.opt_out;
+            }
+            if (params.farewell_config !== undefined) {
+                const farewell = params.farewell_config;
+                sessionOptions.gracefulStop ??= {
+                    enabled: farewell.graceful_enabled,
+                    timeout_ms:
+                        farewell.graceful_timeout_seconds === undefined
+                            ? undefined
+                            : farewell.graceful_timeout_seconds * 1000,
+                };
+                delete params.farewell_config;
+            }
+            if (params.audio_scenario !== undefined) {
+                sessionOptions.audioScenario ??=
+                    params.audio_scenario === "default" ? "aiserver" : params.audio_scenario;
+                delete params.audio_scenario;
+            }
+            normalized.parameters = Object.keys(params).length ? params : undefined;
+            if (normalized.labels !== undefined) {
+                sessionOptions.labels ??= normalized.labels;
+                normalized.labels = undefined;
+            }
             if (
                 normalized.mllm === undefined &&
                 (normalized.stt !== undefined || normalized.turnDetection?.language !== undefined)
@@ -813,7 +847,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
                 this._variables,
                 options.name ?? "ephemeral",
             );
-            return createStoredSession(this._client, options, { agent }, this);
+            return createStoredSession(this._client, sessionOptions, { agent }, this);
         }
         const name = options.name ?? `agent-${Date.now()}`;
         return new AgentSession({

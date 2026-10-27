@@ -1,50 +1,135 @@
-/** Session writes evidenced by the refreshed Bruno collection (2026-10-19).
- * Supplemental to the older OpenAPI snapshot; intentionally handwritten.
+/** Public contract corrections from engineering's v3-open-questions-reply.md (2026-10-27).
+ * Generated schema remains intact; this adapter corrects statuses, timestamps and headers.
  */
 import type { BaseRequestOptions } from "../BaseClient.js";
 import type { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
+import { HttpResponsePromise as ResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import { omit, segment, type V3Transport } from "./transport.js";
-import type { AgentCreateRequest } from "./types.js";
+import type * as Schema from "./session-schema.js";
 
-export interface SessionStartOptions {
-    client_reference?: string;
-    labels?: Record<string, string>;
-    transport: { type: "rtc"; channel: string; uid: string; subscribe_uids: string[] };
-    lifecycle?: { idle_timeout_ms?: number; max_duration_ms?: number };
-}
-export interface SessionStartRequest extends SessionStartOptions {
-    agent_id: string;
-}
-export interface EphemeralSessionStartRequest extends Omit<SessionStartOptions, "labels"> {
-    agent: Omit<AgentCreateRequest, "agent_name">;
-}
+export type SessionStartOptions = Omit<Schema.SessionCreate, "agent_id" | "client_reference"> & {
+    idempotencyKey?: string;
+};
+export type SessionStartRequest = SessionStartOptions & { agent_id: string };
+export type EphemeralSessionStartRequest = Omit<Schema.EphemeralSessionCreate, "client_reference"> & {
+    idempotencyKey?: string;
+};
 export interface SessionStartResponse {
     agent_session_id: string;
-    status: string;
-    created_at: unknown;
+    status: "STARTING" | "RUNNING";
+    create_ts: number;
+}
+export function normalizeSessionStart(value: unknown): SessionStartResponse {
+    const data = value as Record<string, unknown>;
+    const status = typeof data?.status === "string" ? data.status.toUpperCase() : "";
+    const timestamp = data?.create_ts ?? data?.created_at;
+    if (
+        !data ||
+        typeof data.agent_session_id !== "string" ||
+        !data.agent_session_id.trim() ||
+        !["STARTING", "RUNNING"].includes(status) ||
+        typeof timestamp !== "number" ||
+        !Number.isInteger(timestamp) ||
+        timestamp < 0
+    )
+        throw new Error("Invalid session start response");
+    return {
+        agent_session_id: data.agent_session_id,
+        status: status as SessionStartResponse["status"],
+        create_ts: timestamp,
+    };
+}
+function range(value: number | undefined, min: number, max: number, field: string): void {
+    if (value !== undefined && (!Number.isInteger(value) || value < min || value > max))
+        throw new Error(`${field} must be an integer between ${min} and ${max}`);
+}
+export function validateSessionStart(request: SessionStartRequest | EphemeralSessionStartRequest): void {
+    if ("client_reference" in request || "clientReference" in request)
+        throw new Error(
+            "client_reference is being removed; use application-side correlation with the returned session ID",
+        );
+    if (request.idempotencyKey !== undefined && !request.idempotencyKey.trim())
+        throw new Error("idempotencyKey must not be empty");
+    const transport = request.transport;
+    if (transport.type === "rtc") {
+        if (!transport.channel || [...transport.channel].length > 256)
+            throw new Error("channel must contain 1–256 characters");
+        if (!/^(0|[1-9][0-9]{0,9})$/.test(transport.uid))
+            throw new Error("Numeric RTC uid is required until string UID backend support is available");
+        if (transport.subscribe_uids.length !== 1 || !/^[1-9][0-9]{0,9}$/.test(transport.subscribe_uids[0]!))
+            throw new Error("Exactly one numeric subscriber UID is required; wildcards are unsupported");
+        if (transport.audio_scenario !== undefined && !["aiserver", "chorus"].includes(transport.audio_scenario))
+            throw new Error("Invalid audio_scenario");
+        if (transport.encryption) {
+            if (
+                ![
+                    "aes_128_xts",
+                    "aes_128_ecb",
+                    "aes_256_xts",
+                    "sm4_128_ecb",
+                    "aes_128_gcm",
+                    "aes_256_gcm",
+                    "aes_128_gcm2",
+                    "aes_256_gcm2",
+                ].includes(transport.encryption.mode) ||
+                !transport.encryption.key
+            )
+                throw new Error("Invalid RTC encryption mode/key");
+            if (transport.encryption.salt != null && !/^[A-Za-z0-9+/]{43}=$/.test(transport.encryption.salt))
+                throw new Error("Invalid RTC encryption salt");
+        }
+    } else if (transport.type === "telephony") {
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transport.from))
+            throw new Error("telephony.from must be a registered number UUID");
+        if (!/^\+[1-9][0-9]{1,14}$/.test(transport.to)) throw new Error("telephony.to must be E.164");
+    } else throw new Error("Unsupported session transport");
+    range(request.lifecycle?.idle_timeout_ms, 0, 3600000, "idle_timeout_ms");
+    range(request.lifecycle?.max_duration_ms, 1000, 3600000, "max_duration_ms");
+    range(request.lifecycle?.graceful_stop?.timeout_ms, 0, 120000, "graceful_stop.timeout_ms");
+    if (request.data_policy?.retention !== undefined && !["none", "30_days"].includes(request.data_policy.retention))
+        throw new Error("Invalid data_policy.retention");
+    for (const [name, value] of Object.entries(request.values ?? {})) {
+        if (
+            !/^[a-z][a-z0-9_]{0,63}$/.test(name) ||
+            !["string", "number", "boolean"].includes(typeof value) ||
+            (typeof value === "number" && !Number.isFinite(value))
+        )
+            throw new Error("Invalid session variable value");
+    }
 }
 export class SessionLifecycleResource {
     constructor(protected transport: V3Transport) {}
+    private startRequest(
+        path: string,
+        request: { appid?: string } & (SessionStartRequest | EphemeralSessionStartRequest),
+        options?: BaseRequestOptions,
+    ): HttpResponsePromise<SessionStartResponse> {
+        validateSessionStart(request);
+        const raw = this.transport.request<unknown>(
+            "POST",
+            path,
+            request.appid,
+            omit(request, ["appid", "idempotencyKey"]),
+            {},
+            { "Idempotency-Key": request.idempotencyKey },
+            options,
+        );
+        return ResponsePromise.fromPromise(
+            raw.withRawResponse().then(({ data, rawResponse }) => ({ data: normalizeSessionStart(data), rawResponse })),
+        );
+    }
     start(
         request: { appid?: string } & SessionStartRequest,
         options?: BaseRequestOptions,
     ): HttpResponsePromise<SessionStartResponse> {
         segment(request.agent_id);
-        return this.transport.request("POST", "/sessions", request.appid, omit(request, ["appid"]), {}, {}, options);
+        return this.startRequest("/sessions", request, options);
     }
     startEphemeral(
         request: { appid?: string } & EphemeralSessionStartRequest,
         options?: BaseRequestOptions,
     ): HttpResponsePromise<SessionStartResponse> {
-        return this.transport.request(
-            "POST",
-            "/sessions/ephemeral",
-            request.appid,
-            omit(request, ["appid"]),
-            {},
-            {},
-            options,
-        );
+        return this.startRequest("/sessions/ephemeral", request, options);
     }
     stop(
         request: { appid?: string; agentSessionId: string },

@@ -190,8 +190,8 @@ export class AgentSession {
         this._expiresIn = options.expiresIn;
         this._debug = options.debug;
         this._warn = options.warn ?? ((msg) => console.warn(msg));
-        // Read authMode from pool client if available, else fall back to basic
-        this._authMode = (options.client as { authMode?: AgoraAuthMode }).authMode ?? "basic";
+        // Read authMode from pool client if available, else leave authorization to the supplied client
+        this._authMode = (options.client as { authMode?: AgoraAuthMode }).authMode ?? "token";
         this._agentsClient = options.client.agents;
         this._agentManagementClient = options.client.agentManagement;
         this._sessionBaseUrl = this._clientCurrentUrl();
@@ -582,8 +582,9 @@ export class AgentSession {
         if (this._backend) {
             this._status = "starting";
             try {
-                this._agentId = await this._backend.start();
-                this._status = "running";
+                const started = await this._backend.start();
+                this._agentId = started.id;
+                this._status = started.status;
                 this._emit("started", { agentId: this._agentId, sessionId: this._agentId });
                 return this._agentId;
             } catch (error) {
@@ -698,7 +699,7 @@ export class AgentSession {
      * this method will succeed silently rather than throwing an error.
      */
     async stop(): Promise<void> {
-        if (this._status !== "running") {
+        if (this._status !== "running" && !(this._backend && this._status === "starting")) {
             throw new Error(`Cannot stop session in ${this._status} state`);
         }
 
@@ -723,7 +724,7 @@ export class AgentSession {
             this._emit("stopped", { agentId: this._agentId, ...(this._backend ? { sessionId: this._agentId } : {}) });
         } catch (error) {
             // Handle 404 "task not found" gracefully - agent is already stopped
-            if (error instanceof AgoraError && error.statusCode === 404) {
+            if (!this._backend && error instanceof AgoraError && error.statusCode === 404) {
                 this._status = "stopped";
                 this._emit("stopped", {
                     agentId: this._agentId,
@@ -941,7 +942,14 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
-        if (this._backend) return this._backend.getInfo(this._agentId);
+        if (this._backend) {
+            const info = await this._backend.getInfo(this._agentId);
+            const status = info.status?.toLowerCase();
+            if (status === "failed") this._status = "error";
+            else if (status && ["idle", "starting", "running", "stopping", "stopped"].includes(status))
+                this._status = status as typeof this._status;
+            return info;
+        }
         return this._agentsClient.get(
             {
                 appid: this._appId,

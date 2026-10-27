@@ -57,25 +57,59 @@ export class V3Transport {
         headers: Record<string, string | null | undefined> = {},
         requestOptions: BaseRequestOptions = {},
     ): HttpResponsePromise<T> {
+        // Snapshot JSON payload and option maps before any async auth/header suppliers run.
+        const capturedHeaders = [this.options.headers, this.extraHeaders, headers].map((value) => ({ ...value }));
+        const capturedOptions = { ...requestOptions, headers: { ...requestOptions.headers } };
         const run = async () => {
+            if (body && typeof body === "object" && "idempotencyKey" in body)
+                throw new Error("idempotencyKey is not supported by this operation");
+            const bodySnapshot = body === undefined ? undefined : JSON.parse(JSON.stringify(body));
+            const querySnapshot = JSON.parse(JSON.stringify({ ...query, ...capturedOptions.queryParams }));
+            requestOptions = capturedOptions;
+            const resolved: Record<string, string> = {};
+            for (const source of [
+                capturedHeaders[0],
+                { Authorization: this.authorization() },
+                capturedHeaders[1],
+                capturedHeaders[2],
+                requestOptions.headers,
+                requestOptions.authorization !== undefined
+                    ? { Authorization: requestOptions.authorization }
+                    : undefined,
+            ]) {
+                for (const [name, supplier] of Object.entries(source ?? {})) {
+                    const value = await (typeof supplier === "function" ? supplier() : supplier);
+                    const key = name.toLowerCase();
+                    if (value == null) continue;
+                    if (["x-studio-region", "x-studio-v2-gateway-secret", "x-consumer-username"].includes(key))
+                        throw new Error(`${name} is an internal header and is not supported`);
+                    if (key === "authorization" && !/^agora token=\S+$/i.test(value))
+                        throw new Error("Only Agora token authorization is supported");
+                    if (
+                        key === "idempotency-key" &&
+                        !(
+                            method === "POST" &&
+                            (["/sessions", "/sessions/ephemeral", "/campaigns"].includes(path) ||
+                                /^\/campaigns\/[^/]+:(pause|resume|cancel)$/.test(path))
+                        )
+                    )
+                        throw new Error(
+                            "Idempotency-Key is only supported for session starts and campaign creation/actions",
+                        );
+                    resolved[key] = value;
+                }
+            }
             const response = await fetcher<T>({
-                url: `${this.baseUrl().replace(/\/+$/, "")}/conversational-ai/v3/projects/${segment(appid)}${path}`,
+                url: `${this.baseUrl().replace(/\/+$/, "")}/conversational-ai/v1/projects/${segment(appid)}${path}`,
                 method,
                 contentType: "application/json",
                 requestType: "json",
                 responseType: "json",
-                body,
-                queryParameters: { ...query, ...requestOptions.queryParams },
-                headers: {
-                    ...this.options.headers,
-                    Authorization: this.authorization(),
-                    ...this.extraHeaders,
-                    ...headers,
-                    ...requestOptions.headers,
-                    ...(requestOptions.authorization ? { Authorization: requestOptions.authorization } : {}),
-                },
+                body: bodySnapshot,
+                queryParameters: querySnapshot,
+                headers: resolved,
                 timeoutMs: (requestOptions.timeoutInSeconds ?? this.options.timeoutInSeconds ?? 60) * 1000,
-                // Creates have no reliable idempotency; conditional writes must never retry silently.
+                // Writes never retry automatically, including requests with explicit idempotency keys.
                 maxRetries: method === "GET" ? (requestOptions.maxRetries ?? this.options.maxRetries ?? 2) : 0,
                 abortSignal: requestOptions.abortSignal,
                 fetchFn: this.options.fetch,

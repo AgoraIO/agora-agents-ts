@@ -101,7 +101,13 @@ export function toV3Module(
         "adc_credentials_string",
     ])
         if (params[key] !== undefined) errors.push(`${path}.params.${key}`);
-    const credentialKeys = ["api_key", "key", "api_subscription_key"];
+    const credentialKeys = [
+        "api_key",
+        "key",
+        "api_subscription_key",
+        ...(kind === "avatar" && c.vendor === "sensetime" ? ["app_key"] : []),
+        ...(kind === "avatar" && c.vendor === "spatius" ? ["spatius_api_key"] : []),
+    ];
     const credentials = [c.api_key, ...credentialKeys.map((k) => params[k])].filter((v) => v !== undefined);
     if (new Set(credentials).size > 1) errors.push(`${path}.credential`);
     for (const key of credentialKeys) delete params[key];
@@ -121,7 +127,8 @@ export function toV3Module(
     }
     if (kind === "tts" && c._minimaxPresetModel !== undefined) params.model = c._minimaxPresetModel;
     if (kind === "avatar") {
-        if (!["akool", "liveavatar", "anam", "generic"].includes(c.vendor)) errors.push(`${path}.vendor`);
+        if (!["akool", "liveavatar", "anam", "generic", "sensetime", "spatius"].includes(c.vendor))
+            errors.push(`${path}.vendor`);
         result.enabled = c.enable ?? true;
     } else if (c.enable === false) errors.push(`${path}.enable`);
     if (kind === "tts" && c.skip_patterns) {
@@ -129,6 +136,7 @@ export function toV3Module(
         errors.push(`${path}.skip_patterns`);
     }
     result.credential = credentials.length ? { mode: "byok", api_key: credentials[0] } : { mode: "managed" };
+    if (!credentials.length) delete result.url;
     if (Object.keys(params).length) result.params = params;
     return result;
 }

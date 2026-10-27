@@ -346,12 +346,15 @@ export type AgentConfigUpdate = UpdateAgentsRequest.Properties;
 
 /** Options for creating a session via {@link Agent.createSession} */
 export interface SessionOptions {
-    /** Correlation reference for stored/ephemeral sessions. */
-    clientReference?: string;
-    /** Labels for saved-agent sessions; not supported for ephemeral sessions. */
+    /** Runtime values for declared template variables; selects ephemeral startup for inline builders. */
+    values?: Record<string, string | number | boolean>;
+    idempotencyKey?: string;
     labels?: Record<string, string>;
-    /** Maximum duration in seconds; selects the stored/ephemeral session backend. */
     maxDuration?: number;
+    encryption?: import("../v3/session-schema.js").RtcEncryption;
+    audioScenario?: "aiserver" | "chorus";
+    gracefulStop?: import("../v3/session-schema.js").GracefulStop;
+    dataPolicy?: import("../v3/session-schema.js").DataPolicy;
     /** Unique agent instance name sent to the Agora API. Omit to auto-generate `agent-{timestamp}`. */
     name?: string;
     /** The channel to join */

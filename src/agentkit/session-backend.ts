@@ -1,14 +1,14 @@
 /** Internal adapter for session identities, without mixing them with running-agent IDs. */
 import type { AgoraClient } from "../AgoraPoolClient.js";
 import { Area } from "../core/domain/index.js";
-import { V3Error } from "../v3/transport.js";
+import { validateSessionStart } from "../v3/session-lifecycle.js";
 import type { AgentCreateRequest, SessionStartOptions } from "../v3/types.js";
 import type { Agent } from "./Agent.js";
 import { AgentSession } from "./AgentSession.js";
 import type { SessionInfo, SessionOptions } from "./types.js";
 
 export interface SessionBackend {
-    start(): Promise<string>;
+    start(): Promise<{ id: string; status: "starting" | "running" }>;
     stop(id: string): Promise<void>;
     getInfo(id: string): Promise<SessionInfo>;
 }
@@ -24,44 +24,53 @@ export function createStoredSession(
     source: { agent_id: string } | { agent: Omit<AgentCreateRequest, "agent_name"> },
     config?: Agent,
 ): AgentSession {
-    if ("agent" in source && options.labels !== undefined)
-        throw new Error("labels are not confirmed for ephemeral sessions");
     if (client.area === Area.CN) throw new Error("Stored sessions in CN are pending backend confirmation");
-    for (const key of ["token", "expiresIn", "enableStringUid", "preset", "pipelineId"] as const) {
-        if (options[key] !== undefined) throw new Error(`${key} is not supported by this session backend`);
-    }
-    if (!options.channel.trim() || !options.agentUid.trim() || options.remoteUids.some((uid) => !uid.trim())) {
-        throw new Error("Session channel and UIDs must not be empty");
+    for (const key of [
+        "clientReference",
+        "client_reference",
+        "expiresIn",
+        "enableStringUid",
+        "preset",
+        "pipelineId",
+    ] as const) {
+        if (key in options && (options as unknown as Record<string, unknown>)[key] !== undefined)
+            throw new Error(`${key} is not supported by this session backend`);
     }
     const lifecycle: NonNullable<SessionStartOptions["lifecycle"]> = {};
     for (const [key, wire] of [
         ["idleTimeout", "idle_timeout_ms"],
         ["maxDuration", "max_duration_ms"],
     ] as const) {
-        const seconds = options[key];
-        if (seconds !== undefined) {
-            if (!Number.isFinite(seconds) || seconds < 0 || !Number.isSafeInteger(seconds * 1000)) {
-                throw new Error(`${key} must be nonnegative seconds representable as integer milliseconds`);
-            }
-            lifecycle[wire] = seconds * 1000;
-        }
+        if (options[key] !== undefined) lifecycle[wire] = options[key]! * 1000;
     }
+    if (options.gracefulStop !== undefined) lifecycle.graceful_stop = options.gracefulStop;
     const payload = JSON.parse(
         JSON.stringify({
             ...source,
-            client_reference: options.clientReference ?? options.name,
+            values: options.values,
+            idempotencyKey: options.idempotencyKey,
+            data_policy: options.dataPolicy,
             labels: options.labels,
             transport: {
                 type: "rtc",
                 channel: options.channel,
                 uid: options.agentUid,
                 subscribe_uids: options.remoteUids,
+                token: options.token,
+                encryption: options.encryption,
+                audio_scenario: options.audioScenario,
             },
             ...(Object.keys(lifecycle).length ? { lifecycle } : {}),
         }),
     );
+    validateSessionStart(payload);
+    let successfullyStarted = false;
     const backend: SessionBackend = {
         async start() {
+            if (payload.idempotencyKey && successfullyStarted)
+                throw new Error(
+                    "This idempotency key already started a session; create a new handle with a new key for another session",
+                );
             const result =
                 "agent_id" in payload
                     ? await client.v3.sessions.start(payload)
@@ -69,20 +78,11 @@ export function createStoredSession(
             if (typeof result.agent_session_id !== "string" || !result.agent_session_id.trim()) {
                 throw new Error("Session start response is missing agent_session_id");
             }
-            return result.agent_session_id;
+            successfullyStarted = true;
+            return { id: result.agent_session_id, status: result.status === "STARTING" ? "starting" : "running" };
         },
         async stop(id) {
-            try {
-                await client.v3.sessions.stop({ agentSessionId: id });
-            } catch (error) {
-                if (
-                    error instanceof V3Error &&
-                    error.statusCode === 404 &&
-                    (error.body as { reason?: string } | null)?.reason === "TaskNotFound"
-                )
-                    return;
-                throw error;
-            }
+            await client.v3.sessions.stop({ agentSessionId: id });
         },
         async getInfo(id) {
             const info = await client.v3.sessions.get({ agentSessionId: id });
@@ -94,7 +94,7 @@ export function createStoredSession(
         agent: config,
         backend,
         appId: client.appId,
-        name: options.name ?? options.clientReference ?? "session",
+        name: options.name ?? "session",
         ...options,
     });
 }

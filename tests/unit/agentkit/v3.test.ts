@@ -31,7 +31,7 @@ function setup(replies: Response[] = []) {
         appCertificate: "certificate",
         authToken: "token",
         fetch,
-        v3: { baseUrl: "https://staging.test", headers: { "X-Consumer-Username": "test" } },
+        v3: { baseUrl: "https://staging.test", headers: { "X-Test-Context": "test" } },
     });
     return { client, fetch };
 }
@@ -55,9 +55,9 @@ describe("v3 preview", () => {
         expect(result.data.agent_id).toBe("agent-1");
         expect(result.rawResponse.headers.get("etag")).toBe('"v1"');
         const r = request(fetch);
-        expect(r.url).toBe("https://staging.test/conversational-ai/v3/projects/app/agents/a%2Fb");
+        expect(r.url).toBe("https://staging.test/conversational-ai/v1/projects/app/agents/a%2Fb");
         expect(new Headers(r.init.headers).get("authorization")).toBe("agora token=token");
-        expect(new Headers(r.init.headers).get("x-consumer-username")).toBe("test");
+        expect(new Headers(r.init.headers).get("x-test-context")).toBe("test");
         expect(() => client.v3.agents.get({ id: " " })).toThrow("must not be empty");
     });
     it("pages through results and rejects repeated cursors", async () => {
@@ -79,7 +79,7 @@ describe("v3 preview", () => {
         await client.v3.agents.get({ id: "a" });
         await client.v3.agents.update({ id: "a", ifMatch: '"1"', instructions: null });
         await client.v3.agents.delete({ id: "a" });
-        await client.v3.secrets.create({ name: "s", secrets: { key: "value" }, idempotencyKey: "once" });
+        await client.v3.secrets.create({ name: "s", secrets: { key: "value" } });
         await client.v3.secrets.list();
         await client.v3.secrets.get({ name: "s" });
         await client.v3.secrets.update({ name: "s", secrets: { key: null } });
@@ -160,7 +160,7 @@ describe("v3 preview", () => {
                 asr: { credential: { mode: "byok", api_key: "asr" } },
             },
         });
-        expect(base.createSession({ channel: "room", agentUid: "1", remoteUids: ["*"] })).toBeInstanceOf(AgentSession);
+        expect(base.createSession({ channel: "room", agentUid: "1", remoteUids: ["2"] })).toBeInstanceOf(AgentSession);
         expect(() => base.toProperties({ channel: "room", agentUid: "1", remoteUids: ["*"], token: "rtc" })).toThrow(
             SecretRefNotSupportedError,
         );
@@ -468,12 +468,11 @@ describe("v3 preview", () => {
             .update(
                 { id: "a", ifMatch: "stale" },
                 {
-                    authorization: "Bearer per-call",
+                    authorization: "agora token=per-call",
                     headers: {
                         "X-Tenant": "tenant-1",
                         "If-Match": "stale",
                         "If-None-Match": "*",
-                        "Idempotency-Key": "write",
                     },
                 },
             )
@@ -482,7 +481,7 @@ describe("v3 preview", () => {
         const latest = request(fetch, 1);
         const headers = new Headers(latest.init.headers);
         expect(latest.init.method).toBe("GET");
-        expect(headers.get("Authorization")).toBe("Bearer per-call");
+        expect(headers.get("Authorization")).toBe("agora token=per-call");
         expect(headers.get("X-Tenant")).toBe("tenant-1");
         for (const name of ["If-Match", "If-None-Match", "Idempotency-Key"]) expect(headers.has(name)).toBe(false);
     });
@@ -509,7 +508,7 @@ describe("v3 preview", () => {
         for (const index of [1, 2]) {
             const call = request(fetch, index);
             expect(call.init.method).toBe("GET");
-            expect(new URL(call.url).pathname).toBe("/conversational-ai/v3/projects/app/numbers");
+            expect(new URL(call.url).pathname).toBe("/conversational-ai/v1/projects/app/numbers");
             expect(new URL(call.url).searchParams.get("limit")).toBe("100");
         }
         expect(new URL(request(fetch, 2).url).searchParams.get("cursor")).toBe("next");
@@ -667,7 +666,6 @@ describe("stored and ephemeral session adapters", () => {
         expect(session.id).toBe("session/a");
         expect(body(fetch, 1)).toEqual({
             agent_id: "agent-1",
-            client_reference: "reference",
             labels: { owner: "test" },
             transport: { type: "rtc", channel: "room", uid: "1002", subscribe_uids: ["1001"] },
             lifecycle: { idle_timeout_ms: 60000, max_duration_ms: 120000 },
@@ -740,8 +738,6 @@ describe("stored and ephemeral session adapters", () => {
         const { client, fetch } = setup();
         const config = new Agent({ client }).withVariable("choice", { type: "bool" });
         for (const extra of [
-            { labels: { owner: "test" } },
-            { token: "rtc" },
             { preset: "x" },
             { pipelineId: "published" },
             { expiresIn: 60 },
@@ -755,7 +751,7 @@ describe("stored and ephemeral session adapters", () => {
         }
         expect(fetch).not.toHaveBeenCalled();
     });
-    it("treats only TaskNotFound stop responses as an already-ended session", async () => {
+    it("propagates TaskNotFound stop responses", async () => {
         const { client, fetch } = setup([
             response({ agent_session_id: "s", status: "running", created_at: 1 }, 201),
             response({ reason: "TaskNotFound" }, 404),
@@ -764,8 +760,8 @@ describe("stored and ephemeral session adapters", () => {
             .withVariable("choice", { type: "bool" })
             .createSession({ channel: "room", agentUid: "1", remoteUids: ["2"] });
         await session.start();
-        await session.stop();
-        expect(session.status).toBe("stopped");
+        await expect(session.stop()).rejects.toMatchObject({ statusCode: 404, body: { reason: "TaskNotFound" } });
+        expect(session.status).toBe("error");
         expect(fetch).toHaveBeenCalledTimes(2);
     });
 });

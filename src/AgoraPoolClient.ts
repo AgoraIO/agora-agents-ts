@@ -57,12 +57,11 @@ function createClientPool(area: AgoraArea): Pool {
 
 /**
  * Auth mode for the client:
- * - `basic`: Customer ID + Secret for REST API (HTTP Basic Auth)
  * - `token`: Pre-built `agora token=<value>` auth header
  * - `app-credentials`: appId + appCertificate only; AgentSession generates
  *   a fresh ConvoAI token per API call
  */
-export type AgoraAuthMode = "basic" | "token" | "app-credentials";
+export type AgoraAuthMode = "token" | "app-credentials";
 
 export declare namespace AgoraClient {
     export type Options<TArea extends AgoraArea = AgoraArea> = BaseOptions<TArea> & AuthOptions;
@@ -71,7 +70,7 @@ export declare namespace AgoraClient {
         extends Omit<BaseClientOptions, "baseUrl" | "environment" | "username" | "password" | "authorization"> {
         /** The area to use for regional URL selection */
         area: TArea;
-        /** Internal staging override; baseUrl is a host, without the API prefix. */
+        /** Optional public origin override; baseUrl is a host, without the API prefix. */
         v3?: V3Options;
         /** Agora App ID — used as the `appid` path parameter and for RTC token generation */
         appId: string;
@@ -79,18 +78,9 @@ export declare namespace AgoraClient {
         appCertificate: string;
     }
 
-    /** Use Customer ID + Secret for REST API authentication (HTTP Basic Auth) */
-    interface BasicAuthOptions {
-        customerId: string;
-        customerSecret: string;
-        authToken?: never;
-    }
-
     /** Use a pre-built Agora token for REST API authentication. Pass the raw token; the SDK sets `Authorization: agora token=<authToken>` automatically. */
     interface TokenAuthOptions {
         authToken: string;
-        customerId?: never;
-        customerSecret?: never;
     }
 
     /**
@@ -98,12 +88,10 @@ export declare namespace AgoraClient {
      * ConvoAI token per API call — no Customer Secret required.
      */
     interface AppCredentialsOptions {
-        customerId?: never;
-        customerSecret?: never;
         authToken?: never;
     }
 
-    type AuthOptions = BasicAuthOptions | TokenAuthOptions | AppCredentialsOptions;
+    type AuthOptions = TokenAuthOptions | AppCredentialsOptions;
 
     export interface RequestOptions extends BaseRequestOptions {}
 }
@@ -112,7 +100,7 @@ export declare namespace AgoraClient {
  * AgoraClient extends the base client with domain pool support for
  * regional URL cycling and automatic domain selection.
  *
- * Three authentication modes are supported:
+ * Two authentication modes are supported:
  *
  * **App credentials (recommended)** — no Customer Secret needed; AgentSession
  * generates a short-lived ConvoAI token per API call:
@@ -134,20 +122,13 @@ export declare namespace AgoraClient {
  * });
  * ```
  *
- * **Basic auth** — Customer ID + Secret from Agora Console:
- * ```typescript
- * const client = new AgoraClient({
- *     area: Area.US,
- *     appId: "your-app-id",
- *     appCertificate: "your-app-certificate",
- *     customerId: "your-customer-id",
- *     customerSecret: "your-customer-secret",
- * });
- * ```
  */
 export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraClient {
     protected readonly _pool: Pool;
     public readonly v3: V3Client;
+    public get campaigns(): V3Client["campaigns"] {
+        return this.v3.campaigns;
+    }
     /** Project secrets shared with the advanced resource client. */
     public get secrets(): V3Client["secrets"] {
         return this.v3.secrets;
@@ -168,49 +149,43 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
     constructor(options: AgoraClient.Options<TArea>) {
         const pool = createClientPool(options.area);
 
-        let authMode: AgoraAuthMode;
-        let username: string;
-        let password: string;
-        let authToken = "";
-
-        const opts = options as AgoraClient.Options<TArea> & {
-            customerId?: string;
-            customerSecret?: string;
-            authToken?: string;
-        };
-
-        if (opts.customerId != null && opts.customerSecret != null) {
-            authMode = "basic";
-            username = opts.customerId;
-            password = opts.customerSecret;
-        } else if (opts.customerId != null) {
-            throw new Error("customerSecret is required when customerId is provided");
-        } else if (opts.authToken != null) {
-            authMode = "token";
-            authToken = opts.authToken;
-            username = "";
-            password = "";
-        } else {
-            authMode = "app-credentials";
-            username = "";
-            password = "";
+        for (const key of Object.keys(options)) {
+            if (
+                [
+                    "customerid",
+                    "customersecret",
+                    "clientid",
+                    "clientsecret",
+                    "username",
+                    "password",
+                    "authorization",
+                ].includes(key.replace(/_/g, "").toLowerCase())
+            ) {
+                throw new Error(`${key} is not supported; use appId/appCertificate or authToken`);
+            }
         }
-
-        const { customerId: _cid, customerSecret: _cs, authToken: _at, ...rest } = opts;
-
-        // _getCustomAuthorizationHeaders() in the generated client spreads { Authorization }
-        // after _getAuthorizationHeader(), so it overrides the Basic header on every request.
-        const authorization =
-            authMode === "basic"
-                ? `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`
-                : authMode === "token"
-                  ? `agora token=${authToken}`
-                  : "";
-
+        const authMode: AgoraAuthMode = options.authToken !== undefined ? "token" : "app-credentials";
+        const { authToken, ...rest } = options;
+        const authorization = (): string =>
+            authMode === "token"
+                ? `agora token=${authToken}`
+                : `agora token=${generateConvoAIToken({ appId: options.appId, appCertificate: options.appCertificate, channelName: "", uid: 0 })}`;
+        const originalFetch = options.fetch ?? globalThis.fetch;
+        const tokenOnlyFetch: typeof fetch = async (input, init) => {
+            const finalHeaders = new Headers(input instanceof Request ? input.headers : undefined);
+            new Headers(init?.headers).forEach((value, key) => finalHeaders.set(key, value));
+            const auth = finalHeaders.get("authorization");
+            if (auth !== null && !/^agora token=\S+$/i.test(auth))
+                throw new Error("Only Agora token authorization is supported");
+            for (const name of ["x-studio-region", "x-studio-v2-gateway-secret", "x-consumer-username"])
+                if (finalHeaders.has(name)) throw new Error(`${name} is an internal header and is not supported`);
+            return originalFetch(input, init);
+        };
         super({
             ...rest,
-            username,
-            password,
+            fetch: tokenOnlyFetch,
+            username: "",
+            password: "",
             authorization,
             baseUrl: () => pool.getCurrentURL(),
         });
@@ -224,11 +199,8 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
             new V3Transport(
                 this._options,
                 this.appId,
-                () => v3Base ?? new URL(pool.getCurrentURL()).origin,
-                () =>
-                    authMode === "app-credentials"
-                        ? `agora token=${generateConvoAIToken({ appId: this.appId, appCertificate: this.appCertificate, channelName: "v3", uid: 0 })}`
-                        : authorization,
+                () => v3Base ?? "https://preview.ai.agora.io",
+                authorization,
                 options.v3?.headers,
             ),
         );

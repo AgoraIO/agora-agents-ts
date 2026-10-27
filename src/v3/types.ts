@@ -662,7 +662,7 @@ export type Contract_Mllm = {
 export type Contract_Avatar = {
     enabled?: boolean;
     credential?: Contract_ModelCredential;
-    vendor?: "akool" | "liveavatar" | "anam" | "generic";
+    vendor?: "akool" | "liveavatar" | "anam" | "generic" | "sensetime" | "spatius";
     params?: { [key: string]: unknown };
 };
 export type Contract_RealtimeTurnDetection =
@@ -708,8 +708,16 @@ export type Contract_JsonSchema = Record<string, unknown> | boolean;
 export type AgentCreateRequest = Contract_AgentCreateInput & AgentCreateModel;
 
 export type {
-    EphemeralSessionStartRequest,
     SessionStartOptions,
     SessionStartRequest,
+    EphemeralSessionStartRequest,
     SessionStartResponse,
 } from "./session-lifecycle.js";
+
+export type {
+    CampaignCreate,
+    CampaignPatch,
+    CampaignResponse,
+    CampaignListResponse,
+    CampaignDeleteResponse,
+} from "./campaign-schema.js";

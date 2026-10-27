@@ -804,7 +804,7 @@ export const contract: Record<string, any> = {
             },
             vendor: {
                 type: "string",
-                enum: ["akool", "liveavatar", "anam", "generic"],
+                enum: ["akool", "liveavatar", "anam", "generic", "sensetime", "spatius"],
             },
             params: {
                 type: "object",
