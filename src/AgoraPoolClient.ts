@@ -195,6 +195,25 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
         this.authMode = authMode;
         this.area = options.area as TArea;
         const v3Base = options.v3?.baseUrl ?? process.env.AGORA_AGENTS_V3_BASE_URL;
+        if (v3Base !== undefined) {
+            let origin: URL;
+            try {
+                origin = new URL(v3Base);
+            } catch {
+                throw new Error("v3.baseUrl must be an HTTP(S) origin");
+            }
+            if (
+                !["http:", "https:"].includes(origin.protocol) ||
+                origin.username ||
+                origin.password ||
+                origin.pathname !== "/" ||
+                origin.search ||
+                origin.hash ||
+                v3Base.includes("?") ||
+                v3Base.includes("#")
+            )
+                throw new Error("v3.baseUrl must be an HTTP(S) origin without credentials, path, query or fragment");
+        }
         this.v3 = new V3Client(
             new V3Transport(
                 this._options,

@@ -185,19 +185,48 @@ describe("engineering public contract", () => {
         expect(result.rawResponse.status).toBe(201);
         expect(result.rawResponse.headers.get("Idempotent-Replayed")).toBe("true");
     });
-    it.each([404, 409])("propagates stop errors %s even from STARTING", async (status) => {
-        const { client } = setup([
-            reply(stored),
-            reply(start),
-            reply({ reason: status === 404 ? "TaskNotFound" : "TaskConflict" }, status),
-        ]);
+    it.each([
+        [404, "TaskNotFound", "error"],
+        [409, "TaskConflict", "stopping"],
+        [409, "TaskNotRunning", "stopped"],
+        [409, "Other", "error"],
+    ] as const)("propagates stop errors %s even from STARTING", async (status, reason, expected) => {
+        const { client } = setup([reply(stored), reply(start), reply({ reason }, status)]);
         const session = (await SavedAgent.get(client, "saved")).createSession(opts);
         await session.start();
         await expect(session.stop()).rejects.toMatchObject({ statusCode: status });
-        expect(session.status).toBe("error");
+        expect(session.status).toBe(expected);
+    });
+    it.each([
+        ["agent", "user"],
+        ["0", "user"],
+        ["0", "2"],
+        ["1", "2"],
+    ])("accepts matching or auto-selected UID types", async (agentUid, subscriber) => {
+        const { client, fetch } = setup([reply(start)]);
+        const session = new Agent({ client })
+            .withVariable("x", { type: "str" })
+            .createSession({ ...opts, agentUid, remoteUids: [subscriber] });
+        await session.start();
+        expect(body(fetch).transport.uid).toBe(agentUid);
+    });
+    it.each([
+        "https://stage.example?route=old",
+        "https://stage.example#frag",
+        "https://user:pass@stage.example",
+        "https://stage.example/path",
+        "ftp://stage.example",
+    ])("rejects invalid preview origin %s", (baseUrl) => {
+        const fetch = vi.fn();
+        expect(
+            () => new AgoraClient({ area: Area.US, appId: "app", authToken: "token", v3: { baseUrl }, fetch }),
+        ).toThrow("origin");
+        expect(fetch).not.toHaveBeenCalled();
     });
     it.each([
         { remoteUids: ["*"] },
+        { agentUid: "agent", remoteUids: ["2"] },
+        { agentUid: "1", remoteUids: ["user"] },
         { remoteUids: [] },
         { remoteUids: ["2", "3"] },
         { maxDuration: 0 },

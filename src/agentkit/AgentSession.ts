@@ -9,6 +9,7 @@ import type { AgoraAuthMode, AgoraClient } from "../AgoraPoolClient.js";
 import type * as Agora from "../api/index.js";
 import type { AgentManagementClient } from "../api/resources/agentManagement/client/Client.js";
 import type { AgentsClient } from "../api/resources/agents/client/Client.js";
+import { V3Error } from "../v3/transport.js";
 import { AgoraError } from "../errors/index.js";
 import { type SessionBackend, UnsupportedSessionOperationError } from "./session-backend.js";
 import type { Agent } from "./Agent.js";
@@ -733,7 +734,20 @@ export class AgentSession {
                 return; // Don't throw - agent is already stopped
             }
 
-            this._status = "error";
+            const reason =
+                error instanceof V3Error &&
+                error.statusCode === 409 &&
+                error.body !== null &&
+                typeof error.body === "object" &&
+                "reason" in error.body
+                    ? error.body.reason
+                    : undefined;
+            this._status =
+                this._backend && reason === "TaskNotRunning"
+                    ? "stopped"
+                    : this._backend && reason === "TaskConflict"
+                      ? "stopping"
+                      : "error";
             this._emit("error", error);
             throw error;
         }

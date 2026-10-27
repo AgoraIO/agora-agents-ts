@@ -54,10 +54,18 @@ export function validateSessionStart(request: SessionStartRequest | EphemeralSes
     if (transport.type === "rtc") {
         if (!transport.channel || [...transport.channel].length > 256)
             throw new Error("channel must contain 1–256 characters");
-        if (!/^(0|[1-9][0-9]{0,9})$/.test(transport.uid))
-            throw new Error("Numeric RTC uid is required until string UID backend support is available");
-        if (transport.subscribe_uids.length !== 1 || !/^[1-9][0-9]{0,9}$/.test(transport.subscribe_uids[0]!))
-            throw new Error("Exactly one numeric subscriber UID is required; wildcards are unsupported");
+        if (typeof transport.uid !== "string" || !transport.uid.trim()) throw new Error("uid must be nonempty");
+        if (
+            !Array.isArray(transport.subscribe_uids) ||
+            transport.subscribe_uids.length !== 1 ||
+            typeof transport.subscribe_uids[0] !== "string" ||
+            !transport.subscribe_uids[0].trim() ||
+            transport.subscribe_uids[0] === "*"
+        )
+            throw new Error("Exactly one non-wildcard subscriber UID is required");
+        const numeric = (uid: string) => /^[0-9]+$/.test(uid);
+        if (transport.uid !== "0" && numeric(transport.uid) !== numeric(transport.subscribe_uids[0]))
+            throw new Error("Agent and subscriber must use the same UID type");
         if (transport.audio_scenario !== undefined && !["aiserver", "chorus"].includes(transport.audio_scenario))
             throw new Error("Invalid audio_scenario");
         if (transport.encryption) {
