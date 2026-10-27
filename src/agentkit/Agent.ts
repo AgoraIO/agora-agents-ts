@@ -870,6 +870,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             appId: this._client.appId,
             appCertificate: this._client.appCertificate,
             ...options,
+            agentUid: options.agentUid ?? "0",
             name,
         });
     }

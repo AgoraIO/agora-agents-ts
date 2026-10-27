@@ -338,7 +338,7 @@ export type McpServersItem = McpServer & Record<string, unknown>;
 export type AgentConfig = StartAgentsRequest.Properties;
 
 /** Agent configuration update (for runtime updates) */
-export type AgentConfigUpdate = UpdateAgentsRequest.Properties;
+export type AgentConfigUpdate = UpdateAgentsRequest.Properties & { messages?: import("../v3/types.js").Message[] };
 
 // =============================================================================
 // Session Types
@@ -362,8 +362,8 @@ export interface SessionOptions {
     channel: string;
     /** Authentication token for the channel. Omit to auto-generate (requires appCertificate on the session). */
     token?: string;
-    /** The agent's RTC UID */
-    agentUid: string;
+    /** The agent's RTC UID. Omit for server auto-assignment (legacy inline sessions use 0). */
+    agentUid?: string;
     /** Remote user UIDs to subscribe to */
     remoteUids: string[];
     /** Idle timeout in seconds (0 = no auto-exit) */
@@ -393,7 +393,8 @@ export type SessionStatus = ListAgentsResponse.Data.List.Item.Status;
 export type SessionInfo = GetAgentsResponse & {
     agent_session_id?: string;
     agent_name?: string;
-    analysis?: import("../v3/types.js").SessionAnalysis | null;
+    /** Older responses may include analysis; the current contract does not promise it. */
+    analysis?: unknown;
 };
 
 /** Session list response */

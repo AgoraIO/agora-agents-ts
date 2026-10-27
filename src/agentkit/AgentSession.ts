@@ -861,7 +861,6 @@ export class AgentSession {
      * @param config - Partial configuration to update
      */
     async update(config: AgentConfigUpdate): Promise<void> {
-        if (this._backend) throw new UnsupportedSessionOperationError("update");
         if (this._status !== "running") {
             throw new Error(`Cannot update in ${this._status} state`);
         }
@@ -870,6 +869,14 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
+        if (this._backend) {
+            await this._backend.update(this._agentId, config);
+            return;
+        }
+        if (config?.messages !== undefined)
+            throw new Error(
+                "messages requires a stored or ephemeral session; use llm.system_messages for this session",
+            );
         await this._agentsClient.update(
             {
                 appid: this._appId,

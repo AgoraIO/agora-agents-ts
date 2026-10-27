@@ -12,8 +12,8 @@ import type { LlmConfig, MllmConfig, SttConfig, TtsConfig } from "./types.js";
 
 export type SecretRef = string & { readonly __secretRef: unique symbol };
 export function secretRef(set: string, key: string): SecretRef {
-    if (![set, key].every((v) => /^[A-Za-z0-9_-]{1,64}$/.test(v)))
-        throw new Error("Secret names and keys must be 1–64 letters, digits, underscores or hyphens");
+    if (![set, key].every((v) => /^[A-Za-z0-9_]{1,64}$/.test(v)))
+        throw new Error("Secret names and keys must be 1–64 letters, digits or underscores");
     return `$secrets.${set}.${key}` as SecretRef;
 }
 export class SecretRefNotSupportedError extends Error {
@@ -43,8 +43,10 @@ export function validateVariable(name: string, def: VariableDefinition): void {
     if (!/^[a-z][a-z0-9_]{0,63}$/.test(name)) throw new Error("Invalid v3 variable name");
     if (!["str", "int", "float", "bool", "date", "datetime"].includes(def.type))
         throw new Error("Invalid v3 variable type");
+    if (def.options && new Set(def.options.map((value) => JSON.stringify(value))).size !== def.options.length)
+        throw new Error("Variable options must be unique");
     if (def.extract && !def.description?.trim()) throw new Error("Extracted variables require a description");
-    if (validateContract(def, contract.Contract_VariableDefinition, `variables.${name}`).length)
+    if (validateContract(def, contract.AgentRequest_VariableDefinition, `variables.${name}`).length)
         throw new Error("Invalid v3 variable definition");
 }
 type Config = AgentOptions & { llm?: LlmConfig; tts?: TtsConfig; stt?: SttConfig; mllm?: MllmConfig };
@@ -69,9 +71,19 @@ export function toV3Module(
     kind: "asr" | "llm" | "tts" | "mllm" | "avatar",
     errors: string[] = [],
 ): Map {
-    const c = config as Map,
+    const c = { ...config } as Map,
         params = { ...c.params };
     const path = `pipeline.${kind}`;
+    if (kind === "llm" && c.style === "bedrock") {
+        c.vendor ??= "amazon";
+        for (const key of ["access_key", "secret_key", "region"]) {
+            if (c[key] !== undefined) {
+                if (params[key] !== undefined && params[key] !== c[key]) errors.push(`${path}.params.${key}`);
+                params[key] = c[key];
+                delete c[key];
+            }
+        }
+    }
     const allowed = {
         asr: ["vendor", "url", "language", "model"],
         llm: [
@@ -92,28 +104,64 @@ export function toV3Module(
         avatar: ["vendor"],
     }[kind];
     leftovers(c, [...allowed, ...moved, "api_key", "params", "enable", "_minimaxPresetModel"], path, errors);
-    // v3 only has a single API-key credential. Multi-part credentials cannot safely be inferred.
+    // Credential aliases are normalized to the selected provider's public fields.
+    const fields: Map = {};
+    const aliases: Record<string, string[]> =
+        c.vendor === "amazon" && kind === "asr"
+            ? {
+                  access_key_id: ["access_key_id", "aws_access_key_id"],
+                  secret_access_key: ["secret_access_key", "aws_secret_access_key"],
+              }
+            : c.vendor === "amazon" && kind === "tts"
+              ? {
+                    aws_access_key_id: ["aws_access_key_id", "access_key_id"],
+                    aws_secret_access_key: ["aws_secret_access_key", "secret_access_key"],
+                }
+              : c.vendor === "amazon" &&
+                  kind === "llm" &&
+                  (params.access_key !== undefined || params.secret_key !== undefined)
+                ? { access_key: ["access_key"], secret_key: ["secret_key"] }
+                : c.vendor === "google" && kind === "asr"
+                  ? { adc_credentials_string: ["adc_credentials_string", "api_key"] }
+                  : c.vendor === "google" && kind === "tts"
+                    ? { credentials: ["credentials", "adc_credentials_string", "api_key"] }
+                    : c.vendor === "sarvam" && kind === "tts"
+                      ? { api_subscription_key: ["api_subscription_key", "api_key"] }
+                      : (kind === "asr" && ["microsoft", "speechmatics"].includes(c.vendor)) ||
+                          (kind === "tts" && ["elevenlabs", "humeai", "microsoft", "minimax"].includes(c.vendor))
+                        ? { key: ["key", "api_key"] }
+                        : kind === "avatar" && c.vendor === "sensetime"
+                          ? { app_key: ["app_key", "api_key"] }
+                          : kind === "avatar" && c.vendor === "spatius"
+                            ? { spatius_api_key: ["spatius_api_key", "api_key"] }
+                            : { api_key: ["api_key", "key"] };
+    if (Object.keys(aliases).length > 1 && c.api_key !== undefined) errors.push(`${path}.credential`);
+    for (const [field, keys] of Object.entries(aliases)) {
+        const values = keys.map((key) => params[key]).filter((value) => value !== undefined);
+        if (Object.keys(aliases).length === 1 && c.api_key !== undefined) values.push(c.api_key);
+        if (new Set(values).size > 1) errors.push(`${path}.credential.fields.${field}`);
+        if (values.length) fields[field] = values[0];
+        for (const key of keys) delete params[key];
+    }
     for (const key of [
+        "api_key",
+        "key",
+        "api_subscription_key",
         "aws_access_key_id",
         "aws_secret_access_key",
         "access_key",
         "secret_key",
+        "access_key_id",
+        "secret_access_key",
         "adc_credentials_string",
-    ])
+        "credentials",
+    ]) {
         if (params[key] !== undefined) errors.push(`${path}.params.${key}`);
-    const credentialKeys = [
-        "api_key",
-        "key",
-        "api_subscription_key",
-        ...(kind === "avatar" && c.vendor === "sensetime" ? ["app_key"] : []),
-        ...(kind === "avatar" && c.vendor === "spatius" ? ["spatius_api_key"] : []),
-    ];
-    const credentials = [c.api_key, ...credentialKeys.map((k) => params[k])].filter((v) => v !== undefined);
-    if (new Set(credentials).size > 1) errors.push(`${path}.credential`);
-    for (const key of credentialKeys) delete params[key];
-    const url = c.url ?? params.url ?? params.base_url;
+    }
+    const url = c.url ?? params.url ?? params.base_url ?? params.api_base_url;
     delete params.url;
     delete params.base_url;
+    delete params.api_base_url;
     const result = clean(Object.fromEntries(allowed.map((key) => [key, c[key]])));
     if (url !== undefined) result.url = url;
     if ((kind === "llm" || kind === "mllm" || kind === "asr") && params.model !== undefined) {
@@ -135,8 +183,8 @@ export function toV3Module(
         // The v2 numeric enum has no published mapping to the v3 names.
         errors.push(`${path}.skip_patterns`);
     }
-    result.credential = credentials.length ? { mode: "byok", api_key: credentials[0] } : { mode: "managed" };
-    if (!credentials.length) delete result.url;
+    result.credential = Object.keys(fields).length ? { mode: "byok", fields } : { mode: "managed" };
+    if (!Object.keys(fields).length) delete result.url;
     if (Object.keys(params).length) result.params = params;
     return result;
 }
@@ -200,7 +248,23 @@ function turns(c: Map, realtime: boolean, errors: string[]): Map {
     }
     return result;
 }
-function validateContract(value: any, schema: Map, path: string): string[] {
+function validateContract(value: any, schema: any, path: string): string[] {
+    if (schema === true) return [];
+    if (schema === false) return [path];
+    if (schema.type === "null") return value === null ? [] : [path];
+    if (schema.allOf) {
+        const errors = schema.allOf.flatMap((branch: Map) => validateContract(value, branch, path));
+        if (errors.length) return errors;
+    }
+    if (schema.not && validateContract(value, schema.not, path).length === 0) return [path];
+    if (schema.if) {
+        const branch = validateContract(value, schema.if, path).length === 0 ? schema.then : schema.else;
+        if (branch) {
+            const errors = validateContract(value, branch, path);
+            if (errors.length) return errors;
+        }
+    }
+    if (object(value) && schema.required?.some((key: string) => !(key in value))) return [path];
     if (schema.$ref) return validateContract(value, contract[schema.$ref.split("/").pop()], path);
     for (const union of ["oneOf", "anyOf"])
         if (schema[union]) {
@@ -218,8 +282,8 @@ function validateContract(value: any, schema: Map, path: string): string[] {
     if (schema.type === "string") {
         if (
             typeof value !== "string" ||
-            (schema.minLength !== undefined && value.length < schema.minLength) ||
-            (schema.maxLength !== undefined && value.length > schema.maxLength) ||
+            (schema.minLength !== undefined && [...value].length < schema.minLength) ||
+            (schema.maxLength !== undefined && [...value].length > schema.maxLength) ||
             (schema.pattern && !new RegExp(schema.pattern).test(value))
         )
             return [path];
@@ -375,13 +439,30 @@ export function buildV3Agent(
                       })),
         });
     }
-    errors.push(...validateContract(body, { $ref: "#/components/schemas/Contract_AgentCreateInput" }, "agent"));
+    const { agent_name: _agentName, ...inline } = body;
+    errors.push(...validateContract(inline, { $ref: "#/components/schemas/PublicAgentInput" }, "agent"));
     if (errors.length) throw new UnsupportedFieldError([...new Set(errors)]);
     return body as V3.AgentCreateRequest;
 }
 const mutable = ["agent_name", "instructions", "messages", "greeting", "variables", "pipeline", "filler_words"];
 function object(v: unknown): v is Map {
     return !!v && typeof v === "object" && !Array.isArray(v);
+}
+function credentialFieldNames(kind: string, vendor?: string): string[] {
+    if (kind === "asr" && vendor === "amazon") return ["access_key_id", "secret_access_key"];
+    if (kind === "tts" && vendor === "amazon") return ["aws_access_key_id", "aws_secret_access_key"];
+    if (kind === "llm" && vendor === "amazon") return ["api_key", "access_key", "secret_key"];
+    if (kind === "asr" && vendor === "google") return ["adc_credentials_string"];
+    if (kind === "tts" && vendor === "google") return ["credentials"];
+    if (kind === "tts" && vendor === "sarvam") return ["api_subscription_key"];
+    if (
+        (kind === "asr" && ["microsoft", "speechmatics"].includes(vendor ?? "")) ||
+        (kind === "tts" && ["elevenlabs", "humeai", "microsoft", "minimax"].includes(vendor ?? ""))
+    )
+        return ["key"];
+    if (kind === "avatar" && vendor === "sensetime") return ["app_key"];
+    if (kind === "avatar" && vendor === "spatius") return ["spatius_api_key"];
+    return ["api_key"];
 }
 /** Explicitly clear readable stale keys under standard JSON merge-patch semantics. */
 export function redeployPatch(previous: V3.AgentResponse, desired: V3.AgentCreateRequest): V3.AgentPatchRequest {
@@ -398,7 +479,18 @@ export function redeployPatch(previous: V3.AgentResponse, desired: V3.AgentCreat
         if (module && object(next.credential))
             result.credential = {
                 ...next.credential,
-                ...(next.credential.mode === "managed" ? { api_key: null } : {}),
+                ...(next.credential.mode === "managed"
+                    ? { fields: null }
+                    : {
+                          fields: {
+                              ...Object.fromEntries(
+                                  credentialFieldNames(path.split(".")[1]!, old.vendor)
+                                      .filter((key) => !(key in next.credential.fields))
+                                      .map((key) => [key, null]),
+                              ),
+                              ...next.credential.fields,
+                          },
+                      }),
             };
         return result;
     };
@@ -420,7 +512,17 @@ export async function deployAgent(
     body: V3.AgentCreateRequest,
     options: DeployOptions,
 ): Promise<SavedAgent> {
-    if (client.area === Area.CN) throw new Error("v3 deployment in CN is pending backend confirmation");
+    const invalid = validateContract(body, contract.AgentRequest_AgentCreateInput, "agent");
+    if (invalid.length) throw new UnsupportedFieldError(invalid);
+    for (const [kind, module] of Object.entries(body.pipeline ?? {})) {
+        if (object(module) && module.credential?.mode === "byok") {
+            for (const value of Object.values(module.credential.fields ?? {}))
+                if (typeof value !== "string" || !/^\$secrets\.[A-Za-z0-9_]{1,64}\.[A-Za-z0-9_]{1,64}$/.test(value))
+                    throw new Error(
+                        `Saved ${kind} credentials require secretRef(); use an ephemeral session for inline credentials`,
+                    );
+        }
+    }
     const agentId = options.agentId;
     let response: WithRawResponse<V3.AgentResponse>;
     if (agentId !== undefined) {

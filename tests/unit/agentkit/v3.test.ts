@@ -146,7 +146,7 @@ describe("v3 preview", () => {
                     ],
                 }),
             )
-            .withStt(new DeepgramSTT({ apiKey: "asr", model: "nova-3" }));
+            .withStt(new DeepgramSTT({ apiKey: secretRef("prod", "asr"), model: "nova-3" }));
         const agent = base.withVariable("outcome", { type: "bool", extract: true, description: "Resolved?" });
         const deployed = await agent.deploy({ name: "Test" });
         expect(deployed.id).toBe("agent-1");
@@ -156,8 +156,8 @@ describe("v3 preview", () => {
             variables: { outcome: { type: "bool" } },
             pipeline: {
                 mode: "cascaded",
-                llm: { credential: { mode: "byok", api_key: "$secrets.prod.llm" }, model: "gpt-4o-mini" },
-                asr: { credential: { mode: "byok", api_key: "asr" } },
+                llm: { credential: { mode: "byok", fields: { api_key: "$secrets.prod.llm" } }, model: "gpt-4o-mini" },
+                asr: { credential: { mode: "byok", fields: { api_key: "$secrets.prod.asr" } } },
             },
         });
         expect(base.createSession({ channel: "room", agentUid: "1", remoteUids: ["2"] })).toBeInstanceOf(AgentSession);
@@ -170,7 +170,7 @@ describe("v3 preview", () => {
     it("maps public interaction language to ASR without changing provider language", async () => {
         const { client, fetch } = setup([response(saved())]);
         const agent = new Agent({ client })
-            .withStt(new DeepgramSTT({ apiKey: "asr", model: "nova-3", language: "fr" }))
+            .withStt(new DeepgramSTT({ apiKey: secretRef("prod", "asr"), model: "nova-3", language: "fr" }))
             .withTurnDetection({
                 language: "de-DE",
                 mode: "default",
@@ -181,12 +181,12 @@ describe("v3 preview", () => {
             vendor: "deepgram",
             language: "de-DE",
             params: { language: "fr" },
-            credential: { mode: "byok", api_key: "asr" },
+            credential: { mode: "byok", fields: { api_key: "$secrets.prod.asr" } },
         });
         expect(body(fetch).pipeline.turn_detection).toEqual({
             start_of_speech: { type: "vad", interrupt_duration_ms: 160 },
         });
-        const v2 = agent.toProperties({
+        const v2 = agent.withStt(new DeepgramSTT({ apiKey: "inline", model: "nova-3", language: "fr" })).toProperties({
             channel: "room",
             agentUid: "1",
             remoteUids: ["*"],
@@ -207,7 +207,7 @@ describe("v3 preview", () => {
         await new Agent({ client }).deploy({ name: "Default" });
         expect(body(fetch, 1).pipeline).not.toHaveProperty("asr");
         await new Agent({ client })
-            .withStt(new DeepgramSTT({ apiKey: "key", model: "nova-3", language: "fr" }))
+            .withStt(new DeepgramSTT({ apiKey: secretRef("prod", "key"), model: "nova-3", language: "fr" }))
             .deploy({ name: "Default interaction language" });
         expect(body(fetch, 2).pipeline.asr).toMatchObject({ language: "en-US", params: { language: "fr" } });
         expect(buildV3Agent({ client, turnDetection: { language: "es-ES" } }, {}, "Direct").pipeline).toMatchObject({
@@ -218,7 +218,7 @@ describe("v3 preview", () => {
     it("keeps cascaded provider instructions separate from Agent instructions", async () => {
         const { client, fetch } = setup([response(saved()), response(saved())]);
         const vendor = new OpenAI({
-            apiKey: "key",
+            apiKey: secretRef("prod", "key"),
             url: "https://api.openai.com/v1/chat/completions",
             model: "gpt-4o-mini",
             params: { instructions: "Provider-specific setting" },
@@ -235,7 +235,7 @@ describe("v3 preview", () => {
         const { client, fetch } = setup([response(saved()), response(saved())]);
         const agent = new Agent({ client, instructions: "Agent fallback" }).withMllm(
             new OpenAIRealtime({
-                apiKey: "key",
+                apiKey: secretRef("prod", "key"),
                 model: "gpt-realtime",
                 instructions: "Keep answers concise",
                 messages: [{ role: "user", content: "Hi" }],
@@ -248,7 +248,7 @@ describe("v3 preview", () => {
         await new Agent({ client })
             .withMllm(
                 new OpenAIRealtime({
-                    apiKey: "key",
+                    apiKey: secretRef("prod", "key"),
                     instructions: "Vendor fallback",
                     messages: [
                         { role: "system", content: "System wins" },
@@ -265,7 +265,11 @@ describe("v3 preview", () => {
         const { client, fetch } = setup([response(saved())]);
         await new Agent({ client, instructions: "Agent fallback" })
             .withMllm(
-                new OpenAIRealtime({ apiKey: "key", model: "gpt-realtime", instructions: "Realtime instructions" }),
+                new OpenAIRealtime({
+                    apiKey: secretRef("prod", "key"),
+                    model: "gpt-realtime",
+                    instructions: "Realtime instructions",
+                }),
             )
             .deploy({ name: "Realtime" });
         expect(body(fetch).instructions).toBe("Realtime instructions");
@@ -294,7 +298,7 @@ describe("v3 preview", () => {
         );
         expect(realtime.pipeline).toMatchObject({
             mode: "realtime",
-            mllm: { credential: { mode: "byok", api_key: "key" } },
+            mllm: { credential: { mode: "byok", fields: { api_key: "key" } } },
             turn_detection: { type: "agora_vad", threshold: 0.5 },
         });
         const cascade = buildV3Agent(
@@ -373,7 +377,7 @@ describe("v3 preview", () => {
                 mode: "cascaded",
                 llm: {
                     vendor: "openai",
-                    credential: { mode: "managed", api_key: null },
+                    credential: { mode: "managed", fields: null },
                     params: { bar: 2, foo: null },
                 },
             },
@@ -424,10 +428,13 @@ describe("v3 preview", () => {
         });
         const patch = redeployPatch(previous as any, {
             agent_name: "A",
-            pipeline: { mode: "cascaded", llm: { credential: { mode: "byok", api_key: "fresh" }, params: {} } },
+            pipeline: {
+                mode: "cascaded",
+                llm: { credential: { mode: "byok", fields: { api_key: "fresh" } }, params: {} },
+            },
         });
         expect(patch.pipeline).toMatchObject({
-            llm: { params: { credential: null }, credential: { mode: "byok", api_key: "fresh" } },
+            llm: { params: { credential: null }, credential: { mode: "byok", fields: { api_key: "fresh" } } },
         });
         expect(JSON.stringify(patch)).not.toContain("source");
     });
@@ -458,7 +465,7 @@ describe("v3 preview", () => {
         expect(() => buildV3Agent({ client, llm: { template_variables: { name: "Ana" } } }, {}, "A")).toThrow(
             UnsupportedFieldError,
         );
-        expect(() => buildV3Agent({ client, turnDetection: { config: { speech_threshold: 1 } } }, {}, "A")).toThrow(
+        expect(() => buildV3Agent({ client, turnDetection: { config: { speech_threshold: 1.1 } } }, {}, "A")).toThrow(
             UnsupportedFieldError,
         );
     });
@@ -538,12 +545,20 @@ describe("configuration lifecycle", () => {
         expect(await session.start()).toBe("running-1");
         expect(request(fetch).url).toContain("/join");
         const options: SaveOptions = { name: "Support" };
-        const stored = await config.save(options);
+        await expect(config.save(options)).rejects.toThrow();
+        const persistedConfig = config.withMllm(
+            new OpenAIRealtime({
+                apiKey: secretRef("support", "key"),
+                model: "gpt-realtime",
+                instructions: "Help callers",
+            }),
+        );
+        const stored = await persistedConfig.save(options);
         expect(stored).toBeInstanceOf(SavedAgent);
         expect(stored).toBeInstanceOf(DeployedAgent);
         expect(stored.id).toBe("agent-1");
         expect(stored.raw).toBe(client.v3.agents);
-        const updated = await stored.update(config.withGreeting("Updated"));
+        const updated = await stored.update(persistedConfig.withGreeting("Updated"));
         expect(updated.id).toBe(stored.id);
         expect(body(fetch, 3).agent_name).toBe(stored.name);
         expect(body(fetch, 3).greeting).toEqual({ mode: "text", text: "Updated" });
@@ -704,13 +719,12 @@ describe("stored and ephemeral session adapters", () => {
         expect(body(fetch).agent).not.toHaveProperty("agent_name");
         expect(body(fetch)).not.toHaveProperty("agent_id");
         expect(body(fetch).agent.variables).toEqual({ resolved: { type: "bool" } });
-        expect(body(fetch).agent.pipeline.mllm.credential.api_key).toBe("$secrets.support.key");
+        expect(body(fetch).agent.pipeline.mllm.credential.fields.api_key).toBe("$secrets.support.key");
         expect(config.config).toEqual(before);
         for (const call of [
             () => session.say("Hi"),
             () => session.interrupt(),
             () => session.think("Hi"),
-            () => session.update({}),
             () => session.getHistory(),
             () => session.getTurns(),
             () => session.getAllTurns(),

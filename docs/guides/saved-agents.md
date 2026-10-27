@@ -12,8 +12,9 @@ Saving, ephemeral sessions, and project provisioning require this preview checko
 ```ts
 import { Agent, AgoraClient, Area, OpenAIRealtime, SavedAgent, secretRef } from 'agora-agents';
 const client = new AgoraClient({ area: Area.US, appId: process.env.AGORA_APP_ID!, appCertificate: process.env.AGORA_APP_CERTIFICATE! });
+await client.secrets.create({ name: 'support', secrets: { openai: process.env.OPENAI_API_KEY! } });
 const config = new Agent({ client }).withMllm(new OpenAIRealtime({
-  apiKey: process.env.OPENAI_API_KEY!, model: 'gpt-realtime', instructions: 'Help callers briefly.',
+  apiKey: secretRef('support', 'openai'), model: 'gpt-realtime', instructions: 'Help callers briefly.',
 }));
 const session = config.createSession({ channel: 'room', agentUid: '1002', remoteUids: ['1001'] });
 await session.start();
@@ -21,13 +22,13 @@ await session.stop();
 const saved = await config.save({ name: 'Support' });
 ```
 
-Ordinary inline sessions retain their existing transport and conversation controls. Configurations with secret references or variables, and new session options, automatically use ephemeral startup instead. Ephemeral configurations are not saved.
+Ordinary inline sessions retain their existing transport and conversation controls. Configurations with secret references or variables, and new session options, automatically use ephemeral startup instead. Ephemeral configurations are not saved. Saved BYOK credentials must use `secretRef()`; inline keys remain supported for ephemeral and existing inline sessions. The SDK never uploads secrets implicitly.
 
 ## Update, load, and assign numbers
 
 ```ts
 const revised = config.withMllm(new OpenAIRealtime({
-  apiKey: process.env.OPENAI_API_KEY!, model: 'gpt-realtime', instructions: 'Ask one question at a time.',
+  apiKey: secretRef('support', 'openai'), model: 'gpt-realtime', instructions: 'Ask one question at a time.',
 }));
 const updated = await saved.update(revised);
 const loaded = await SavedAgent.get(client, updated.id);
@@ -57,7 +58,7 @@ await ephemeral.start();
 await ephemeral.stop();
 ```
 
-Secrets are write-only; references do not recover their values. Variable definitions belong to the configuration; primitive runtime `values` belong to a session. Saved starts cannot override provider settings: revise the saved config first, or use an ephemeral configuration.
+Secrets are write-only; references do not recover their values. Variable definitions belong to the configuration; primitive runtime `values` belong to a session. Saved starts use the saved configuration. After startup, `session.update()` can replace messages, model params, or the RTC token without changing the saved configuration.
 
 ## Session options and status
 
@@ -76,13 +77,25 @@ console.log(sessionId, info.agent_session_id, info.status);
 await fromSaved.stop();
 ```
 
-Saved/ephemeral starts support `values`, `labels`, optional `token`, RTC `encryption`, `audioScenario`, `geofence`, `gracefulStop`, and `dataPolicy`. `idleTimeout` uses seconds (0–3600); `maxDuration` uses seconds (1–3600). Graceful timeout uses milliseconds (0–120000). RTC accepts numeric or string UIDs of the same type, or agent UID `0` for automatic selection, with exactly one nonzero, non-wildcard subscriber. String UID support depends on backend rollout and may still be rejected by the server. `clientReference`/`client_reference` are rejected because the field is being removed. `name` remains a local session name and is not sent as a correlation field.
+Saved/ephemeral starts support `values`, `labels`, optional `token`, RTC `encryption`, `audioScenario`, `geofence`, `gracefulStop`, and `dataPolicy`. `idleTimeout` uses seconds (0–3600); `maxDuration` uses seconds (1–3600). Graceful timeout uses milliseconds (0–120000). RTC accepts numeric or string UIDs of the same type, or omit `agentUid` (or use `0`) for automatic selection, with exactly one nonzero, non-wildcard subscriber. String UID support depends on backend rollout and may still be rejected by the server. `clientReference`/`client_reference` are rejected because the field is being removed. `name` remains a local session name and is not sent as a correlation field.
 
 Start returns the actual session ID and reports `starting` or `running` locally. `getInfo()` updates local status; wire statuses remain uppercase, with `FAILED` mapped to local `error`. `stop()` works from starting/running. For 409 `TaskNotRunning`, local state becomes `stopped`; for 409 `TaskConflict`, it remains `stopping`. Other failures become `error`. All stop errors propagate, including 404 `TaskNotFound`, 409 `TaskNotRunning`/`TaskConflict`, and timeouts. Retry decisions belong to the caller. A successful stop emits the existing stopped event; read the server status for backend progression.
 
 Session-start idempotency keys last 24 hours. Reusing a key/body replays the original response; a changed body or in-progress request returns `409 IdempotencyKeyConflict`. Keep the same key if the outcome is uncertain. The SDK does not automatically retry writes. Secret/number creation does not accept idempotency keys.
 
-Retention `none` disables stored recordings/transcripts/turns and extraction. Existing `parameters.opt_out`, farewell, and audio-scenario settings map to session fields during ephemeral startup; explicit session options win. Unsupported settings fail before a request. New-backend session update, say, think, interrupt, history/turn controls, and legacy raw-client access remain unsupported; no old/new ID substitution is performed.
+Retention `none` disables stored recordings/transcripts/turns and extraction. Existing `parameters.opt_out`, farewell, and audio-scenario settings map to session fields during ephemeral startup; explicit session options win. Unsupported settings fail before a request. Say, think, interrupt, history/turn controls, and legacy raw-client access remain unsupported for these sessions; no old/new ID substitution is performed.
+
+## Update a running session
+
+```ts
+await fromSaved.update({
+  token: 'renewed-rtc-token',
+  messages: [{ role: 'system', content: 'Keep replies concise.' }],
+  mllm: { params: { temperature: 0.5 } },
+});
+```
+
+Use `llm.params` for cascaded models or `mllm.params` for realtime models; each supplied params object **replaces** the current provider params, so include settings you want to retain. `messages` replaces the conversation message list; the existing `llm.system_messages` spelling also maps to that field for saved/ephemeral sessions. Endpoint aliases (`url`, `base_url`, `api_base_url`) cannot change at runtime. Existing inline sessions retain their original `update({token,llm,mllm})` behavior. Updates require a running session and propagate backend errors.
 
 ## Campaigns and advanced access
 

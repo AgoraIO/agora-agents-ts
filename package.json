@@ -25,7 +25,8 @@
     "files": [
         "dist/**/*",
         "reference.md",
-        "README.md"
+        "README.md",
+        "openapi.yaml"
     ],
     "scripts": {
         "format": "biome format --write --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",

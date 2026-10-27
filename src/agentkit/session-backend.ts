@@ -1,20 +1,20 @@
 /** Internal adapter for session identities, without mixing them with running-agent IDs. */
 import type { AgoraClient } from "../AgoraPoolClient.js";
-import { Area } from "../core/domain/index.js";
 import { validateSessionStart } from "../v3/session-lifecycle.js";
 import type { AgentCreateRequest, SessionStartOptions } from "../v3/types.js";
 import type { Agent } from "./Agent.js";
 import { AgentSession } from "./AgentSession.js";
-import type { SessionInfo, SessionOptions } from "./types.js";
+import type { AgentConfigUpdate, SessionInfo, SessionOptions } from "./types.js";
 
 export interface SessionBackend {
     start(): Promise<{ id: string; status: "starting" | "running" }>;
     stop(id: string): Promise<void>;
+    update(id: string, config: AgentConfigUpdate): Promise<void>;
     getInfo(id: string): Promise<SessionInfo>;
 }
 export class UnsupportedSessionOperationError extends Error {
     constructor(operation: string) {
-        super(`${operation} is not supported by this session backend; only start, stop and getInfo are available`);
+        super(`${operation} is not supported by this session backend; start, stop, getInfo and update are available`);
         this.name = "UnsupportedSessionOperationError";
     }
 }
@@ -24,7 +24,6 @@ export function createStoredSession(
     source: { agent_id: string } | { agent: Omit<AgentCreateRequest, "agent_name"> },
     config?: Agent,
 ): AgentSession {
-    if (client.area === Area.CN) throw new Error("Stored sessions in CN are pending backend confirmation");
     for (const key of [
         "clientReference",
         "client_reference",
@@ -85,6 +84,60 @@ export function createStoredSession(
         async stop(id) {
             await client.v3.sessions.stop({ agentSessionId: id });
         },
+        async update(id, config) {
+            const input = config as Record<string, any>;
+            if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Invalid session update");
+            for (const key of Object.keys(input))
+                if (!["token", "messages", "llm", "mllm"].includes(key))
+                    throw new Error(`Unsupported session update field: ${key}`);
+            if (input.llm !== undefined && input.mllm !== undefined)
+                throw new Error("Update one active model pipeline at a time");
+            if (input.messages !== undefined && input.llm?.system_messages !== undefined)
+                throw new Error("Provide messages or llm.system_messages, not both");
+            const patch: Record<string, any> = {};
+            if (input.token !== undefined) {
+                if (typeof input.token !== "string" || !input.token) throw new Error("token must be a string");
+                patch.transport = { token: input.token };
+            }
+            const overrides: Record<string, any> = {};
+            const messages = input.messages ?? input.llm?.system_messages;
+            if (messages !== undefined) {
+                if (
+                    !Array.isArray(messages) ||
+                    messages.some(
+                        (message: any) =>
+                            !message ||
+                            !["system", "user", "assistant"].includes(message.role) ||
+                            typeof message.content !== "string" ||
+                            Object.keys(message).some((key) => !["role", "content"].includes(key)),
+                    )
+                )
+                    throw new Error("Invalid session messages");
+                overrides.messages = messages;
+            }
+            for (const kind of ["llm", "mllm"])
+                if (input[kind] !== undefined) {
+                    const module = input[kind];
+                    if (
+                        !module ||
+                        typeof module !== "object" ||
+                        Array.isArray(module) ||
+                        Object.keys(module).some(
+                            (key) => !["params", ...(kind === "llm" ? ["system_messages"] : [])].includes(key),
+                        )
+                    )
+                        throw new Error(`Invalid ${kind} update`);
+                    if (module.params !== undefined) {
+                        if (!module.params || typeof module.params !== "object" || Array.isArray(module.params))
+                            throw new Error("params must be an object");
+                        if (["url", "base_url", "api_base_url"].some((key) => key in module.params))
+                            throw new Error("Runtime endpoint aliases are not mutable");
+                        overrides.pipeline = { [kind]: { params: module.params } };
+                    }
+                }
+            if (Object.keys(overrides).length) patch.agent = { overrides };
+            await client.v3.sessions.update({ agentSessionId: id, ...patch });
+        },
         async getInfo(id) {
             const info = await client.v3.sessions.get({ agentSessionId: id });
             return { ...info, message: info.message ?? undefined, stop_ts: info.stop_ts ?? undefined };
@@ -97,5 +150,6 @@ export function createStoredSession(
         appId: client.appId,
         name: options.name ?? "session",
         ...options,
+        agentUid: options.agentUid ?? "0",
     });
 }

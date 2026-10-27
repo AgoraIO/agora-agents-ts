@@ -8,7 +8,7 @@ import { V3Transport, segment, omit, snapshotPagination } from "./transport.js";
 export class AgentsResource {
     constructor(private transport: V3Transport) {}
     create(
-        request: { appid?: string } & T.AgentCreateRequest,
+        request: { appid?: string } & T.AgentCreateInput,
         options?: BaseRequestOptions,
     ): HttpResponsePromise<T.AgentResponse> {
         return this.transport.request<T.AgentResponse>(
@@ -71,7 +71,7 @@ export class AgentsResource {
         );
     }
     update(
-        request: { appid?: string; id: string; ifMatch: string } & T.AgentPatchRequest,
+        request: { appid?: string; id: string; ifMatch: string } & T.AgentPatch,
         options?: BaseRequestOptions,
     ): HttpResponsePromise<T.AgentResponse> {
         return this.transport.request<T.AgentResponse>(

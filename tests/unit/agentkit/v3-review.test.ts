@@ -215,7 +215,10 @@ describe("preview review regressions", () => {
         const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
         expect(url).toMatch(/\/sessions\/ephemeral$/);
         const body = JSON.parse(init.body as string);
-        expect(body.agent.pipeline.avatar.credential).toEqual({ mode: "byok", api_key: "$secrets.avatars.key" });
+        expect(body.agent.pipeline.avatar.credential).toEqual({
+            mode: "byok",
+            fields: { app_key: "$secrets.avatars.key" },
+        });
         expect(body.agent.pipeline.avatar.params).not.toHaveProperty("app_key");
     });
 

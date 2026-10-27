@@ -17,7 +17,10 @@ export type SessionStartOptions = Omit<Schema.SessionCreate, "agent_id" | "clien
     idempotencyKey?: string;
 };
 export type SessionStartRequest = SessionStartOptions & { agent_id: string };
-export type EphemeralSessionStartRequest = Omit<Schema.EphemeralSessionCreate, "client_reference" | "transport"> & {
+export type EphemeralSessionStartRequest = Omit<
+    Schema.PublicEphemeralSessionCreate,
+    "client_reference" | "transport"
+> & {
     transport: SessionTransport;
     idempotencyKey?: string;
 };
@@ -61,18 +64,27 @@ export function validateSessionStart(request: SessionStartRequest | EphemeralSes
     if (transport.type === "rtc") {
         if (!transport.channel || [...transport.channel].length > 256)
             throw new Error("channel must contain 1–256 characters");
-        if (typeof transport.uid !== "string" || !transport.uid.trim()) throw new Error("uid must be nonempty");
+        if (
+            transport.uid !== undefined &&
+            (typeof transport.uid !== "string" || !transport.uid.trim() || [...transport.uid].length > 255)
+        )
+            throw new Error("uid must be nonempty");
         if (
             !Array.isArray(transport.subscribe_uids) ||
             transport.subscribe_uids.length !== 1 ||
             typeof transport.subscribe_uids[0] !== "string" ||
             !transport.subscribe_uids[0].trim() ||
+            [...transport.subscribe_uids[0]].length > 255 ||
             transport.subscribe_uids[0] === "*" ||
             /^0+$/.test(transport.subscribe_uids[0])
         )
             throw new Error("Exactly one non-wildcard subscriber UID is required");
         const numeric = (uid: string) => /^[0-9]+$/.test(uid);
-        if (transport.uid !== "0" && numeric(transport.uid) !== numeric(transport.subscribe_uids[0]))
+        if (
+            transport.uid !== undefined &&
+            transport.uid !== "0" &&
+            numeric(transport.uid) !== numeric(transport.subscribe_uids[0])
+        )
             throw new Error("Agent and subscriber must use the same UID type");
         if (transport.audio_scenario !== undefined && !["aiserver", "chorus"].includes(transport.audio_scenario))
             throw new Error("Invalid audio_scenario");
@@ -156,6 +168,20 @@ export class SessionLifecycleResource {
         options?: BaseRequestOptions,
     ): HttpResponsePromise<SessionStartResponse> {
         return this.startRequest("/sessions/ephemeral", request, options);
+    }
+    update(
+        request: Schema.SessionPatch & { appid?: string; agentSessionId: string },
+        options?: BaseRequestOptions,
+    ): HttpResponsePromise<Record<string, never>> {
+        return this.transport.request(
+            "PATCH",
+            `/sessions/${segment(request.agentSessionId)}`,
+            request.appid,
+            omit(request, ["appid", "agentSessionId"]),
+            {},
+            {},
+            options,
+        );
     }
     stop(
         request: { appid?: string; agentSessionId: string },

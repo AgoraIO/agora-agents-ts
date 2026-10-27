@@ -112,7 +112,9 @@ describe("engineering public contract", () => {
         expect(body(fetch).pipeline.llm).not.toHaveProperty("url");
         expect(body(fetch).pipeline.llm.params ?? {}).not.toHaveProperty("url");
         await new Agent({ client })
-            .withLlm(new OpenAI({ apiKey: "key", model: "gpt-4o-mini", url: "https://byok.example" }))
+            .withLlm(
+                new OpenAI({ apiKey: secretRef("prod", "key"), model: "gpt-4o-mini", url: "https://byok.example" }),
+            )
             .save();
         expect(body(fetch, 1).pipeline.llm.url).toBe("https://byok.example");
     });
@@ -128,9 +130,12 @@ describe("engineering public contract", () => {
             }),
         ];
         for (const avatar of avatars) await new Agent({ client, avatar: avatar.toConfig() }).save();
-        expect(body(fetch).pipeline.avatar.credential).toEqual({ mode: "byok", api_key: "$secrets.avatars.sense" });
+        expect(body(fetch).pipeline.avatar.credential).toEqual({
+            mode: "byok",
+            fields: { app_key: "$secrets.avatars.sense" },
+        });
         expect(body(fetch).pipeline.avatar.params).not.toHaveProperty("app_key");
-        expect(body(fetch, 1).pipeline.avatar.credential.api_key).toBe("$secrets.avatars.spatius");
+        expect(body(fetch, 1).pipeline.avatar.credential.fields.spatius_api_key).toBe("$secrets.avatars.spatius");
         expect(body(fetch, 1).pipeline.avatar.params).not.toHaveProperty("spatius_api_key");
     });
     it("sends values, ephemeral labels, token, policy and idempotency; progresses STARTING via getInfo", async () => {
