@@ -21,7 +21,7 @@ const client = new AgoraClient({
 
 The public default is `https://preview.ai.agora.io/conversational-ai/v1/projects/{appid}`. The SDK supplies the path and project. Optional `v3.baseUrl` or `AGORA_AGENTS_V3_BASE_URL` changes the origin; the explicit option wins. API naming in the advanced `client.v3` namespace is retained for compatibility even though the public wire path is `v1`.
 
-Use app credentials for fresh ConvoAI REST tokens, or supply `authToken`. Customer/Client ID and Secret options and Basic authorization overrides are rejected. Do not supply internal gateway headers or `X-Studio-Region`; they are rejected before network calls. Normal custom headers, timeout, cancellation, and custom fetch remain available. Supported regions and failover are still unconfirmed; stored-agent/session AgentKit operations remain guarded in CN.
+Use app credentials for fresh ConvoAI REST tokens, or supply `authToken`. Customer/Client ID and Secret options and Basic authorization overrides are rejected. Do not supply internal gateway headers or `X-Studio-Region`; they are rejected before network calls. Normal custom headers, timeout, cancellation, and custom fetch remain available. See the [release notes](../../changelog.md) for current regional availability. Existing stored-agent/session AgentKit guards in CN remain unchanged; failover behavior is not confirmed.
 
 ## 2. Session routing
 
