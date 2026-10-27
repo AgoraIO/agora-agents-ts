@@ -166,11 +166,11 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
             }
         }
         const authMode: AgoraAuthMode = options.authToken !== undefined ? "token" : "app-credentials";
-        const { authToken, ...rest } = options;
+        const { authToken, appId, appCertificate, ...rest } = options;
         const authorization = (): string =>
             authMode === "token"
                 ? `agora token=${authToken}`
-                : `agora token=${generateConvoAIToken({ appId: options.appId, appCertificate: options.appCertificate, channelName: "", uid: 0 })}`;
+                : `agora token=${generateConvoAIToken({ appId, appCertificate, channelName: "", uid: 0 })}`;
         const originalFetch = options.fetch ?? globalThis.fetch;
         const tokenOnlyFetch: typeof fetch = async (input, init) => {
             const finalHeaders = new Headers(input instanceof Request ? input.headers : undefined);
@@ -191,8 +191,8 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
             baseUrl: () => pool.getCurrentURL(),
         });
         this._pool = pool;
-        this.appId = options.appId;
-        this.appCertificate = options.appCertificate;
+        this.appId = appId;
+        this.appCertificate = appCertificate;
         this.authMode = authMode;
         this.area = options.area as TArea;
         const v3Base = options.v3?.baseUrl ?? process.env.AGORA_AGENTS_V3_BASE_URL;

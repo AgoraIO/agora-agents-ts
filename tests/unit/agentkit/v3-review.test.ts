@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import * as tokenHelpers from "../../../src/agentkit/token.js";
 import { Agent, AgoraClient, Area, SavedAgent, SensetimeAvatar, secretRef } from "../../../src/index.js";
 
 const reply = (body: unknown, status = 200, etag = '"1"') =>
@@ -278,4 +279,31 @@ describe("preview review regressions", () => {
             expect(new Headers(init?.headers).get("X-Scan")).toBe("original");
         },
     );
+    it("keeps REST signing credentials bound to the original project when constructor options are reused", async () => {
+        const sign = vi
+            .spyOn(tokenHelpers, "generateConvoAIToken")
+            .mockImplementation((params) => `signed-for-${params.appId}`);
+        try {
+            const fetch = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => reply({}));
+            const original = { area: Area.US, appId: "first-project", appCertificate: "first-certificate", fetch };
+            const first = new AgoraClient(original);
+            original.appId = "second-project";
+            original.appCertificate = "second-certificate";
+            const second = new AgoraClient(original);
+            await first.v3.agents.list();
+            await second.v3.agents.list();
+            await first.agents.get({ appid: "first-project", agentId: "legacy-session" });
+            expect(sign.mock.calls.map(([params]) => [params.appId, params.appCertificate])).toEqual([
+                ["first-project", "first-certificate"],
+                ["second-project", "second-certificate"],
+                ["first-project", "first-certificate"],
+            ]);
+            expect(String(fetch.mock.calls[0][0])).toContain("/projects/first-project/");
+            expect(new Headers(fetch.mock.calls[0][1]?.headers).get("Authorization")).toBe(
+                "agora token=signed-for-first-project",
+            );
+        } finally {
+            sign.mockRestore();
+        }
+    });
 });
