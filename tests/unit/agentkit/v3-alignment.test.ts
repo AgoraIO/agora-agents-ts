@@ -276,6 +276,57 @@ describe("engineering public contract", () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 });
+describe("conflict reload headers", () => {
+    it("strips inherited write headers from every source without changing shared settings", async () => {
+        const globalHeaders = { "If-Match": "global-etag", "X-Global": "global" };
+        const extraHeaders = { "If-None-Match": "*", "X-Extra": "extra" };
+        const callHeaders = { "Idempotency-Key": "campaign-key", "X-Call": "call" };
+        const fetch = vi
+            .fn()
+            .mockResolvedValueOnce(reply({ reason: "PreconditionFailed" }, 412))
+            .mockResolvedValueOnce(reply({ campaign_id: "c" }))
+            .mockResolvedValueOnce(reply({ campaign_id: "second" }));
+        const client = new AgoraClient({
+            area: Area.US,
+            appId: "app",
+            authToken: "token",
+            headers: globalHeaders,
+            v3: { headers: extraHeaders },
+            fetch,
+        });
+        const request = {
+            name: "campaign",
+            agent_id: "a",
+            transport: { type: "telephony", from: ["n"] },
+            contacts: [{ phone: "+12025550123" }],
+            schedule: { mode: "immediate" },
+        } as const;
+        let conflict: any;
+        try {
+            await client.campaigns.create(request as any, {
+                headers: callHeaders,
+                authorization: "agora token=override",
+            });
+        } catch (error) {
+            conflict = error;
+        }
+        expect(await conflict.latest()).toEqual({ campaign_id: "c" });
+        const reload = new Headers(req(fetch, 1).init.headers);
+        for (const name of ["If-Match", "If-None-Match", "Idempotency-Key"]) expect(reload.has(name)).toBe(false);
+        expect(reload.get("Authorization")).toBe("agora token=override");
+        expect(reload.get("X-Global")).toBe("global");
+        expect(reload.get("X-Extra")).toBe("extra");
+        expect(reload.get("X-Call")).toBe("call");
+        await client.campaigns.create(request as any, { headers: callHeaders });
+        const next = new Headers(req(fetch, 2).init.headers);
+        expect(next.get("If-Match")).toBe("global-etag");
+        expect(next.get("If-None-Match")).toBe("*");
+        expect(next.get("Idempotency-Key")).toBe("campaign-key");
+        expect(globalHeaders["If-Match"]).toBe("global-etag");
+        expect(extraHeaders["If-None-Match"]).toBe("*");
+        expect(callHeaders["Idempotency-Key"]).toBe("campaign-key");
+    });
+});
 describe("campaign resource", () => {
     const campaign = { id: "c", status: "running" };
     it("exposes eight operations with exact paths, conditional/idempotency headers and empty action bodies", async () => {

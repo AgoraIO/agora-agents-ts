@@ -56,6 +56,7 @@ export class V3Transport {
         query: Record<string, unknown> = {},
         headers: Record<string, string | null | undefined> = {},
         requestOptions: BaseRequestOptions = {},
+        stripWriteHeaders = false,
     ): HttpResponsePromise<T> {
         // Snapshot JSON payload and option maps before any async auth/header suppliers run.
         const capturedHeaders = [this.options.headers, this.extraHeaders, headers].map((value) => ({ ...value }));
@@ -86,8 +87,9 @@ export class V3Transport {
                     : undefined,
             ]) {
                 for (const [name, supplier] of Object.entries(source ?? {})) {
-                    const value = await (typeof supplier === "function" ? supplier() : supplier);
                     const key = name.toLowerCase();
+                    if (stripWriteHeaders && ["if-match", "if-none-match", "idempotency-key"].includes(key)) continue;
+                    const value = await (typeof supplier === "function" ? supplier() : supplier);
                     if (value == null) continue;
                     if (["x-studio-region", "x-studio-v2-gateway-secret", "x-consumer-username"].includes(key))
                         throw new Error(`${name} is an internal header and is not supported`);
@@ -135,15 +137,8 @@ export class V3Transport {
                         undefined,
                         {},
                         {},
-                        {
-                            ...requestOptions,
-                            headers: Object.fromEntries(
-                                Object.entries(requestOptions.headers ?? {}).filter(
-                                    ([key]) =>
-                                        !["if-match", "if-none-match", "idempotency-key"].includes(key.toLowerCase()),
-                                ),
-                            ),
-                        },
+                        requestOptions,
+                        true,
                     ),
                 );
             throw new V3Error(status, detail, response.rawResponse);
