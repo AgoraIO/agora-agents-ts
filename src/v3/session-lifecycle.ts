@@ -67,7 +67,8 @@ export function validateSessionStart(request: SessionStartRequest | EphemeralSes
             transport.subscribe_uids.length !== 1 ||
             typeof transport.subscribe_uids[0] !== "string" ||
             !transport.subscribe_uids[0].trim() ||
-            transport.subscribe_uids[0] === "*"
+            transport.subscribe_uids[0] === "*" ||
+            /^0+$/.test(transport.subscribe_uids[0])
         )
             throw new Error("Exactly one non-wildcard subscriber UID is required");
         const numeric = (uid: string) => /^[0-9]+$/.test(uid);
