@@ -2,7 +2,7 @@
 import type { BaseRequestOptions } from "../BaseClient.js";
 import type { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import type * as T from "./campaign-schema.js";
-import { omit, segment, type V3Transport } from "./transport.js";
+import { omit, segment, snapshotPagination, type V3Transport } from "./transport.js";
 export class CampaignsResource {
     constructor(private transport: V3Transport) {}
     create(
@@ -43,6 +43,9 @@ export class CampaignsResource {
         request: Parameters<CampaignsResource["list"]>[0] = {},
         options?: BaseRequestOptions,
     ): AsyncGenerator<T.CampaignResponse> {
+        const snapshot = snapshotPagination(request, options);
+        request = snapshot.request;
+        options = snapshot.options;
         const seen = new Set<string>();
         let cursor = request?.cursor;
         while (true) {

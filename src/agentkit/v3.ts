@@ -484,6 +484,10 @@ export class SavedAgent {
         agent: string | null,
         options: AssignNumberOptions = {},
     ): Promise<V3.NumberResponse> {
+        const policy = clean({
+            max_call_duration_seconds: options.maxCallDurationSeconds,
+            max_silence_duration_ms: options.maxSilenceDurationMs,
+        });
         let id: string;
         if (typeof number === "object") id = number.number_id;
         else if (number.startsWith("+")) {
@@ -500,10 +504,6 @@ export class SavedAgent {
         for (let attempt = 0; ; attempt++) {
             const current = await this.client.v3.numbers.get({ id }).withRawResponse();
             try {
-                const policy = clean({
-                    max_call_duration_seconds: options.maxCallDurationSeconds,
-                    max_silence_duration_ms: options.maxSilenceDurationMs,
-                });
                 return await this.client.v3.numbers.update({
                     id,
                     ifMatch: etag(current),

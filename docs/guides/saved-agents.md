@@ -89,3 +89,5 @@ Retention `none` disables stored recordings/transcripts/turns and extraction. Ex
 `client.campaigns` exposes typed create/list/get/update/delete and pause/resume/cancel, with raw response headers and pagination. It does not implement a separate scheduling state machine or contact retry loop. See the [complete reference](../reference/v3.md#campaigns-eight-operations).
 
 `client.secrets`, `client.numbers`, and `client.campaigns` share their advanced `client.v3` resource instances. `deploy()` and `DeployedAgent` remain compatibility aliases. Session lists still lack a reliable saved-agent association; store your own returned session-ID → saved-ID relationship.
+
+Status reads started before a stop or restart cannot overwrite the newer local state. Concurrent status reads apply only the most recently issued read. During a restart, `id` is null until the new session ID arrives; reads and stop cannot target the previous session.

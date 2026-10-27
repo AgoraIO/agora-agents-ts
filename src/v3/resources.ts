@@ -4,7 +4,7 @@ import { SessionLifecycleResource } from "./session-lifecycle.js";
 import type * as T from "./types.js";
 import type { BaseRequestOptions } from "../BaseClient.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
-import { V3Transport, segment, omit } from "./transport.js";
+import { V3Transport, segment, omit, snapshotPagination } from "./transport.js";
 export class AgentsResource {
     constructor(private transport: V3Transport) {}
     create(
@@ -44,6 +44,9 @@ export class AgentsResource {
         request: Parameters<AgentsResource["list"]>[0] = {},
         options?: BaseRequestOptions,
     ): AsyncGenerator<T.AgentListItem> {
+        const snapshot = snapshotPagination(request, options);
+        request = snapshot.request;
+        options = snapshot.options;
         let cursor = request?.cursor;
         const seen = new Set<string>();
         do {
@@ -135,6 +138,9 @@ export class SecretsResource {
         request: Parameters<SecretsResource["list"]>[0] = {},
         options?: BaseRequestOptions,
     ): AsyncGenerator<T.SecretSet> {
+        const snapshot = snapshotPagination(request, options);
+        request = snapshot.request;
+        options = snapshot.options;
         let cursor = request?.cursor;
         const seen = new Set<string>();
         do {
@@ -274,6 +280,9 @@ export class NumbersResource {
         request: Parameters<NumbersResource["list"]>[0] = {},
         options?: BaseRequestOptions,
     ): AsyncGenerator<T.NumberResponse> {
+        const snapshot = snapshotPagination(request, options);
+        request = snapshot.request;
+        options = snapshot.options;
         let cursor = request?.cursor;
         const seen = new Set<string>();
         do {
@@ -360,6 +369,9 @@ export class SessionsResource extends SessionLifecycleResource {
         request: Parameters<SessionsResource["list"]>[0] = {},
         options?: BaseRequestOptions,
     ): AsyncGenerator<T.SessionSummary> {
+        const snapshot = snapshotPagination(request, options);
+        request = snapshot.request;
+        options = snapshot.options;
         let cursor = request?.cursor;
         const seen = new Set<string>();
         do {

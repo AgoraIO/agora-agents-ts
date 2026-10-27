@@ -170,6 +170,23 @@ export class AgentSession {
     private _sessionBaseUrl?: string;
     private _agentId: string | null = null;
     private _status: "idle" | "starting" | "running" | "stopping" | "stopped" | "error" = "idle";
+    private _lifecycleRevision = 0;
+    private _infoReadRevision = 0;
+    private _pendingLifecycle: number | undefined;
+
+    private _beginLifecycle(): number {
+        const revision = ++this._lifecycleRevision;
+        this._pendingLifecycle = revision;
+        return revision;
+    }
+
+    private _finishLifecycle(revision: number | undefined): void {
+        if (revision !== undefined && this._pendingLifecycle === revision) {
+            this._pendingLifecycle = undefined;
+            ++this._lifecycleRevision;
+        }
+    }
+
     private _eventHandlers: Map<AgentSessionEvent, Set<AgentSessionEventHandler>> = new Map();
     private readonly _warn: (message: string) => void;
 
@@ -581,15 +598,19 @@ export class AgentSession {
         }
 
         if (this._backend) {
+            const lifecycle = this._beginLifecycle();
+            this._agentId = null;
             this._status = "starting";
             try {
                 const started = await this._backend.start();
                 this._agentId = started.id;
                 this._status = started.status;
+                this._finishLifecycle(lifecycle);
                 this._emit("started", { agentId: this._agentId, sessionId: this._agentId });
                 return this._agentId;
             } catch (error) {
                 this._status = "error";
+                this._finishLifecycle(lifecycle);
                 this._emit("error", error);
                 throw error;
             }
@@ -708,6 +729,7 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
+        const lifecycle = this._backend ? this._beginLifecycle() : undefined;
         this._status = "stopping";
 
         try {
@@ -722,6 +744,7 @@ export class AgentSession {
                 );
 
             this._status = "stopped";
+            this._finishLifecycle(lifecycle);
             this._emit("stopped", { agentId: this._agentId, ...(this._backend ? { sessionId: this._agentId } : {}) });
         } catch (error) {
             // Handle 404 "task not found" gracefully - agent is already stopped
@@ -748,6 +771,7 @@ export class AgentSession {
                     : this._backend && reason === "TaskConflict"
                       ? "stopping"
                       : "error";
+            this._finishLifecycle(lifecycle);
             this._emit("error", error);
             throw error;
         }
@@ -957,7 +981,17 @@ export class AgentSession {
         }
 
         if (this._backend) {
-            const info = await this._backend.getInfo(this._agentId);
+            const id = this._agentId;
+            const lifecycle = this._lifecycleRevision;
+            const read = ++this._infoReadRevision;
+            const info = await this._backend.getInfo(id);
+            if (
+                this._pendingLifecycle !== undefined ||
+                lifecycle !== this._lifecycleRevision ||
+                read !== this._infoReadRevision ||
+                id !== this._agentId
+            )
+                return info;
             const status = info.status?.toLowerCase();
             if (status === "failed") this._status = "error";
             else if (status && ["idle", "starting", "running", "stopping", "stopped"].includes(status))

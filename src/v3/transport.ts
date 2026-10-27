@@ -1,3 +1,4 @@
+import { isInternalHeader } from "../core/publicHeaders.js";
 import type { BaseClientOptions, BaseRequestOptions } from "../BaseClient.js";
 import { fetcher } from "../core/fetcher/Fetcher.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
@@ -9,11 +10,30 @@ export interface V3Options {
 }
 export function segment(value: string): string {
     if (typeof value !== "string" || !value.trim()) throw new Error("v3 path identifiers must not be empty");
+    if (value === "." || value === "..") throw new Error("v3 path identifiers must not be dot segments");
     return encodeURIComponent(value);
 }
 export function omit(value: object, keys: string[]): object {
     return Object.fromEntries(Object.entries(value).filter(([key]) => !keys.includes(key)));
 }
+/** Keep an active cursor scan bound to its original project, filters and headers. */
+export function snapshotPagination<T extends object>(
+    request: T | undefined,
+    options?: BaseRequestOptions,
+): { request: T; options: BaseRequestOptions | undefined } {
+    return {
+        request: { ...request } as T,
+        options:
+            options === undefined
+                ? undefined
+                : {
+                      ...options,
+                      headers: { ...options.headers },
+                      queryParams: JSON.parse(JSON.stringify(options.queryParams ?? {})) as Record<string, unknown>,
+                  },
+    };
+}
+
 export class V3Error extends Error {
     constructor(
         public readonly statusCode: number,
@@ -91,8 +111,7 @@ export class V3Transport {
                     if (stripWriteHeaders && ["if-match", "if-none-match", "idempotency-key"].includes(key)) continue;
                     const value = await (typeof supplier === "function" ? supplier() : supplier);
                     if (value == null) continue;
-                    if (["x-studio-region", "x-studio-v2-gateway-secret", "x-consumer-username"].includes(key))
-                        throw new Error(`${name} is an internal header and is not supported`);
+                    if (isInternalHeader(key)) throw new Error(`${name} is an internal header and is not supported`);
                     if (key === "authorization" && !/^agora token=\S+$/i.test(value))
                         throw new Error("Only Agora token authorization is supported");
                     if (key === "idempotency-key" && !value.trim())

@@ -34,3 +34,6 @@ pnpm-lock.yaml
 
 # Hand-maintained additive v3 preview, pending shared Fern generation
 src/v3/
+
+# Shared public gateway-header policy is handwritten.
+src/core/publicHeaders.ts

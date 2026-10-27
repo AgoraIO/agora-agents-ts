@@ -6,6 +6,7 @@ import { generateConvoAIToken } from "./agentkit/token.js";
 import type { BaseClientOptions, BaseRequestOptions } from "./BaseClient.js";
 import { AgoraClient as BaseAgoraClient } from "./Client.js";
 import { Area, CNAPIPath, GlobalAPIPath, Pool } from "./core/domain/index.js";
+import { isInternalHeader } from "./core/publicHeaders.js";
 import { AgoraError } from "./errors/index.js";
 
 const API_BASE_URL_ENV = "AGORA_AGENTS_API_BASE_URL";
@@ -177,8 +178,8 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
             const auth = finalHeaders.get("authorization");
             if (auth !== null && !/^agora token=\S+$/i.test(auth))
                 throw new Error("Only Agora token authorization is supported");
-            for (const name of ["x-studio-region", "x-studio-v2-gateway-secret", "x-consumer-username"])
-                if (finalHeaders.has(name)) throw new Error(`${name} is an internal header and is not supported`);
+            for (const name of finalHeaders.keys())
+                if (isInternalHeader(name)) throw new Error(`${name} is an internal header and is not supported`);
             return originalFetch(input, init);
         };
         super({
