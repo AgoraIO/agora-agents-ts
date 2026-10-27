@@ -59,6 +59,7 @@ export function createStoredSession(
                 token: options.token,
                 encryption: options.encryption,
                 audio_scenario: options.audioScenario,
+                geofence: options.geofence,
             },
             ...(Object.keys(lifecycle).length ? { lifecycle } : {}),
         }),

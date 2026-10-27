@@ -708,6 +708,8 @@ export type Contract_JsonSchema = Record<string, unknown> | boolean;
 export type AgentCreateRequest = Contract_AgentCreateInput & AgentCreateModel;
 
 export type {
+    SessionGeofence,
+    SessionTransport,
     SessionStartOptions,
     SessionStartRequest,
     EphemeralSessionStartRequest,

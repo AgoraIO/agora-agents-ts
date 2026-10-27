@@ -211,6 +211,23 @@ describe("engineering public contract", () => {
         await expect(session.stop()).rejects.toMatchObject({ statusCode: status });
         expect(session.status).toBe(expected);
     });
+    it("maps and snapshots corrected geofence options and legacy config", async () => {
+        const { client, fetch } = setup([reply(start), reply(start)]);
+        const config = new Agent({ client, geofence: { area: "GLOBAL", exclude_area: "EUROPE" } }).withVariable("x", {
+            type: "str",
+        });
+        const first = config.createSession(opts);
+        await first.start();
+        expect(body(fetch).transport.geofence).toEqual({ area: "global", exclude_area: "europe" });
+        expect(body(fetch).agent).not.toHaveProperty("geofence");
+        const fence = { area: "japan" as const };
+        const second = config.createSession({ ...opts, geofence: fence });
+        (fence as any).area = "india";
+        await second.start();
+        expect(body(fetch, 1).transport.geofence).toEqual({ area: "japan" });
+        expect(config.geofence).toEqual({ area: "GLOBAL", exclude_area: "EUROPE" });
+        expect(() => config.save()).toThrow("geofence");
+    });
     it.each([
         ["agent", "user"],
         ["0", "user"],
@@ -239,6 +256,9 @@ describe("engineering public contract", () => {
     });
     it.each([
         { remoteUids: ["*"] },
+        { geofence: { area: "japan", exclude_area: "europe" } },
+        { geofence: { area: "global", exclude_area: "global" } },
+        { geofence: { area: "unknown" } },
         { agentUid: "agent", remoteUids: ["2"] },
         { agentUid: "1", remoteUids: ["user"] },
         { remoteUids: [] },

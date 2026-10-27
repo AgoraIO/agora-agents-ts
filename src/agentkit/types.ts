@@ -353,6 +353,7 @@ export interface SessionOptions {
     maxDuration?: number;
     encryption?: import("../v3/session-schema.js").RtcEncryption;
     audioScenario?: "aiserver" | "chorus";
+    geofence?: import("../v3/session-lifecycle.js").SessionGeofence;
     gracefulStop?: import("../v3/session-schema.js").GracefulStop;
     dataPolicy?: import("../v3/session-schema.js").DataPolicy;
     /** Unique agent instance name sent to the Agora API. Omit to auto-generate `agent-{timestamp}`. */

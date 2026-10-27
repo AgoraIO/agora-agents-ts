@@ -797,6 +797,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             options.idempotencyKey !== undefined ||
             options.encryption !== undefined ||
             options.audioScenario !== undefined ||
+            options.geofence !== undefined ||
             options.gracefulStop !== undefined ||
             options.dataPolicy !== undefined ||
             options.labels !== undefined ||
@@ -810,6 +811,19 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         if (requiresStoredSession) {
             const normalized = this.config;
             const sessionOptions = { ...options };
+            if (normalized.geofence !== undefined) {
+                sessionOptions.geofence ??= {
+                    area: normalized.geofence.area.toLowerCase() as NonNullable<SessionOptions["geofence"]>["area"],
+                    ...(normalized.geofence.exclude_area === undefined
+                        ? {}
+                        : {
+                              exclude_area: normalized.geofence.exclude_area.toLowerCase() as NonNullable<
+                                  SessionOptions["geofence"]
+                              >["exclude_area"],
+                          }),
+                };
+                normalized.geofence = undefined;
+            }
             const params = { ...normalized.parameters };
             if (params.opt_out !== undefined) {
                 sessionOptions.dataPolicy ??= { retention: params.opt_out ? "none" : "30_days" };

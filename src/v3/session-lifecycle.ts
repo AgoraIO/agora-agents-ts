@@ -7,11 +7,18 @@ import { HttpResponsePromise as ResponsePromise } from "../core/fetcher/HttpResp
 import { omit, segment, type V3Transport } from "./transport.js";
 import type * as Schema from "./session-schema.js";
 
-export type SessionStartOptions = Omit<Schema.SessionCreate, "agent_id" | "client_reference"> & {
+export type SessionGeofence = {
+    area: "global" | "north_america" | "europe" | "asia" | "india" | "japan";
+    exclude_area?: "north_america" | "europe" | "asia" | "india" | "japan";
+};
+export type SessionTransport = (Schema.RtcTransport & { geofence?: SessionGeofence }) | Schema.TelephonyTransport;
+export type SessionStartOptions = Omit<Schema.SessionCreate, "agent_id" | "client_reference" | "transport"> & {
+    transport: SessionTransport;
     idempotencyKey?: string;
 };
 export type SessionStartRequest = SessionStartOptions & { agent_id: string };
-export type EphemeralSessionStartRequest = Omit<Schema.EphemeralSessionCreate, "client_reference"> & {
+export type EphemeralSessionStartRequest = Omit<Schema.EphemeralSessionCreate, "client_reference" | "transport"> & {
+    transport: SessionTransport;
     idempotencyKey?: string;
 };
 export interface SessionStartResponse {
@@ -68,6 +75,16 @@ export function validateSessionStart(request: SessionStartRequest | EphemeralSes
             throw new Error("Agent and subscriber must use the same UID type");
         if (transport.audio_scenario !== undefined && !["aiserver", "chorus"].includes(transport.audio_scenario))
             throw new Error("Invalid audio_scenario");
+        if (transport.geofence !== undefined) {
+            const areas = ["global", "north_america", "europe", "asia", "india", "japan"];
+            const fence = transport.geofence;
+            if (
+                !areas.includes(fence.area) ||
+                (fence.exclude_area !== undefined &&
+                    (fence.area !== "global" || !areas.slice(1).includes(fence.exclude_area)))
+            )
+                throw new Error("Invalid geofence: exclude_area requires global area");
+        }
         if (transport.encryption) {
             if (
                 ![
