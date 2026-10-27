@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## Unreleased preview — 2026-10-27
+
+- Saved agents, ephemeral and saved-agent sessions, project secrets/numbers, and campaign resources are available in the preview checkout. See [Saving agents](docs/guides/saved-agents.md).
+- The current preview service rollout is US-only. Regional availability may expand independently of SDK releases; this rollout note does not introduce a new SDK region restriction.
+
 ## [v2.12.0] — 2026-10-07
 
 ### Added
