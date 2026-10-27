@@ -47,6 +47,10 @@ const session = agent.createSession({
 console.log(client.authMode); // "app-credentials"
 ```
 
-## Legacy auth modes
+## Pre-minted tokens
 
-The generated client still supports pre-minted REST tokens and HTTP Basic Auth for legacy integrations. Do not use those modes for new session integrations. Use app credentials so AgentKit can mint short-lived ConvoAI REST auth and RTC join tokens for each session.
+Alternatively, set `authToken` to a raw Agora REST token. The SDK sends `Authorization: agora token=<value>`. Keep `appId` and `appCertificate` for existing RTC token generation. `client.authMode` is `"token"` in this mode.
+
+The public client accepts only app credentials or `authToken`. Customer/Client ID and Secret options are removed and rejected, including JavaScript calls. Basic authorization overrides are rejected before network calls on both current and legacy resources. Internal gateway and `X-Studio-Region` headers are not public options.
+
+Saved-agent/session/campaign resources use `https://preview.ai.agora.io/conversational-ai/v1/projects/{appid}` by default. Existing ordinary inline sessions retain their established endpoint routing and use token authentication.

@@ -31,20 +31,17 @@ const client = new AgoraClient<TArea>(options: AgoraClient.Options<TArea>);
 | `area` | `AgoraArea` | Yes | Region for API routing (`Area.US`, `Area.EU`, `Area.AP`, `Area.CN`) |
 | `appId` | `string` | Yes | Agora App ID |
 | `appCertificate` | `string` | Yes | Agora App Certificate (keep secret) |
-| `customerId` | `string` | No | Customer ID for Basic Auth |
-| `customerSecret` | `string` | No | Customer Secret for Basic Auth |
 | `authToken` | `string` | No | Pre-built `agora token=<value>` string |
 | `timeoutInSeconds` | `number` | No | Request timeout in seconds |
 | `maxRetries` | `number` | No | Max retry attempts (default from Fern config) |
 | `logging` | `LogConfig \| Logger` | No | SDK logger configuration |
-| `v3` | `V3Options` | No | Preview host/header overrides; see the [v3 reference](./v3.md) |
+| `v3` | `V3Options` | No | Optional public origin/custom headers; see the [v3 reference](./v3.md) |
 | `fetch` | `typeof fetch` | No | Custom fetch implementation |
 
 Authentication mode is determined by which options you provide:
 
 | Options provided | Resolved mode |
 |---|---|
-| `customerId` + `customerSecret` | `"basic"` |
 | `authToken` | `"token"` |
 | Neither | `"app-credentials"` |
 
@@ -92,4 +89,4 @@ See the [API Reference](../../reference.md) for the full sub-client method signa
 
 ## Project provisioning (preview)
 
-`client.secrets` manages project secret sets and keys. `client.numbers` registers, lists, retrieves, updates, and deletes project numbers. These accessors share the exact underlying instances, transport, and auth of `client.v3.secrets` and `client.v3.numbers`; existing `client.agents` and `client.phoneNumbers` keep their meanings. See [Saving agents](../guides/saved-agents.md) and [operation signatures](./v3.md).
+`client.campaigns` exposes campaign CRUD and pause/resume/cancel operations. `client.secrets` manages project secret sets and keys. `client.numbers` registers, lists, retrieves, updates, and deletes project numbers. These accessors share the exact underlying instances, transport, and auth of `client.v3.secrets` and `client.v3.numbers`; existing `client.agents` and `client.phoneNumbers` keep their meanings. See [Saving agents](../guides/saved-agents.md) and [operation signatures](./v3.md).

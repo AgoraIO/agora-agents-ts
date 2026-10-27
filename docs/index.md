@@ -50,7 +50,7 @@ npm install agora-agents
 | [MLLM Flow Guide](./guides/mllm-flow.md) | Global MLLM providers and Chinese mainland Qwen Omni |
 | [Saving agents](./guides/saved-agents.md) | Configure once, then create a session or save an agent |
 | [v3 Preview Guide](./guides/v3-preview.md) | Staging setup, stored-agent deployment, secrets, numbers, and v2 migration |
-| [v3 Preview Reference](./reference/v3.md) | 23 operations, pagination, ETags, errors, and AgentKit helpers |
+| [v3 Preview Reference](./reference/v3.md) | 31 operations, pagination, ETags, errors, and AgentKit helpers |
 | [Preview Endpoint](./guides/preview-endpoint.md) | Legacy preview routing and production migration compatibility |
 | [Avatar Integration](./guides/avatars.md) | LiveAvatar, Generic Avatar, Anam, Akool, SenseTime (CN), and HeyGen integration |
 | [Agent Builder Features](./guides/agent-builder-features.md) | Turn detection, SAL, filler words, and advanced agent options |
