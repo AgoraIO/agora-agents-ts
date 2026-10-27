@@ -5171,6 +5171,7 @@ components:
           type: object
           minProperties: 1
           title: Secrets
+          additionalProperties: false
       additionalProperties: false
       type: object
       required:
@@ -5264,6 +5265,7 @@ components:
           type: object
           minProperties: 1
           title: Secrets
+          additionalProperties: false
       additionalProperties: false
       type: object
       required:
@@ -5311,6 +5313,10 @@ components:
                 format: password
                 writeOnly: true
               - type: 'null'
+            "^[A-Za-z0-9_]*-[A-Za-z0-9_-]*$":
+              type: 'null'
+              description: An existing legacy hyphenated key may only be deleted,
+                not written.
           propertyNames:
             maxLength: 64
             minLength: 1
@@ -5319,6 +5325,7 @@ components:
           title: Secrets
           description: Non-null writes require ASCII letters, digits or underscores;
             existing hyphenated keys may only be removed with null.
+          additionalProperties: false
       additionalProperties: false
       type: object
       required:

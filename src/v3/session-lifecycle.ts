@@ -4,7 +4,7 @@
 import type { BaseRequestOptions } from "../BaseClient.js";
 import type { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import { HttpResponsePromise as ResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
-import { omit, segment, type V3Transport } from "./transport.js";
+import { omit, segment, validateIdempotencyKey, type V3Transport } from "./transport.js";
 import type * as Schema from "./session-schema.js";
 
 export type SessionGeofence = {
@@ -58,8 +58,7 @@ export function validateSessionStart(request: SessionStartRequest | EphemeralSes
         throw new Error(
             "client_reference is being removed; use application-side correlation with the returned session ID",
         );
-    if (request.idempotencyKey !== undefined && !request.idempotencyKey.trim())
-        throw new Error("idempotencyKey must not be empty");
+    if (request.idempotencyKey !== undefined) validateIdempotencyKey(request.idempotencyKey);
     const transport = request.transport;
     if (transport.type === "rtc") {
         if (!transport.channel || [...transport.channel].length > 256)
@@ -172,7 +171,7 @@ export class SessionLifecycleResource {
     update(
         request: Schema.SessionPatch & { appid?: string; agentSessionId: string },
         options?: BaseRequestOptions,
-    ): HttpResponsePromise<Record<string, never>> {
+    ): HttpResponsePromise<Schema.SessionUpdateResponse> {
         return this.transport.request(
             "PATCH",
             `/sessions/${segment(request.agentSessionId)}`,

@@ -123,6 +123,30 @@ describe("latest public contract", () => {
             fields: null,
         });
     });
+    it("clears hidden credentials when the same provider changes authentication form", () => {
+        const previous = {
+            ...saved,
+            pipeline: { mode: "cascaded", llm: { vendor: "amazon", credential: { mode: "byok" } } },
+        } as V3.AgentResponse;
+        const patch = redeployPatch(previous, {
+            agent_name: "Support",
+            pipeline: {
+                mode: "cascaded",
+                llm: {
+                    vendor: "amazon",
+                    credential: {
+                        mode: "byok",
+                        fields: { access_key: "$secrets.aws.id", secret_key: "$secrets.aws.secret" },
+                    },
+                },
+            },
+        });
+        expect((patch.pipeline as any).llm.credential.fields).toEqual({
+            api_key: null,
+            access_key: "$secrets.aws.id",
+            secret_key: "$secrets.aws.secret",
+        });
+    });
     it("updates saved sessions through their public handle with token, messages and complete params replacement", async () => {
         const { client, fetch } = setup([response(saved), response(started), response({}), response({})]);
         const handle = await SavedAgent.get(client, "saved");
@@ -152,6 +176,43 @@ describe("latest public contract", () => {
         await expect(session.update({ token: "" })).rejects.toThrow();
         await expect(session.update({ llm: { params: {} }, mllm: { params: {} } })).rejects.toThrow();
         expect(fetch).toHaveBeenCalledTimes(4);
+    });
+    it("uses the same messages update API for existing inline sessions without mutating input", async () => {
+        const { client, fetch } = setup([response({ agent_id: "legacy" }), response({})]);
+        const session = new Agent({ client })
+            .withMllm(new OpenAIRealtime({ apiKey: "inline", model: "gpt-realtime" }))
+            .createSession({ channel: "room", agentUid: "1", remoteUids: ["2"], token: "rtc" });
+        await session.start();
+        const update = {
+            messages: [{ role: "system" as const, content: "Help" }],
+            mllm: { params: { temperature: 0.3 } },
+        };
+        const before = JSON.parse(JSON.stringify(update));
+        await session.update(update);
+        expect(body(fetch, 1)).toMatchObject({
+            properties: { llm: { system_messages: update.messages }, mllm: { params: { temperature: 0.3 } } },
+        });
+        expect(body(fetch, 1).properties).not.toHaveProperty("messages");
+        expect(update).toEqual(before);
+        await expect(session.update({ ...update, llm: { system_messages: [] } })).rejects.toThrow("not both");
+        expect(fetch).toHaveBeenCalledTimes(2);
+    });
+    it("keeps legacy system messages alongside realtime params updates", async () => {
+        const { client, fetch } = setup([response(saved), response(started), response(started)]);
+        const session = (await SavedAgent.get(client, "saved")).createSession({ channel: "room", remoteUids: ["2"] });
+        await session.start();
+        await session.update({
+            llm: { system_messages: [{ role: "system", content: "Be brief" }] },
+            mllm: { params: { temperature: 0.4 } },
+        });
+        expect(body(fetch, 2)).toEqual({
+            agent: {
+                overrides: {
+                    messages: [{ role: "system", content: "Be brief" }],
+                    pipeline: { mllm: { params: { temperature: 0.4 } } },
+                },
+            },
+        });
     });
     it("exposes typed session PATCH errors without retries", async () => {
         const { client, fetch } = setup([response({ reason: "TaskConflict" }, 409)]);
@@ -199,6 +260,27 @@ describe("latest public contract", () => {
             "preview.ai.agora.io/conversational-ai/v1/projects/app/sessions",
         );
     });
+    it("returns the current typed PATCH response", async () => {
+        const { client } = setup([response(started)]);
+        const updated = await client.v3.sessions.update({ agentSessionId: "session", transport: { token: "new" } });
+        expect(updated.agent_session_id).toBe("session");
+        expect(updated.create_ts).toBe(1);
+        expect(updated.status).toBe("RUNNING");
+    });
+    it.each(["a b", "é", "x".repeat(257)])(
+        "rejects an invalid idempotency key across header sources: %s",
+        async (key) => {
+            const { client, fetch } = setup();
+            await expect(client.campaigns.pause({ id: "campaign", idempotencyKey: key })).rejects.toThrow("ASCII");
+            await expect(
+                client.campaigns.pause({ id: "campaign" }, { headers: { "Idempotency-Key": key } }),
+            ).rejects.toThrow("ASCII");
+            expect(() =>
+                new Agent({ client }).createSession({ channel: "room", remoteUids: ["2"], idempotencyKey: key }),
+            ).toThrow("ASCII");
+            expect(fetch).not.toHaveBeenCalled();
+        },
+    );
     it("secret references use the current write-name alphabet", () => {
         expect(secretRef("support_prod", "api_key")).toBe("$secrets.support_prod.api_key");
         expect(() => secretRef("support-prod", "key")).toThrow();

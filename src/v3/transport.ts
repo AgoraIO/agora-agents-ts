@@ -8,6 +8,11 @@ export interface V3Options {
     baseUrl?: string;
     headers?: Record<string, string>;
 }
+export function validateIdempotencyKey(value: string): void {
+    if (typeof value !== "string" || !value.trim()) throw new Error("Idempotency-Key must not be empty");
+    if (!/^[\x21-\x7E]{1,256}$/.test(value))
+        throw new Error("Idempotency-Key must contain 1–256 printable ASCII characters without spaces");
+}
 export function segment(value: string): string {
     if (typeof value !== "string" || !value.trim()) throw new Error("v3 path identifiers must not be empty");
     if (value === "." || value === "..") throw new Error("v3 path identifiers must not be dot segments");
@@ -114,8 +119,7 @@ export class V3Transport {
                     if (isInternalHeader(key)) throw new Error(`${name} is an internal header and is not supported`);
                     if (key === "authorization" && !/^agora token=\S+$/i.test(value))
                         throw new Error("Only Agora token authorization is supported");
-                    if (key === "idempotency-key" && !value.trim())
-                        throw new Error("Idempotency-Key must not be empty");
+                    if (key === "idempotency-key") validateIdempotencyKey(value);
                     if (
                         key === "idempotency-key" &&
                         !(

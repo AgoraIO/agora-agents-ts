@@ -873,15 +873,18 @@ export class AgentSession {
             await this._backend.update(this._agentId, config);
             return;
         }
-        if (config?.messages !== undefined)
-            throw new Error(
-                "messages requires a stored or ephemeral session; use llm.system_messages for this session",
-            );
+        let properties = config;
+        if (config?.messages !== undefined) {
+            if (config.llm?.system_messages !== undefined)
+                throw new Error("Provide messages or llm.system_messages, not both");
+            const { messages, ...remaining } = config;
+            properties = { ...remaining, llm: { ...remaining.llm, system_messages: messages } };
+        }
         await this._agentsClient.update(
             {
                 appid: this._appId,
                 agentId: this._agentId,
-                properties: config,
+                properties,
             },
             { headers: this._requestHeaders() },
         );

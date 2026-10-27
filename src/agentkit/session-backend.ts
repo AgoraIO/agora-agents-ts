@@ -90,7 +90,7 @@ export function createStoredSession(
             for (const key of Object.keys(input))
                 if (!["token", "messages", "llm", "mllm"].includes(key))
                     throw new Error(`Unsupported session update field: ${key}`);
-            if (input.llm !== undefined && input.mllm !== undefined)
+            if (input.llm?.params !== undefined && input.mllm?.params !== undefined)
                 throw new Error("Update one active model pipeline at a time");
             if (input.messages !== undefined && input.llm?.system_messages !== undefined)
                 throw new Error("Provide messages or llm.system_messages, not both");
@@ -130,7 +130,11 @@ export function createStoredSession(
                     if (module.params !== undefined) {
                         if (!module.params || typeof module.params !== "object" || Array.isArray(module.params))
                             throw new Error("params must be an object");
-                        if (["url", "base_url", "api_base_url"].some((key) => key in module.params))
+                        if (
+                            Object.keys(module.params).some((key) =>
+                                ["url", "base_url", "api_base_url", "endpoint"].includes(key.toLowerCase()),
+                            )
+                        )
                             throw new Error("Runtime endpoint aliases are not mutable");
                         overrides.pipeline = { [kind]: { params: module.params } };
                     }

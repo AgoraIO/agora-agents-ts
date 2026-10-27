@@ -349,7 +349,7 @@ export type SecretList = { data: SecretPage; has_more: boolean; next_cursor: str
 export type SecretPage = { count: number; list: Array<SecretSet> };
 export type SecretReplace = { secrets: { [key: string]: string } };
 export type SecretSet = { name: string; keys: Array<string>; create_ts: number; update_ts: number };
-export type SecretUpdate = { secrets: { [key: string]: string | null } };
+export type SecretUpdate = { secrets: { [key: string]: (string | null) | null } };
 export type SemanticTurnEnd = {
     type: "semantic";
     silence_duration_ms?: number | null;

@@ -3516,6 +3516,7 @@ export const contract: Record<string, any> = {
                 type: "object",
                 minProperties: 1,
                 title: "Secrets",
+                additionalProperties: false,
             },
         },
         additionalProperties: false,
@@ -3629,6 +3630,7 @@ export const contract: Record<string, any> = {
                 type: "object",
                 minProperties: 1,
                 title: "Secrets",
+                additionalProperties: false,
             },
         },
         additionalProperties: false,
@@ -3687,6 +3689,10 @@ export const contract: Record<string, any> = {
                             },
                         ],
                     },
+                    "^[A-Za-z0-9_]*-[A-Za-z0-9_-]*$": {
+                        type: "null",
+                        description: "An existing legacy hyphenated key may only be deleted, not written.",
+                    },
                 },
                 propertyNames: {
                     maxLength: 64,
@@ -3697,6 +3703,7 @@ export const contract: Record<string, any> = {
                 title: "Secrets",
                 description:
                     "Non-null writes require ASCII letters, digits or underscores; existing hyphenated keys may only be removed with null.",
+                additionalProperties: false,
             },
         },
         additionalProperties: false,

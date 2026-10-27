@@ -8056,7 +8056,8 @@
                         },
                         "type": "object",
                         "minProperties": 1,
-                        "title": "Secrets"
+                        "title": "Secrets",
+                        "additionalProperties": false
                     }
                 },
                 "additionalProperties": false,
@@ -8169,7 +8170,8 @@
                         },
                         "type": "object",
                         "minProperties": 1,
-                        "title": "Secrets"
+                        "title": "Secrets",
+                        "additionalProperties": false
                     }
                 },
                 "additionalProperties": false,
@@ -8227,6 +8229,10 @@
                                         "type": "null"
                                     }
                                 ]
+                            },
+                            "^[A-Za-z0-9_]*-[A-Za-z0-9_-]*$": {
+                                "type": "null",
+                                "description": "An existing legacy hyphenated key may only be deleted, not written."
                             }
                         },
                         "propertyNames": {
@@ -8236,7 +8242,8 @@
                         "type": "object",
                         "minProperties": 1,
                         "title": "Secrets",
-                        "description": "Non-null writes require ASCII letters, digits or underscores; existing hyphenated keys may only be removed with null."
+                        "description": "Non-null writes require ASCII letters, digits or underscores; existing hyphenated keys may only be removed with null.",
+                        "additionalProperties": false
                     }
                 },
                 "additionalProperties": false,
