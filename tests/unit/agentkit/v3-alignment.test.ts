@@ -257,6 +257,8 @@ describe("engineering public contract", () => {
     it.each([
         { remoteUids: ["*"] },
         { agentUid: "0", remoteUids: ["0"] },
+        { agentUid: "0", remoteUids: ["00"] },
+        { agentUid: "0", remoteUids: ["000"] },
         { agentUid: "1", remoteUids: ["0"] },
         { geofence: { area: "japan", exclude_area: "europe" } },
         { geofence: { area: "global", exclude_area: "global" } },
