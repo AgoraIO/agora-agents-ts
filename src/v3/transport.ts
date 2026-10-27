@@ -61,6 +61,14 @@ export class V3Transport {
         const capturedHeaders = [this.options.headers, this.extraHeaders, headers].map((value) => ({ ...value }));
         const capturedOptions = { ...requestOptions, headers: { ...requestOptions.headers } };
         const run = async () => {
+            for (const key of Object.keys(capturedOptions)) {
+                if (
+                    ["customerid", "customersecret", "clientid", "clientsecret", "username", "password"].includes(
+                        key.replace(/_/g, "").toLowerCase(),
+                    )
+                )
+                    throw new Error(`${key} is not supported; use token authorization`);
+            }
             if (body && typeof body === "object" && "idempotencyKey" in body)
                 throw new Error("idempotencyKey is not supported by this operation");
             const bodySnapshot = body === undefined ? undefined : JSON.parse(JSON.stringify(body));

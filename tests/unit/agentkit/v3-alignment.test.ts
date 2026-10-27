@@ -54,6 +54,20 @@ describe("engineering public contract", () => {
         await expect(client.v3.agents.get({ id: "a" }, options)).rejects.toThrow();
         expect(fetch).not.toHaveBeenCalled();
     });
+    it.each([
+        "customerId",
+        "customerSecret",
+        "clientId",
+        "clientSecret",
+        "ClientId",
+        "CustomerSecret",
+        "username",
+        "password",
+    ])("rejects obsolete per-call credential %s", async (key) => {
+        const { client, fetch } = setup();
+        await expect(client.v3.agents.get({ id: "a" }, { [key]: "old" } as any)).rejects.toThrow("not supported");
+        expect(fetch).not.toHaveBeenCalled();
+    });
     it("prevents Basic overrides on inherited legacy resources too", async () => {
         const { client, fetch } = setup();
         for (const options of [{ headers: { Authorization: "Basic c2VjcmV0" }, maxRetries: 0 }]) {
