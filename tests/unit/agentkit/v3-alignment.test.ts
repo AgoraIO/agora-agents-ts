@@ -333,6 +333,13 @@ describe("conflict reload headers", () => {
 });
 describe("campaign resource", () => {
     const campaign = { id: "c", status: "running" };
+    it.each(["", "   "])("rejects blank campaign idempotency keys %j", async (idempotencyKey) => {
+        const { client, fetch } = setup();
+        await expect(client.campaigns.create({ name: "c", idempotencyKey } as any)).rejects.toThrow("Idempotency-Key");
+        for (const action of ["pause", "resume", "cancel"] as const)
+            await expect(client.campaigns[action]({ id: "c", idempotencyKey })).rejects.toThrow("Idempotency-Key");
+        expect(fetch).not.toHaveBeenCalled();
+    });
     it("exposes eight operations with exact paths, conditional/idempotency headers and empty action bodies", async () => {
         const { client, fetch } = setup();
         expect(client.campaigns).toBe(client.v3.campaigns);

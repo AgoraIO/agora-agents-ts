@@ -95,6 +95,8 @@ export class V3Transport {
                         throw new Error(`${name} is an internal header and is not supported`);
                     if (key === "authorization" && !/^agora token=\S+$/i.test(value))
                         throw new Error("Only Agora token authorization is supported");
+                    if (key === "idempotency-key" && !value.trim())
+                        throw new Error("Idempotency-Key must not be empty");
                     if (
                         key === "idempotency-key" &&
                         !(
