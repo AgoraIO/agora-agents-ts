@@ -3,6 +3,7 @@
 import { mergeHeaders } from "./core/headers.js";
 import * as core from "./core/index.js";
 import type * as environments from "./environments.js";
+import { SDK_VERSION } from "./version.js";
 
 export interface BaseClientOptions {
     environment?: core.Supplier<environments.AgoraEnvironment | string>;
@@ -44,8 +45,8 @@ export function normalizeClientOptions<T extends BaseClientOptions>(options: T):
         {
             "X-Fern-Language": "JavaScript",
             "X-Fern-SDK-Name": "agora-agents",
-            "X-Fern-SDK-Version": "v2.12.0",
-            "User-Agent": "agora-agents/v2.12.0",
+            "X-Fern-SDK-Version": SDK_VERSION,
+            "User-Agent": `agora-agents/${SDK_VERSION}`,
             "X-Fern-Runtime": core.RUNTIME.type,
             "X-Fern-Runtime-Version": core.RUNTIME.version,
         },

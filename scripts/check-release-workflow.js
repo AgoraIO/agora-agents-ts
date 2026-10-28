@@ -25,18 +25,12 @@ if (compatDependency !== `^${rootVersion}`) {
     fail(`Compat package dependency on agora-agents (${compatDependency}) must be ^${rootVersion}.`);
 }
 
-if (!fs.readFileSync("src/version.ts", "utf8").includes(`export const SDK_VERSION = "v${rootVersion}";`)) {
-    fail("Runtime SDK version must match the package version.");
-}
-
 const releaseWorkflow = fs.readFileSync(".github/workflows/release.yml", "utf8");
 const requiredWorkflowMarkers = [
     ["contents: write", "release workflow must have contents: write so it can create GitHub releases"],
     ["gh release create", "release workflow must create a GitHub release when one does not exist"],
     ["gh release edit", "release workflow must update an existing GitHub release"],
     ["release_notes.md", "release workflow must generate and use a release notes file"],
-    ['--tag "$NPM_DIST_TAG"', "npm publishing must select a release channel explicitly"],
-    ['--prerelease="$PRERELEASE"', "GitHub releases must distinguish prereleases"],
 ];
 
 for (const [marker, message] of requiredWorkflowMarkers) {

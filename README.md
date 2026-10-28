@@ -11,14 +11,14 @@ The Agora Agents SDK for TypeScript lets you build real-time voice agents on Ago
 
 `Agent` is the configuration builder. Choose `config.createSession(...).start()` for a running conversation, or `await config.save({name})` for a `SavedAgent`. Continue with the returned session or saved handle: `saved.update(revisedConfig)`, `assignNumber()`, `unassignNumber()`, `listNumbers()`, and `delete()`.
 
-**Saving agents and project provisioning require this preview checkout; they are not announced as a published npm release.** Existing session behavior is unchanged. Use `client.secrets` and `secretRef()` for stored credentials, `withVariable()` for template/extraction definitions, and `client.numbers` to register numbers. Number listing scans project pages and filters assignments locally. `client.campaigns` provides typed campaign creation, reads, updates, pause/resume/cancel, and deletion.
+**Saving agents and project provisioning are part of SDK preview `3.0.0-alpha.1`.** Existing session behavior is unchanged. Use `client.secrets` and `secretRef()` for stored credentials, `withVariable()` for template/extraction definitions, and `client.numbers` to register numbers. Number listing scans project pages and filters assignments locally. `client.campaigns` provides typed campaign creation, reads, updates, pause/resume/cancel, and deletion.
 
 Start with [Saving agents](docs/guides/saved-agents.md). Use `saved.createSession(...).start()` to run a saved configuration. Builders with secret references or variable definitions automatically start an ephemeral session without saving first. These sessions support values, labels, optional RTC token/encryption, retention, graceful stop, start, stop, and get-info. Runtime updates support RTC token, messages, and complete model params replacement; conversation actions remain unavailable. The public client uses token authentication and the public preview origin; no internal gateway headers are needed. Advanced users can access 32 operations, ETags, raw headers, pagination, and project session reads and start/stop/update through the [transport reference](docs/reference/v3.md). [Staging setup and mapping limits](docs/guides/v3-preview.md) remain documented separately.
 
 ## Installation
 
 ```sh
-npm install agora-agents
+npm install agora-agents@3.0.0-alpha.1
 ```
 
 ## Quick Start
