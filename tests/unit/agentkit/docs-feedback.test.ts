@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import * as tokenModule from "../../../src/agentkit/token.js";
 import {
     Agent,
     AgoraClient,
@@ -238,5 +239,43 @@ describe("Platform docs feedback", () => {
                 .start(),
         ).rejects.toThrow("32-bit");
         expect(fetch).not.toHaveBeenCalled();
+    });
+    it.each([undefined, "https://gemini.example/stream?key=old"])(
+        "strips Gemini query keys with a custom vendor: %s",
+        async (url) => {
+            const { client, fetch } = setup();
+            await new Agent({ client })
+                .withLlm(
+                    new Gemini({ apiKey: secretRef("models", "gemini"), model: "gemini-flash", vendor: "custom", url }),
+                )
+                .save();
+            const llm = body(fetch).pipeline.llm;
+            expect(llm.vendor).toBe("custom");
+            expect(llm.url).not.toContain("key=");
+            expect(llm.url).not.toContain("%24secrets");
+            expect(llm.credential.fields.api_key).toBe("$secrets.models.gemini");
+        },
+    );
+    it("refreshes generated tokens for new unkeyed sessions while preserving retry payloads", async () => {
+        const { client, fetch } = setup(true);
+        let count = 0;
+        const signing = vi.spyOn(tokenModule, "generateConvoAIToken").mockImplementation(() => `generated-${++count}`);
+        try {
+            const session = new Agent({ client }).createEphemeralSession({
+                channel: "room",
+                agentUid: "1",
+                remoteUids: ["2"],
+            });
+            await session.start();
+            await session.stop();
+            fetch.mockResolvedValueOnce(new Response(JSON.stringify({ reason: "TemporaryFailure" }), { status: 503 }));
+            await expect(session.start()).rejects.toThrow();
+            await session.start();
+            expect(body(fetch, 0).transport.token).toBe("generated-1");
+            expect(body(fetch, 2).transport.token).toBe("generated-2");
+            expect(body(fetch, 3).transport.token).toBe("generated-2");
+        } finally {
+            signing.mockRestore();
+        }
     });
 });

@@ -92,6 +92,12 @@ export function createStoredSession(
                 throw new Error(
                     "This idempotency key already started a session; create a new handle with a new key for another session",
                 );
+            if (successfullyStarted && !payload.idempotencyKey) {
+                // A new unkeyed session needs a fresh token. Failed starts retain
+                // their request snapshot, and keyed starts cannot be reused.
+                if (signing) delete payload.transport.token;
+                successfullyStarted = false;
+            }
             if (signing && payload.transport.token === undefined) {
                 if (
                     /^\d+$/.test(signing.uid) &&

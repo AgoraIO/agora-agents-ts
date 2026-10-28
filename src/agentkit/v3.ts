@@ -78,7 +78,7 @@ export function toV3Module(config: object, kind: "asr" | "llm" | "tts" | "avatar
         c.language ??= params.language ?? (c.vendor === "ares" ? "en-US" : undefined);
         delete params.language;
     }
-    if (kind === "llm" && c.vendor === "gemini" && c.url) {
+    if (kind === "llm" && (c.vendor === "gemini" || c.style === "gemini") && c.url) {
         // Legacy Gemini uses a query key; Platform credentials must never live in URLs.
         const url = new URL(c.url);
         const key = url.searchParams.get("key");
