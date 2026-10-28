@@ -119,4 +119,4 @@ await call.stop();
 
 `config.call()` provides the same lifecycle for an unsaved configuration. `from` is a registered number ID, not a phone number. Use `assignNumber(number, { callPolicy: { end_call: { on_user_request: true } } })` to configure the full inbound policy while the SDK handles conditional updates.
 
-For RTC sessions, an explicit nonzero `agentUid` and client certificate let the SDK generate the RTC token when `token` is omitted. Explicit tokens are preserved. If the UID is omitted or zero, token provisioning stays with the service. A client using `authToken` can omit `appCertificate`; in that case, supply the RTC token yourself or use service provisioning.
+For RTC sessions, an explicit nonzero `agentUid` and client certificate let the SDK generate the RTC token when `token` is omitted. Explicit tokens are preserved. If the UID is omitted, zero, or a numeric identity outside the local signer’s unsigned 32-bit range, token provisioning stays with the service. A client using `authToken` can omit `appCertificate`; in that case, supply the RTC token yourself or use service provisioning.

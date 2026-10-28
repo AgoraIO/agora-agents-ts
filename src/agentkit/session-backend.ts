@@ -98,12 +98,14 @@ export function createStoredSession(
                 if (signing) delete payload.transport.token;
                 successfullyStarted = false;
             }
-            if (signing && payload.transport.token === undefined) {
-                if (
-                    /^\d+$/.test(signing.uid) &&
-                    (!Number.isSafeInteger(Number(signing.uid)) || Number(signing.uid) > 4294967295)
-                )
-                    throw new Error("Numeric agentUid must fit an unsigned 32-bit RTC UID for token generation");
+            if (
+                signing &&
+                payload.transport.token === undefined &&
+                (!/^\d+$/.test(signing.uid) ||
+                    (Number.isSafeInteger(Number(signing.uid)) && Number(signing.uid) <= 4294967295))
+            ) {
+                // Larger numeric identities remain opaque; the service provisions
+                // their token instead of coercing them through the local signer.
                 payload.transport.token = /^\d+$/.test(signing.uid)
                     ? generateConvoAIToken({
                           appId: signing.appId,

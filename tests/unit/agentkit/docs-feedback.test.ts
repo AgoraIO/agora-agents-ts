@@ -231,14 +231,18 @@ describe("Platform docs feedback", () => {
         expect(body(fetch, 0)).toEqual(body(fetch, 1));
         expect(new Headers(fetch.mock.calls[1][1].headers).get("idempotency-key")).toBe("same-request");
     });
-    it("rejects oversized numeric UIDs before token generation without rounding them", async () => {
+    it.each([
+        ["4294967295", true],
+        ["4294967296", false],
+        ["9007199254740993", false],
+    ] as const)("preserves numeric UID %s without rounding", async (uid, generated) => {
         const { client, fetch } = setup(true);
-        await expect(
-            new Agent({ client })
-                .createEphemeralSession({ channel: "room", agentUid: "9007199254740993", remoteUids: ["2"] })
-                .start(),
-        ).rejects.toThrow("32-bit");
-        expect(fetch).not.toHaveBeenCalled();
+        await new Agent({ client })
+            .createEphemeralSession({ channel: "room", agentUid: uid, remoteUids: ["2"] })
+            .start();
+        expect(body(fetch).transport.uid).toBe(uid);
+        if (generated) expect(body(fetch).transport.token).toMatch(/^007/);
+        else expect(body(fetch).transport.token).toBeUndefined();
     });
     it.each([undefined, "https://gemini.example/stream?key=old"])(
         "strips Gemini query keys with a custom vendor: %s",
