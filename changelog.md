@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased preview — 2026-10-27
+## [v3.0.0-alpha.1] — 2026-10-28
 
 - Saved agents, ephemeral and saved-agent sessions, project secrets/numbers, and campaign resources are available in the preview checkout. See [Saving agents](docs/guides/saved-agents.md).
 - Aligned the preview with the bundled [OpenAPI contract](openapi.yaml): vendor-specific `credential.fields`, explicit secret references for saved credentials, optional session UID, session runtime PATCH, 50,000-contact/10 MiB campaigns, and current number/call-policy fields. Session and campaign create/action idempotency lasts 24 hours; writes do not retry automatically. Removed public campaign retry fields and advertised session analysis results.
