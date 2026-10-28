@@ -110,7 +110,7 @@ describe("Agent preset validation", () => {
         const request = start.mock.calls[0]?.[0];
         expect(request?.preset).toBe("openai_gpt_4o_mini,minimax_speech_2_6_turbo");
         expect(request?.properties.tts?.params).toEqual({
-            voice_setting: { voice_id: "English_captivating_female1" },
+            voice_setting: { voice_id: "English_captivating_female1", speed: 1 },
         });
     });
 

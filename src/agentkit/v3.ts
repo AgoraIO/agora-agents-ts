@@ -7,7 +7,7 @@ import type * as V3 from "../v3/types.js";
 import type { Agent, AgentOptions } from "./Agent.js";
 import type { AgentSession } from "./AgentSession.js";
 import { createStoredSession } from "./session-backend.js";
-import type { LlmConfig, MllmConfig, SessionOptions, SttConfig, TtsConfig } from "./types.js";
+import type { CallOptions, LlmConfig, MllmConfig, SessionOptions, SttConfig, TtsConfig } from "./types.js";
 
 export type SecretRef = string & { readonly __secretRef: unique symbol };
 export function secretRef(set: string, key: string): SecretRef {
@@ -69,6 +69,25 @@ export function toV3Module(config: object, kind: "asr" | "llm" | "tts" | "avatar
     const c = { ...config } as Map,
         params = { ...c.params };
     const path = `pipeline.${kind}`;
+    if (kind === "avatar" && c.vendor === "heygen") c.vendor = "liveavatar";
+    if (kind === "asr" && c.keywords !== undefined) {
+        params.keywords = c.keywords;
+        delete c.keywords;
+    }
+    if (kind === "asr") {
+        c.language ??= params.language ?? (c.vendor === "ares" ? "en-US" : undefined);
+        delete params.language;
+    }
+    if (kind === "llm" && c.vendor === "gemini" && c.url) {
+        // Legacy Gemini uses a query key; Platform credentials must never live in URLs.
+        const url = new URL(c.url);
+        const key = url.searchParams.get("key");
+        if (key !== null) {
+            c.api_key ??= key;
+            url.searchParams.delete("key");
+            c.url = url.toString();
+        }
+    }
     if (kind === "llm" && c.style === "bedrock") {
         c.vendor ??= "amazon";
         for (const key of ["access_key", "secret_key", "region"]) {
@@ -152,10 +171,28 @@ export function toV3Module(config: object, kind: "asr" | "llm" | "tts" | "avatar
     ]) {
         if (params[key] !== undefined) errors.push(`${path}.params.${key}`);
     }
-    const url = c.url ?? params.url ?? params.base_url ?? params.api_base_url;
-    delete params.url;
-    delete params.base_url;
-    delete params.api_base_url;
+    const endpointAlias =
+        kind === "asr"
+            ? c.vendor === "assemblyai"
+                ? "ws_url"
+                : c.vendor === "speechmatics"
+                  ? "uri"
+                  : undefined
+            : undefined;
+    const url =
+        kind === "avatar"
+            ? undefined
+            : (c.url ??
+              (endpointAlias ? params[endpointAlias] : undefined) ??
+              params.url ??
+              params.base_url ??
+              params.api_base_url);
+    if (kind !== "avatar") {
+        delete params.url;
+        delete params.base_url;
+        delete params.api_base_url;
+        if (endpointAlias) delete params[endpointAlias];
+    }
     const result = clean(Object.fromEntries(allowed.map((key) => [key, c[key]])));
     if (url !== undefined) result.url = url;
     if ((kind === "llm" || kind === "asr") && params.model !== undefined) {
@@ -489,6 +526,8 @@ export async function deployAgent(
 export interface AssignNumberOptions {
     maxCallDurationSeconds?: number;
     maxSilenceDurationMs?: number;
+    /** Full inbound policy, including end_call. Named duration options take precedence. */
+    callPolicy?: V3.InboundCallPolicy;
 }
 export class SavedAgent {
     readonly id: string;
@@ -509,6 +548,16 @@ export class SavedAgent {
     }
     createSession(options: SessionOptions): AgentSession {
         return createStoredSession(this.client, options, { agent_id: this.id });
+    }
+    /** Create an outbound phone-call session using this saved agent. */
+    call(options: CallOptions): AgentSession {
+        return createStoredSession(
+            this.client,
+            { ...options, channel: "", remoteUids: [] },
+            { agent_id: this.id },
+            undefined,
+            { type: "telephony", from: options.from, to: options.to, call_policy: options.callPolicy },
+        );
     }
     /** Save a revised configuration to this stored identity, preserving its name by default. */
     update(config: Agent, options: { name?: string } = {}): Promise<SavedAgent> {
@@ -540,8 +589,9 @@ export class SavedAgent {
         options: AssignNumberOptions = {},
     ): Promise<V3.NumberResponse> {
         const policy = clean({
-            max_call_duration_seconds: options.maxCallDurationSeconds,
-            max_silence_duration_ms: options.maxSilenceDurationMs,
+            ...options.callPolicy,
+            max_call_duration_seconds: options.maxCallDurationSeconds ?? options.callPolicy?.max_call_duration_seconds,
+            max_silence_duration_ms: options.maxSilenceDurationMs ?? options.callPolicy?.max_silence_duration_ms,
         });
         let id: string;
         if (typeof number === "object") id = number.number_id;
@@ -562,7 +612,12 @@ export class SavedAgent {
                 return await this.client.v3.numbers.update({
                     id,
                     ifMatch: etag(current),
-                    inbound: { agent, ...(Object.keys(policy).length ? { call_policy: policy } : {}) },
+                    inbound: {
+                        agent,
+                        ...(options.callPolicy !== undefined || Object.keys(policy).length
+                            ? { call_policy: policy }
+                            : {}),
+                    },
                 });
             } catch (error) {
                 if (!(error instanceof PreconditionFailedError) || attempt >= 1) throw error;

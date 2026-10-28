@@ -386,6 +386,25 @@ export interface SessionOptions {
     warn?: (message: string) => void;
 }
 
+/** Outbound telephony options; from is a registered number ID, to is an E.164 number. */
+export type CallOptions = Pick<
+    SessionOptions,
+    | "name"
+    | "values"
+    | "idempotencyKey"
+    | "labels"
+    | "maxDuration"
+    | "idleTimeout"
+    | "gracefulStop"
+    | "dataPolicy"
+    | "debug"
+    | "warn"
+> & {
+    from: string;
+    to: string;
+    callPolicy?: import("../v3/types.js").CallPolicy;
+};
+
 /** Session status */
 export type SessionStatus = ListAgentsResponse.Data.List.Item.Status;
 
@@ -393,8 +412,8 @@ export type SessionStatus = ListAgentsResponse.Data.List.Item.Status;
 export type SessionInfo = GetAgentsResponse & {
     agent_session_id?: string;
     agent_name?: string;
-    /** Older responses may include analysis; the current contract does not promise it. */
-    analysis?: unknown;
+    /** Extraction analysis, when returned by the service. */
+    analysis?: import("../v3/types.js").SessionAnalysis | null;
 };
 
 /** Session list response */

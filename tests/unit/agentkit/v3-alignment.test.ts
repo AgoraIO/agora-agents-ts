@@ -17,7 +17,7 @@ const reply = (body: unknown, status = 200) =>
     });
 function setup(replies: Response[] = []) {
     const fetch = vi.fn(async () => replies.shift() ?? reply({}));
-    const client = new AgoraClient({ area: Area.US, appId: "app", appCertificate: "cert", authToken: "token", fetch });
+    const client = new AgoraClient({ area: Area.US, appId: "app", authToken: "token", fetch });
     return { client, fetch };
 }
 const req = (fetch: ReturnType<typeof vi.fn>, i = 0) => ({

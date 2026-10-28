@@ -2,7 +2,6 @@
  * Type-safe LLM (Large Language Model) vendor classes.
  */
 
-import { type OpenAIPresetModel, OpenAIPresetModels } from "../presets.js";
 import type { LlmConfig } from "../types.js";
 import { BaseLLM, type BaseLlmOptions } from "./base.js";
 
@@ -24,15 +23,11 @@ function requireRecord(value: unknown, field: string, vendor: string): asserts v
     }
 }
 
-function isOpenAIManagedModel(model: string): model is OpenAIPresetModel {
-    return OpenAIPresetModels.includes(model.trim().toLowerCase() as OpenAIPresetModel);
-}
-
 /**
  * Constructor options for OpenAI LLM.
  */
 type OpenAICommonOptions = BaseLlmOptions & {
-    /** OpenAI API key. Optional only for AgentKit-supported Agora-managed models. */
+    /** OpenAI API key. Omit for Agora-managed credentials; model availability is validated by the server. */
     apiKey?: string;
     /** Model name (e.g., 'gpt-4o-mini', 'gpt-4', 'gpt-3.5-turbo') */
     model: string;
@@ -61,15 +56,11 @@ type OpenAICommonOptions = BaseLlmOptions & {
 };
 
 export type OpenAIOptions =
-    | (OpenAICommonOptions & {
-          apiKey: string;
-          url: string;
-      })
-    | (Omit<OpenAICommonOptions, "model" | "url" | "vendor"> & {
+    | (OpenAICommonOptions & { apiKey: string; url: string })
+    | (Omit<OpenAICommonOptions, "apiKey" | "url" | "vendor"> & {
           apiKey?: undefined;
-          model: OpenAIPresetModel;
           url?: undefined;
-          vendor?: undefined;
+          vendor?: "openai";
       });
 
 /**
@@ -93,14 +84,10 @@ export class OpenAI extends BaseLLM {
         if (options.apiKey) {
             requireString(options.url, "url", "OpenAI");
         } else {
-            if (!isOpenAIManagedModel(options.model)) {
-                throw new Error("OpenAI requires apiKey unless using a supported Agora-managed model");
-            }
+            if (options.vendor && options.vendor !== "openai")
+                throw new Error("OpenAI managed credentials require the openai vendor");
             if (options.url) {
                 throw new Error("OpenAI Agora-managed mode does not allow url");
-            }
-            if (options.vendor) {
-                throw new Error("OpenAI Agora-managed mode does not allow vendor");
             }
         }
         this.options = options;
@@ -143,7 +130,7 @@ export class OpenAI extends BaseLLM {
             input_modalities: inputModalities ?? ["text"],
             output_modalities: this.outputModalities,
             style: "openai",
-            vendor: this.vendor,
+            vendor: this.vendor ?? "openai",
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
@@ -366,7 +353,7 @@ export class Anthropic extends BaseLLM {
             input_modalities: inputModalities ?? ["text"],
             output_modalities: this.outputModalities,
             style: "anthropic",
-            vendor: this.vendor,
+            vendor: this.vendor ?? "anthropic",
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
@@ -454,6 +441,7 @@ export class Gemini extends BaseLLM {
 
         return {
             url: url ?? defaultUrl,
+            api_key: apiKey,
             // model is the default; params entries extend it; named fields win.
             params: {
                 model,
@@ -472,7 +460,7 @@ export class Gemini extends BaseLLM {
             input_modalities: inputModalities ?? ["text"],
             output_modalities: this.outputModalities,
             style: "gemini",
-            vendor: this.vendor,
+            vendor: this.vendor ?? "gemini",
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
@@ -538,7 +526,7 @@ export class Groq extends BaseLLM {
     }
 
     toConfig(): LlmConfig {
-        return openAIStyleConfig(this.options);
+        return openAIStyleConfig(this.options, "groq");
     }
 }
 
@@ -608,7 +596,7 @@ export class VertexAILLM extends BaseLLM {
             input_modalities: o.inputModalities ?? ["text"],
             output_modalities: this.outputModalities,
             style: "gemini",
-            vendor: this.vendor,
+            vendor: this.vendor ?? "vertexai",
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
@@ -619,9 +607,11 @@ export class VertexAILLM extends BaseLLM {
 
 export interface AmazonBedrockOptions extends BaseLlmOptions {
     /** AWS access key ID. */
-    accessKey: string;
+    accessKey?: string;
     /** AWS secret access key. */
-    secretKey: string;
+    secretKey?: string;
+    /** Bedrock API key, mutually exclusive with the AWS access-key pair. */
+    apiKey?: string;
     /** AWS region. */
     region: string;
     model: string;
@@ -641,8 +631,14 @@ export interface AmazonBedrockOptions extends BaseLlmOptions {
 export class AmazonBedrock extends BaseLLM {
     constructor(private readonly options: AmazonBedrockOptions) {
         super(options);
-        requireString(options.accessKey, "accessKey", "AmazonBedrock");
-        requireString(options.secretKey, "secretKey", "AmazonBedrock");
+        if (options.apiKey !== undefined) {
+            requireString(options.apiKey, "apiKey", "AmazonBedrock");
+            if (options.accessKey !== undefined || options.secretKey !== undefined)
+                throw new Error("Use apiKey or accessKey/secretKey, not both");
+        } else {
+            requireString(options.accessKey, "accessKey", "AmazonBedrock");
+            requireString(options.secretKey, "secretKey", "AmazonBedrock");
+        }
         requireString(options.region, "region", "AmazonBedrock");
         requireString(options.model, "model", "AmazonBedrock");
     }
@@ -651,6 +647,7 @@ export class AmazonBedrock extends BaseLLM {
         const o = this.options;
         return {
             url: `https://bedrock-runtime.${o.region}.amazonaws.com/model/${o.model}/converse-stream`,
+            api_key: o.apiKey,
             access_key: o.accessKey,
             secret_key: o.secretKey,
             region: o.region,
@@ -671,7 +668,7 @@ export class AmazonBedrock extends BaseLLM {
             input_modalities: o.inputModalities ?? ["text"],
             output_modalities: this.outputModalities,
             style: "bedrock",
-            vendor: this.vendor,
+            vendor: this.vendor ?? "amazon",
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,
@@ -723,7 +720,7 @@ export class Dify extends BaseLLM {
             input_modalities: o.inputModalities ?? ["text"],
             output_modalities: this.outputModalities,
             style: "dify",
-            vendor: this.vendor,
+            vendor: this.vendor ?? "dify",
             greeting_configs: this.greetingConfigs,
             template_variables: this.templateVariables,
             mcp_servers: this.mcpServers,

@@ -91,7 +91,7 @@ new OpenAI(options: OpenAIOptions)
 
 | Option | Type | Required | Description |
 |---|---|---|---|
-| `apiKey` | `string` | BYOK only | OpenAI API key. Optional for supported Agora-managed OpenAI models. |
+| `apiKey` | `string` | BYOK only | OpenAI API key. Omit for Agora-managed credentials; the server validates model availability. |
 | `model` | `string` | Yes | Model name (e.g., `'gpt-4o-mini'`, `'gpt-4'`) |
 | `url` | `string` | BYOK only | API endpoint URL. Required when `apiKey` is set. |
 | `maxHistory` | `number` | No | Max conversation history to cache |
@@ -823,3 +823,11 @@ CN TTS helpers reuse shared vendor names where possible. `GenericTTS` is availab
 |---|---|
 | `SensetimeAvatar` | `agoraUid`, `appId`, `appKey`; optional `sceneList`, `agoraToken`, `enable`, `additionalParams` |
 | `SpatiusAvatar` | `spatiusApiKey`, `spatiusAppId`, `spatiusAvatarId`, `agoraUid`; optional `agoraToken`, `region`, `sampleRate`, `sessionExpireMinutes`, `enable`, `additionalParams` |
+
+### Platform provider mapping
+
+Provider classes set the Platform vendor automatically. OpenAI managed model names are validated by the service instead of an SDK allowlist. Gemini credentials use `credential.fields.api_key`; query keys are removed from Platform URLs. Bedrock supports either `apiKey` or the mutually exclusive `accessKey`/`secretKey` pair, with vendor `amazon`.
+
+MiniMax accepts `speed` (default `1`), `volume`, `pitch`, `emotion`, `sampleRate`, `bitrate`, `format`, `channel`, and `additionalParams`. Typed options override their corresponding nested additional parameters without dropping other nested settings.
+
+Platform ASR language comes from an explicit turn-detection language, otherwise the vendor's language; ARES defaults to `en-US`. It is sent once at the ASR block level. ARES keywords are sent in `params.keywords`. AssemblyAI `ws_url` and Speechmatics `uri` map to the block endpoint. Generic avatar endpoints remain `params.api_base_url`; HeyGen maps to the supported `liveavatar` vendor.

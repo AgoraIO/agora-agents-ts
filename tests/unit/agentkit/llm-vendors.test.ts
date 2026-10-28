@@ -70,7 +70,7 @@ describe("LLM vendor helpers", () => {
         });
     });
 
-    test("Gemini builds the official stream URL and omits top-level api_key", () => {
+    test("Gemini builds the official stream URL and retains api_key for Platform credentials", () => {
         const config = new Gemini({
             apiKey: "google-key",
             model: "gemini-2.0-flash",
@@ -83,10 +83,10 @@ describe("LLM vendor helpers", () => {
                 model: "gemini-2.0-flash",
             },
         });
-        expect((config as Record<string, unknown>)?.api_key).toBeUndefined();
+        expect((config as Record<string, unknown>)?.api_key).toBe("google-key");
     });
 
-    test("Gemini preserves explicit URL overrides without emitting api_key", () => {
+    test("Gemini preserves explicit URL overrides while retaining api_key", () => {
         const config = new Gemini({
             apiKey: "google-key",
             model: "gemini-2.0-flash",
@@ -100,7 +100,7 @@ describe("LLM vendor helpers", () => {
                 model: "gemini-2.0-flash",
             },
         });
-        expect((config as Record<string, unknown>)?.api_key).toBeUndefined();
+        expect((config as Record<string, unknown>)?.api_key).toBe("google-key");
     });
 
     test("VertexAILLM builds correct URL and excludes project routing from params", () => {
@@ -206,9 +206,7 @@ describe("LLM vendor helpers", () => {
 
     test("rejects missing required LLM fields at runtime", () => {
         expect(() => new OpenAI({ apiKey: "openai-key", model: "gpt-4o" } as never)).toThrow("OpenAI requires url");
-        expect(() => new OpenAI({ model: "gpt-4o" } as never)).toThrow(
-            "OpenAI requires apiKey unless using a supported Agora-managed model",
-        );
+        expect(() => new OpenAI({ model: "gpt-5.6-luna" })).not.toThrow();
         expect(
             () => new OpenAI({ model: "gpt-5-mini", url: "https://api.openai.com/v1/chat/completions" } as never),
         ).toThrow("OpenAI Agora-managed mode does not allow url");

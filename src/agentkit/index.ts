@@ -152,6 +152,7 @@ export type {
     AsrVendorName,
     AvatarConfig,
     AvatarWireVendor,
+    CallOptions,
     CartesiaTts,
     CartesiaTtsParams,
     // Conversation types

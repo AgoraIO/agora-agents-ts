@@ -280,3 +280,9 @@ See the [Avatar Integration guide](./docs/guides/avatars.md) for sample-rate req
 
 - [SDK Reference](./reference.md)
 - [Agora Conversational AI Docs](https://docs.agora.io/en/conversational-ai/overview)
+
+### Installing a preview checkout
+
+The published `3.0.0-alpha.1` preview is available separately from stable 2.x packages. Git installs run `prepare` to build importable CommonJS/ESM output; lifecycle scripts and development dependencies must be enabled. To build a checkout on Windows, PowerShell, Command Prompt, macOS, or Linux, run `npm install` then `npm run build` (the clean step uses Node).
+
+Use `agent.createEphemeralSession(options)` to explicitly start an unsaved Platform configuration. Use `agent.call(options)` or `saved.call(options)` for an outbound phone session, then call `start()` on the returned handle.

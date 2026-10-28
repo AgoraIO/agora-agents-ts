@@ -14,21 +14,21 @@ import { Agent, AgoraClient, Area, OpenAI, SavedAgent, secretRef } from 'agora-a
 const client = new AgoraClient({ area: Area.US, appId: process.env.AGORA_APP_ID!, appCertificate: process.env.AGORA_APP_CERTIFICATE! });
 await client.secrets.create({ name: 'support', secrets: { openai: process.env.OPENAI_API_KEY! } });
 const config = new Agent({ client }).withLlm(new OpenAI({
-  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', instructions: 'Help callers briefly.',
+  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', systemMessages: [{ role: 'system', content: 'Help callers briefly.' }],
 }));
-const session = config.createSession({ channel: 'room', agentUid: '1002', remoteUids: ['1001'] });
+const session = config.createEphemeralSession({ channel: 'room', agentUid: '1002', remoteUids: ['1001'] });
 await session.start();
 await session.stop();
 const saved = await config.save({ name: 'Support' });
 ```
 
-Ordinary inline sessions retain their existing transport and conversation controls. Configurations with secret references or variables, and new session options, automatically use ephemeral startup instead. Ephemeral configurations are not saved. Saved BYOK credentials must use `secretRef()`; inline keys remain supported for ephemeral and existing inline sessions. The SDK never uploads secrets implicitly.
+`createEphemeralSession()` explicitly starts an unsaved configuration through the Platform, including when no variables, secrets, or special options are set. Ordinary inline sessions retain their existing transport and conversation controls. Configurations with secret references or variables, and new session options, automatically use ephemeral startup instead. Ephemeral configurations are not saved. Saved BYOK credentials must use `secretRef()`; inline keys remain supported for ephemeral and existing inline sessions. The SDK never uploads secrets implicitly.
 
 ## Update, load, and assign numbers
 
 ```ts
 const revised = config.withLlm(new OpenAI({
-  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', instructions: 'Ask one question at a time.',
+  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', systemMessages: [{ role: 'system', content: 'Ask one question at a time.' }],
 }));
 const updated = await saved.update(revised);
 const loaded = await SavedAgent.get(client, updated.id);
@@ -47,9 +47,9 @@ Use an authorized number/trunk and a complete supported pipeline. Assignment doe
 ```ts
 await client.secrets.create({ name: 'support', secrets: { openai: process.env.OPENAI_API_KEY! } });
 const referenced = config.withLlm(new OpenAI({
-  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', instructions: 'Help {{customer}}.',
+  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', systemMessages: [{ role: 'system', content: 'Help {{customer}}.' }],
 })).withVariable('customer', { type: 'str', required: true });
-const ephemeral = referenced.createSession({
+const ephemeral = referenced.createEphemeralSession({
   channel: 'ephemeral-room', agentUid: '1002', remoteUids: ['1001'],
   values: { customer: 'Ada' }, labels: { team: 'support' },
   idempotencyKey: 'support-session-4821',
@@ -104,3 +104,19 @@ Use `llm.params` for cascaded models; each supplied params object **replaces** t
 `client.secrets`, `client.numbers`, and `client.campaigns` share their advanced `client.v3` resource instances. `deploy()` and `DeployedAgent` remain compatibility aliases. Session lists still lack a reliable saved-agent association; store your own returned session-ID → saved-ID relationship.
 
 Status reads started before a stop or restart cannot overwrite the newer local state. Concurrent status reads apply only the most recently issued read. During a restart, `id` is null until the new session ID arrives; reads and stop cannot target the previous session.
+
+## Outbound calls
+
+```ts
+const call = saved.call({
+  from: number.number_id, to: '+12025550199',
+  callPolicy: { max_ring_duration_ms: 30000 },
+  idempotencyKey: 'outbound-4821',
+});
+await call.start();
+await call.stop();
+```
+
+`config.call()` provides the same lifecycle for an unsaved configuration. `from` is a registered number ID, not a phone number. Use `assignNumber(number, { callPolicy: { end_call: { on_user_request: true } } })` to configure the full inbound policy while the SDK handles conditional updates.
+
+For RTC sessions, an explicit nonzero `agentUid` and client certificate let the SDK generate the RTC token when `token` is omitted. Explicit tokens are preserved. If the UID is omitted or zero, token provisioning stays with the service. A client using `authToken` can omit `appCertificate`; in that case, supply the RTC token yourself or use service provisioning.

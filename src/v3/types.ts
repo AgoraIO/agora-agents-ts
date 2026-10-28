@@ -343,12 +343,12 @@ export type ScheduledSchedule = {
 };
 export type SecretCreate = { name: string; secrets: { [key: string]: string } };
 export type SecretDeleted = { deleted: true };
-export type SecretKey = { key: string };
+export type SecretKey = { key: string; create_ts?: number; update_ts?: number };
 export type SecretKeyWrite = { value: string };
 export type SecretList = { data: SecretPage; has_more: boolean; next_cursor: string | null };
 export type SecretPage = { count: number; list: Array<SecretSet> };
 export type SecretReplace = { secrets: { [key: string]: string } };
-export type SecretSet = { name: string; keys: Array<string>; create_ts: number; update_ts: number };
+export type SecretSet = { name: string; keys: Array<string | SecretKey>; create_ts: number; update_ts: number };
 export type SecretUpdate = { secrets: { [key: string]: (string | null) | null } };
 export type SemanticTurnEnd = {
     type: "semantic";
@@ -379,6 +379,7 @@ export type SessionResponse = {
     status: "IDLE" | "STARTING" | "RUNNING" | "STOPPING" | "STOPPED" | "FAILED";
     stop_ts?: number | null;
     message?: string | null;
+    analysis?: SessionAnalysis | null;
 };
 export type SessionStartResponse = { agent_session_id: string; create_ts: number; status: "STARTING" | "RUNNING" };
 export type SessionStopResponse = Record<string, unknown>;
@@ -755,6 +756,13 @@ export type InboundEndCallPolicy = {
     on_voicemail?: boolean;
     on_ai_assistant?: boolean;
     on_fax?: boolean;
+};
+export type SessionAnalysis = {
+    status: "pending" | "completed" | "failed" | "skipped";
+    skip_reason: "no_user_turns" | "retention_none" | null;
+    complete_ts: number | null;
+    result: { [key: string]: string | number | number | boolean | null } | null;
+    error: string | null;
 };
 
 export type {

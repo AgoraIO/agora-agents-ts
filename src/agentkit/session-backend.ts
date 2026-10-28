@@ -1,9 +1,10 @@
 /** Internal adapter for session identities, without mixing them with running-agent IDs. */
 import type { AgoraClient } from "../AgoraPoolClient.js";
 import { validateSessionStart } from "../v3/session-lifecycle.js";
-import type { AgentCreateRequest, SessionStartOptions } from "../v3/types.js";
+import type { AgentCreateRequest, SessionStartOptions, TelephonyTransport } from "../v3/types.js";
 import type { Agent } from "./Agent.js";
 import { AgentSession } from "./AgentSession.js";
+import { ExpiresIn, generateConvoAIToken, generateRtcTokenWithAccount } from "./token.js";
 import type { AgentConfigUpdate, SessionInfo, SessionOptions } from "./types.js";
 
 export interface SessionBackend {
@@ -23,15 +24,9 @@ export function createStoredSession(
     options: SessionOptions,
     source: { agent_id: string } | { agent: Omit<AgentCreateRequest, "agent_name"> },
     config?: Agent,
+    telephony?: TelephonyTransport,
 ): AgentSession {
-    for (const key of [
-        "clientReference",
-        "client_reference",
-        "expiresIn",
-        "enableStringUid",
-        "preset",
-        "pipelineId",
-    ] as const) {
+    for (const key of ["clientReference", "client_reference", "enableStringUid", "preset", "pipelineId"] as const) {
         if (key in options && (options as unknown as Record<string, unknown>)[key] !== undefined)
             throw new Error(`${key} is not supported by this session backend`);
     }
@@ -50,7 +45,7 @@ export function createStoredSession(
             idempotencyKey: options.idempotencyKey,
             data_policy: options.dataPolicy,
             labels: options.labels,
-            transport: {
+            transport: telephony ?? {
                 type: "rtc",
                 channel: options.channel,
                 uid: options.agentUid,
@@ -64,6 +59,32 @@ export function createStoredSession(
         }),
     );
     validateSessionStart(payload);
+    if (
+        options.expiresIn !== undefined &&
+        (!Number.isInteger(options.expiresIn) || !Number.isFinite(options.expiresIn))
+    )
+        throw new Error("expiresIn must be a whole number of seconds");
+    if (
+        telephony &&
+        [options.agentUid, options.token, options.encryption, options.audioScenario, options.geofence].some(
+            (value) => value !== undefined,
+        )
+    )
+        throw new Error("RTC options are not supported for phone calls");
+    const expiry = options.expiresIn === undefined ? undefined : ExpiresIn.seconds(options.expiresIn);
+    const signing =
+        !telephony &&
+        options.token === undefined &&
+        client.appCertificate &&
+        options.agentUid !== undefined &&
+        !/^0+$/.test(options.agentUid)
+            ? {
+                  appId: client.appId,
+                  appCertificate: client.appCertificate,
+                  channel: options.channel,
+                  uid: options.agentUid,
+              }
+            : undefined;
     let successfullyStarted = false;
     const backend: SessionBackend = {
         async start() {
@@ -71,6 +92,28 @@ export function createStoredSession(
                 throw new Error(
                     "This idempotency key already started a session; create a new handle with a new key for another session",
                 );
+            if (signing && payload.transport.token === undefined) {
+                if (
+                    /^\d+$/.test(signing.uid) &&
+                    (!Number.isSafeInteger(Number(signing.uid)) || Number(signing.uid) > 4294967295)
+                )
+                    throw new Error("Numeric agentUid must fit an unsigned 32-bit RTC UID for token generation");
+                payload.transport.token = /^\d+$/.test(signing.uid)
+                    ? generateConvoAIToken({
+                          appId: signing.appId,
+                          appCertificate: signing.appCertificate,
+                          channelName: signing.channel,
+                          uid: Number(signing.uid),
+                          tokenExpire: expiry,
+                      })
+                    : generateRtcTokenWithAccount({
+                          appId: signing.appId,
+                          appCertificate: signing.appCertificate,
+                          channel: signing.channel,
+                          account: signing.uid,
+                          expirySeconds: expiry,
+                      });
+            }
             const result =
                 "agent_id" in payload
                     ? await client.v3.sessions.start(payload)

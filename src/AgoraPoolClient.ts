@@ -75,12 +75,11 @@ export declare namespace AgoraClient {
         v3?: V3Options;
         /** Agora App ID — used as the `appid` path parameter and for RTC token generation */
         appId: string;
-        /** Agora App Certificate — used to sign RTC tokens. Keep this secret. */
-        appCertificate: string;
     }
 
     /** Use a pre-built Agora token for REST API authentication. Pass the raw token; the SDK sets `Authorization: agora token=<authToken>` automatically. */
     interface TokenAuthOptions {
+        appCertificate?: string;
         authToken: string;
     }
 
@@ -89,6 +88,7 @@ export declare namespace AgoraClient {
      * ConvoAI token per API call — no Customer Secret required.
      */
     interface AppCredentialsOptions {
+        appCertificate: string;
         authToken?: never;
     }
 
@@ -141,7 +141,7 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
     /** Agora App ID */
     public readonly appId: string;
     /** Agora App Certificate (used for RTC token signing) */
-    public readonly appCertificate: string;
+    public readonly appCertificate: string | undefined;
     /** The active authentication mode */
     public readonly authMode: AgoraAuthMode;
     /** The configured routing area */
@@ -167,10 +167,12 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
         }
         const authMode: AgoraAuthMode = options.authToken !== undefined ? "token" : "app-credentials";
         const { authToken, appId, appCertificate, ...rest } = options;
+        if (authMode === "app-credentials" && !appCertificate)
+            throw new Error("appCertificate or authToken is required");
         const authorization = (): string =>
             authMode === "token"
                 ? `agora token=${authToken}`
-                : `agora token=${generateConvoAIToken({ appId, appCertificate, channelName: "", uid: 0 })}`;
+                : `agora token=${generateConvoAIToken({ appId, appCertificate: appCertificate!, channelName: "", uid: 0 })}`;
         const originalFetch = options.fetch ?? globalThis.fetch;
         const tokenOnlyFetch: typeof fetch = async (input, init) => {
             const finalHeaders = new Headers(input instanceof Request ? input.headers : undefined);
@@ -279,7 +281,7 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
         if (this.authMode === "app-credentials") {
             const token = generateConvoAIToken({
                 appId: this.appId,
-                appCertificate: this.appCertificate,
+                appCertificate: this.appCertificate!,
                 channelName: "stop",
                 uid: 0,
             });

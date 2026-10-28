@@ -37,6 +37,7 @@ import { generateConvoAIToken } from "./token.js";
 import type {
     AdvancedFeatures,
     AvatarConfig,
+    CallOptions,
     FillerWordsConfig,
     GeofenceConfig,
     InterruptionConfig,
@@ -772,8 +773,8 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
     save(options: SaveOptions = {}): Promise<SavedAgent> {
         const config = this.config;
         if (config.mllm === undefined && (config.stt !== undefined || config.turnDetection?.language !== undefined)) {
-            // Reuse v2's ASR language precedence only when ASR or language was configured.
-            config.stt = this._resolveAsrConfig(this._resolveTurnDetectionConfig());
+            // Keep Platform language precedence separate from legacy interaction defaults.
+            config.stt = this._resolvePlatformAsrConfig();
         }
         return deployAgent(
             this._client,
@@ -808,61 +809,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             if (error instanceof SecretRefNotSupportedError) requiresStoredSession = true;
             else throw error;
         }
-        if (requiresStoredSession) {
-            const normalized = this.config;
-            const sessionOptions = { ...options };
-            if (normalized.geofence !== undefined) {
-                sessionOptions.geofence ??= {
-                    area: normalized.geofence.area.toLowerCase() as NonNullable<SessionOptions["geofence"]>["area"],
-                    ...(normalized.geofence.exclude_area === undefined
-                        ? {}
-                        : {
-                              exclude_area: normalized.geofence.exclude_area.toLowerCase() as NonNullable<
-                                  SessionOptions["geofence"]
-                              >["exclude_area"],
-                          }),
-                };
-                normalized.geofence = undefined;
-            }
-            const params = { ...normalized.parameters };
-            if (params.opt_out !== undefined) {
-                sessionOptions.dataPolicy ??= { retention: params.opt_out ? "none" : "30_days" };
-                delete params.opt_out;
-            }
-            if (params.farewell_config !== undefined) {
-                const farewell = params.farewell_config;
-                sessionOptions.gracefulStop ??= {
-                    enabled: farewell.graceful_enabled,
-                    timeout_ms:
-                        farewell.graceful_timeout_seconds === undefined
-                            ? undefined
-                            : farewell.graceful_timeout_seconds * 1000,
-                };
-                delete params.farewell_config;
-            }
-            if (params.audio_scenario !== undefined) {
-                sessionOptions.audioScenario ??=
-                    params.audio_scenario === "default" ? "aiserver" : params.audio_scenario;
-                delete params.audio_scenario;
-            }
-            normalized.parameters = Object.keys(params).length ? params : undefined;
-            if (normalized.labels !== undefined) {
-                sessionOptions.labels ??= normalized.labels;
-                normalized.labels = undefined;
-            }
-            if (
-                normalized.mllm === undefined &&
-                (normalized.stt !== undefined || normalized.turnDetection?.language !== undefined)
-            ) {
-                normalized.stt = this._resolveAsrConfig(this._resolveTurnDetectionConfig());
-            }
-            const { agent_name: _name, ...agent } = buildV3Agent(
-                normalized,
-                this._variables,
-                options.name ?? "ephemeral",
-            );
-            return createStoredSession(this._client, sessionOptions, { agent }, this);
-        }
+        if (requiresStoredSession) return this.createEphemeralSession(options);
         const name = options.name ?? `agent-${Date.now()}`;
         return new AgentSession({
             client: this._client,
@@ -873,6 +820,73 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             agentUid: options.agentUid ?? "0",
             name,
         });
+    }
+
+    /** Start an unsaved configuration explicitly through the Platform API. */
+    createEphemeralSession(options: SessionOptions): AgentSession {
+        return this._createPlatformSession(options);
+    }
+
+    /** Create an outbound phone-call session from this unsaved configuration. */
+    call(options: CallOptions): AgentSession {
+        return this._createPlatformSession(
+            { ...options, channel: "", remoteUids: [] },
+            { type: "telephony", from: options.from, to: options.to, call_policy: options.callPolicy },
+        );
+    }
+
+    private _createPlatformSession(
+        options: SessionOptions,
+        transport?: import("../v3/types.js").TelephonyTransport,
+    ): AgentSession {
+        const normalized = this.config;
+        const sessionOptions = { ...options };
+        if (normalized.geofence !== undefined) {
+            sessionOptions.geofence ??= {
+                area: normalized.geofence.area.toLowerCase() as NonNullable<SessionOptions["geofence"]>["area"],
+                ...(normalized.geofence.exclude_area === undefined
+                    ? {}
+                    : {
+                          exclude_area: normalized.geofence.exclude_area.toLowerCase() as NonNullable<
+                              SessionOptions["geofence"]
+                          >["exclude_area"],
+                      }),
+            };
+            normalized.geofence = undefined;
+        }
+        const params = { ...normalized.parameters };
+        if (params.opt_out !== undefined) {
+            sessionOptions.dataPolicy ??= { retention: params.opt_out ? "none" : "30_days" };
+            delete params.opt_out;
+        }
+        if (params.farewell_config !== undefined) {
+            const farewell = params.farewell_config;
+            sessionOptions.gracefulStop ??= {
+                enabled: farewell.graceful_enabled,
+                timeout_ms:
+                    farewell.graceful_timeout_seconds === undefined
+                        ? undefined
+                        : farewell.graceful_timeout_seconds * 1000,
+            };
+            delete params.farewell_config;
+        }
+        if (params.audio_scenario !== undefined) {
+            sessionOptions.audioScenario ??= params.audio_scenario === "default" ? "aiserver" : params.audio_scenario;
+            delete params.audio_scenario;
+        }
+        normalized.parameters = Object.keys(params).length ? params : undefined;
+        if (normalized.labels !== undefined) {
+            sessionOptions.labels ??= normalized.labels;
+            normalized.labels = undefined;
+        }
+        if (
+            normalized.mllm === undefined &&
+            (normalized.stt !== undefined || normalized.turnDetection?.language !== undefined)
+        ) {
+            normalized.stt = this._resolvePlatformAsrConfig();
+        }
+        const { agent_name: _name, ...agent } = buildV3Agent(normalized, this._variables, options.name ?? "ephemeral");
+        return createStoredSession(this._client, sessionOptions, { agent }, this, transport);
     }
 
     /**
@@ -1089,6 +1103,17 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         newAgent._fillerWords = this._fillerWords;
         newAgent._greetingConfigs = this._greetingConfigs;
         return newAgent;
+    }
+
+    private _resolvePlatformAsrConfig(): SttConfig | undefined {
+        const config = this._stt ? { ...this._stt } : { vendor: this._client.area === Area.CN ? "fengming" : "ares" };
+        const params = (config as { params?: Record<string, unknown> }).params;
+        const language =
+            this._turnDetection?.language ??
+            (config as { language?: string }).language ??
+            params?.language ??
+            (["ares", "fengming"].includes(config.vendor) ? DEFAULT_TURN_DETECTION_LANGUAGE : undefined);
+        return { ...config, ...(typeof language === "string" ? { language } : {}) } as SttConfig;
     }
 
     private _resolveAsrConfig(turnDetectionConfig: TurnDetectionConfig): SttConfig | undefined {

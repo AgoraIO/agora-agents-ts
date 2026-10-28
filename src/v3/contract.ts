@@ -3540,6 +3540,16 @@ export const contract: Record<string, any> = {
                 pattern: "^[A-Za-z0-9_]+$",
                 title: "Key",
             },
+            create_ts: {
+                type: "integer",
+                minimum: 0,
+                description: "Key timestamp when returned by the service.",
+            },
+            update_ts: {
+                type: "integer",
+                minimum: 0,
+                description: "Key timestamp when returned by the service.",
+            },
         },
         additionalProperties: false,
         type: "object",
@@ -3643,13 +3653,21 @@ export const contract: Record<string, any> = {
             },
             keys: {
                 items: {
-                    type: "string",
-                    maxLength: 64,
-                    minLength: 1,
-                    pattern: "^[A-Za-z0-9_]+$",
+                    anyOf: [
+                        {
+                            type: "string",
+                            maxLength: 64,
+                            minLength: 1,
+                            pattern: "^[A-Za-z0-9_]+$",
+                        },
+                        {
+                            $ref: "#/components/schemas/SecretKey",
+                        },
+                    ],
                 },
                 type: "array",
                 title: "Keys",
+                description: "Accepts legacy key names and launch key metadata objects during rollout.",
             },
             create_ts: {
                 type: "integer",
@@ -4044,6 +4062,17 @@ export const contract: Record<string, any> = {
                     },
                 ],
                 title: "Message",
+            },
+            analysis: {
+                anyOf: [
+                    {
+                        $ref: "#/components/schemas/SessionAnalysis",
+                    },
+                    {
+                        type: "null",
+                    },
+                ],
+                description: "Optional extraction analysis. May be absent while analysis support is rolling out.",
             },
         },
         additionalProperties: false,
@@ -9008,5 +9037,85 @@ export const contract: Record<string, any> = {
         additionalProperties: false,
         type: "object",
         title: "EndCallPolicy",
+    },
+    SessionAnalysis: {
+        properties: {
+            status: {
+                type: "string",
+                enum: ["pending", "completed", "failed", "skipped"],
+                title: "Status",
+            },
+            skip_reason: {
+                anyOf: [
+                    {
+                        type: "string",
+                        enum: ["no_user_turns", "retention_none"],
+                    },
+                    {
+                        type: "null",
+                    },
+                ],
+                title: "Skip Reason",
+            },
+            complete_ts: {
+                anyOf: [
+                    {
+                        type: "integer",
+                        minimum: 0.0,
+                    },
+                    {
+                        type: "null",
+                    },
+                ],
+                title: "Complete Ts",
+            },
+            result: {
+                anyOf: [
+                    {
+                        patternProperties: {
+                            "^[a-z][a-z0-9_]{0,63}$": {
+                                anyOf: [
+                                    {
+                                        type: "string",
+                                    },
+                                    {
+                                        type: "integer",
+                                    },
+                                    {
+                                        type: "number",
+                                    },
+                                    {
+                                        type: "boolean",
+                                    },
+                                    {
+                                        type: "null",
+                                    },
+                                ],
+                            },
+                        },
+                        type: "object",
+                    },
+                    {
+                        type: "null",
+                    },
+                ],
+                title: "Result",
+            },
+            error: {
+                anyOf: [
+                    {
+                        type: "string",
+                    },
+                    {
+                        type: "null",
+                    },
+                ],
+                title: "Error",
+            },
+        },
+        additionalProperties: false,
+        type: "object",
+        required: ["status", "skip_reason", "complete_ts", "result", "error"],
+        title: "SessionAnalysis",
     },
 };

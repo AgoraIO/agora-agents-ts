@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## Unreleased
+
+- Fix Platform provider defaults, Gemini/Bedrock credentials, ASR keywords/language/endpoints, and generic/HeyGen avatar mapping. Add typed MiniMax voice/audio controls.
+- Add explicit ephemeral and outbound-call session helpers, fixed-UID RTC token generation, full inbound call policy, optional extraction/secret metadata response types, and token-only client typing.
+- Make source builds portable and build Git installs through prepare. Correct saved-agent examples. Model availability for managed OpenAI is validated by the service.
+
 ## [v3.0.0-alpha.1] — 2026-10-28
 
 - Saved agents, ephemeral and saved-agent sessions, project secrets/numbers, and campaign resources are available in the preview checkout. See [Saving agents](docs/guides/saved-agents.md).

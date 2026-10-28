@@ -29,7 +29,6 @@ function setup(replies: Response[] = []) {
     const client = new AgoraClient({
         area: Area.US,
         appId: "app",
-        appCertificate: "certificate",
         authToken: "token",
         fetch,
         v3: { baseUrl: "https://staging.test", headers: { "X-Test-Context": "test" } },
@@ -168,7 +167,7 @@ describe("v3 preview", () => {
         expect(() => agent.withVariable("Bad", { type: "str" })).toThrow();
         expect(() => agent.withVariable("missing", { type: "str", extract: true })).toThrow();
     });
-    it("maps public interaction language to ASR without changing provider language", async () => {
+    it("maps explicit interaction language to the single Platform ASR language", async () => {
         const { client, fetch } = setup([response(saved())]);
         const agent = new Agent({ client })
             .withStt(new DeepgramSTT({ apiKey: secretRef("prod", "asr"), model: "nova-3", language: "fr" }))
@@ -181,7 +180,6 @@ describe("v3 preview", () => {
         expect(body(fetch).pipeline.asr).toMatchObject({
             vendor: "deepgram",
             language: "de-DE",
-            params: { language: "fr" },
             credential: { mode: "byok", fields: { api_key: "$secrets.prod.asr" } },
         });
         expect(body(fetch).pipeline.turn_detection).toEqual({
@@ -210,7 +208,7 @@ describe("v3 preview", () => {
         await new Agent({ client })
             .withStt(new DeepgramSTT({ apiKey: secretRef("prod", "key"), model: "nova-3", language: "fr" }))
             .deploy({ name: "Default interaction language" });
-        expect(body(fetch, 2).pipeline.asr).toMatchObject({ language: "en-US", params: { language: "fr" } });
+        expect(body(fetch, 2).pipeline.asr).toMatchObject({ language: "fr" });
         expect(buildV3Agent({ client, turnDetection: { language: "es-ES" } }, {}, "Direct").pipeline).toMatchObject({
             mode: "cascaded",
             asr: { vendor: "ares", language: "es-ES" },
@@ -688,7 +686,6 @@ describe("configuration lifecycle", () => {
         for (const extra of [
             { preset: "x" },
             { pipelineId: "published" },
-            { expiresIn: 60 },
             { enableStringUid: true },
             { idleTimeout: -1 },
             { maxDuration: NaN },
