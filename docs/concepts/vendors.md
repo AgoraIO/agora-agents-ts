@@ -177,6 +177,9 @@ Avatars provide a visual representation for the agent. Several avatar vendors re
 | `AkoolAvatar`      | Akool                                       | 16000 Hz                 |
 | `AnamAvatar`       | Anam                                        | Provider-defined         |
 | `GenericAvatar`    | Custom avatar provider                      | Provider-defined         |
+| `Tavus` | Tavus | Provider-defined |
+| `Protoface` | Protoface | Provider-defined |
+| `LemonSlice` | LemonSlice | Provider-defined |
 | `SensetimeAvatar`  | SenseTime (CN)                              | Provider-defined         |
 | `SpatiusAvatar`    | Spatius (CN)                                | Provider-defined         |
 
@@ -185,3 +188,5 @@ CN MLLM, LLM, STT, TTS, and avatar vendors (`QwenOmni`, `AliyunLLM`, `FengmingST
 See [Avatar Integration](../guides/avatars.md) for full examples and the sample-rate constraint details.
 
 For detailed constructor options for every vendor, see [Vendor Reference](../reference/vendors.md).
+
+Tavus, Protoface, and LemonSlice use the generic wire configuration with provider URL defaults. LemonSlice also defaults the avatar ID to `lemonslice` and requires exactly one image or agent selector; its optional aspect ratio accepts `2x3`, `9x16`, or `1x1`. See the [Avatar Integration guide](../guides/avatars.md) for defaults, typed fields, and additional-parameter compatibility.
