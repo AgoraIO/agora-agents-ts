@@ -234,9 +234,9 @@ See the [MLLM Flow guide](./docs/guides/mllm-flow.md) for full examples with Gem
 
 ## Avatars
 
-AgentKit supports LiveAvatar, Generic Avatar, Anam, Akool, SenseTime (CN), and deprecated HeyGen. Avatar `agoraToken` is optional: when omitted, `session.start()` generates a token using the same ConvoAI token format as the agent token, scoped to the avatar `agoraUid`. Avatars require the cascading ASR + LLM + TTS pipeline (not MLLM).
+AgentKit supports LiveAvatar, Generic Avatar (including Tavus, Protoface, and LemonSlice), Anam, Akool, SenseTime (CN), and deprecated HeyGen. Avatar `agoraToken` is optional: when omitted, `session.start()` generates a token using the same ConvoAI token format as the agent token, scoped to the avatar `agoraUid`. Avatars require the cascading ASR + LLM + TTS pipeline (not MLLM).
 
-See the [Avatar Integration guide](./docs/guides/avatars.md) for sample-rate requirements and Generic Avatar setup.
+See the [Avatar Integration guide](./docs/guides/avatars.md) for sample-rate requirements, provider URL defaults, LemonSlice image/agent selectors and aspect ratios, and Generic Avatar setup.
 
 ## Documentation
 

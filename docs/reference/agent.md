@@ -86,7 +86,7 @@ Set the MLLM vendor for multimodal mode. Pass a global vendor (`OpenAIRealtime`,
 
 ### `withAvatar<RequiredSR extends number>(this: Agent<RequiredSR, TArea>, vendor: AvatarVendor<RequiredSR>): Agent<RequiredSR, TArea>`
 
-Set the avatar vendor. The `this` constraint enforces that the Agent's TTS sample rate matches the avatar's required rate at compile time. Accepts `LiveAvatarAvatar`, `HeyGenAvatar`, `AkoolAvatar`, `AnamAvatar`, `GenericAvatar`, `SensetimeAvatar`, `SpatiusAvatar`, and other exported avatar classes. Requires the cascading ASR + LLM + TTS pipeline; avatars are not supported with MLLM.
+Set the avatar vendor. The `this` constraint enforces that the Agent's TTS sample rate matches the avatar's required rate at compile time. Accepts `LiveAvatarAvatar`, `HeyGenAvatar`, `AkoolAvatar`, `AnamAvatar`, `GenericAvatar`, `Tavus`, `Protoface`, `LemonSlice`, `SensetimeAvatar`, `SpatiusAvatar`, and other exported avatar classes. Requires the cascading ASR + LLM + TTS pipeline; avatars are not supported with MLLM.
 
 ### `withTurnDetection(config: TurnDetectionConfig): Agent<TTSSampleRate, TArea>`
 
