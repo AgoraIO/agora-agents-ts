@@ -128,6 +128,7 @@ export type {
     SttVendor,
     TtsVendor,
 } from "./region-vendors.js";
+export { UnsupportedSessionOperationError } from "./session-backend.js";
 export type {
     GenerateConvoAITokenOptions,
     GenerateTokenOptions,
@@ -271,6 +272,15 @@ export type {
     XAiTts,
     XAiTtsParams,
 } from "./types.js";
+export type { AssignNumberOptions, DeployOptions, SaveOptions, SecretRef, VariableDefinition } from "./v3.js";
+export {
+    DeployedAgent,
+    NumberNotFoundError,
+    SavedAgent,
+    SecretRefNotSupportedError,
+    secretRef,
+    UnsupportedFieldError,
+} from "./v3.js";
 export type {
     AkoolAvatarOptions,
     AnamAvatarOptions,
@@ -488,15 +498,3 @@ export {
     TypecastTTS,
     XAiTTS,
 } from "./vendors/tts.js";
-
-export type { AssignNumberOptions, DeployOptions, SaveOptions, SecretRef, VariableDefinition } from "./v3.js";
-export {
-    SavedAgent,
-    DeployedAgent,
-    secretRef,
-    NumberNotFoundError,
-    SecretRefNotSupportedError,
-    UnsupportedFieldError,
-} from "./v3.js";
-
-export { UnsupportedSessionOperationError } from "./session-backend.js";

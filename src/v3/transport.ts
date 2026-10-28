@@ -1,8 +1,8 @@
-import { isInternalHeader } from "../core/publicHeaders.js";
 import type { BaseClientOptions, BaseRequestOptions } from "../BaseClient.js";
 import { fetcher } from "../core/fetcher/Fetcher.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import type { RawResponse } from "../core/fetcher/RawResponse.js";
+import { isInternalHeader } from "../core/publicHeaders.js";
 
 export interface V3Options {
     baseUrl?: string;

@@ -9,9 +9,8 @@ import type { AgoraAuthMode, AgoraClient } from "../AgoraPoolClient.js";
 import type * as Agora from "../api/index.js";
 import type { AgentManagementClient } from "../api/resources/agentManagement/client/Client.js";
 import type { AgentsClient } from "../api/resources/agents/client/Client.js";
-import { V3Error } from "../v3/transport.js";
 import { AgoraError } from "../errors/index.js";
-import { type SessionBackend, UnsupportedSessionOperationError } from "./session-backend.js";
+import { V3Error } from "../v3/transport.js";
 import type { Agent } from "./Agent.js";
 import type { AgoraArea } from "./area.js";
 import {
@@ -44,6 +43,7 @@ import {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
+import { type SessionBackend, UnsupportedSessionOperationError } from "./session-backend.js";
 import { ExpiresIn as ExpiresInHelper, generateConvoAIToken } from "./token.js";
 import type {
     AgentConfigUpdate,

@@ -2,21 +2,21 @@ import { describe, expect, it, vi } from "vitest";
 import { buildV3Agent, redeployPatch } from "../../../src/agentkit/v3.js";
 import {
     Agent,
+    AgentSession,
     AgoraClient,
     Area,
     DeepgramSTT,
     DeployedAgent,
-    SavedAgent,
-    AgentSession,
-    UnsupportedSessionOperationError,
-    type SaveOptions,
     OpenAI,
-    OpenAITTS,
     OpenAIRealtime,
+    OpenAITTS,
     PreconditionFailedError,
+    SavedAgent,
+    type SaveOptions,
     SecretRefNotSupportedError,
     secretRef,
     UnsupportedFieldError,
+    UnsupportedSessionOperationError,
 } from "../../../src/index.js";
 
 const response = (body: unknown, status = 200, tag = '"v1"') =>

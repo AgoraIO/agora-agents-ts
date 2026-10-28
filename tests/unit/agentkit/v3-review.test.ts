@@ -36,7 +36,7 @@ describe("preview review regressions", () => {
                 }
                 return reply({ number_id: "number", number: "+12025550123", create_ts: 1 }, 200, `"${reads}"`);
             }
-            patches.push(JSON.parse(init!.body as string));
+            patches.push(JSON.parse(init?.body as string));
             policy.maxCallDurationSeconds = 2;
             policy.maxSilenceDurationMs = 3;
             return patches.length === 1 ? reply({ reason: "PreconditionFailed" }, 412) : reply({ number_id: "number" });

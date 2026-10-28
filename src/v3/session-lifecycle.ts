@@ -4,8 +4,8 @@
 import type { BaseRequestOptions } from "../BaseClient.js";
 import type { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import { HttpResponsePromise as ResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
-import { omit, segment, validateIdempotencyKey, type V3Transport } from "./transport.js";
 import type * as Schema from "./session-schema.js";
+import { omit, segment, type V3Transport, validateIdempotencyKey } from "./transport.js";
 
 export type SessionGeofence = {
     area: "global" | "north_america" | "europe" | "asia" | "india" | "japan";

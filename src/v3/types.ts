@@ -758,11 +758,11 @@ export type InboundEndCallPolicy = {
 };
 
 export type {
+    EphemeralSessionStartRequest,
     SessionGeofence,
-    SessionTransport,
     SessionStartOptions,
     SessionStartRequest,
-    EphemeralSessionStartRequest,
+    SessionTransport,
 } from "./session-lifecycle.js";
 
 export type AgentCreateRequest = AgentCreateInput;

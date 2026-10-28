@@ -7,6 +7,7 @@ const path = require("node:path");
 const repoRoot = path.join(__dirname, "..");
 const rootPackagePath = path.join(repoRoot, "package.json");
 const compatPackagePath = path.join(repoRoot, "compat", "agora-agent-server-sdk", "package.json");
+const sdkVersionPath = path.join(repoRoot, "src", "version.ts");
 
 function usage() {
     console.error("Usage: node scripts/prepare-release.js <version>");
@@ -52,6 +53,7 @@ compatPackage.dependencies["agora-agents"] = `^${version}`;
 
 writePackage(rootPackagePath, rootPackage);
 writePackage(compatPackagePath, compatPackage);
+fs.writeFileSync(sdkVersionPath, `export const SDK_VERSION = "v${version}";\n`);
 
 console.log(`Prepared release ${version}.`);
 console.log(`- agora-agents version: ${rootPackage.version}`);

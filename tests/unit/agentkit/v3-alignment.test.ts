@@ -1,14 +1,15 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
     Agent,
     AgoraClient,
     Area,
     OpenAI,
-    secretRef,
     SavedAgent,
     SensetimeAvatar,
     SpatiusAvatar,
+    secretRef,
 } from "../../../src/index.js";
+
 const reply = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), {
         status,

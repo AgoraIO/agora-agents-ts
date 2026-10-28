@@ -1,18 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
+import { redeployPatch } from "../../../src/agentkit/v3.js";
+import type { V3 } from "../../../src/index.js";
 import {
     Agent,
     AgoraClient,
-    Area,
     AmazonBedrock,
     AmazonSTT,
     AmazonTTS,
+    Area,
     OpenAI,
     OpenAIRealtime,
     SavedAgent,
     secretRef,
 } from "../../../src/index.js";
-import { redeployPatch } from "../../../src/agentkit/v3.js";
-import type { V3 } from "../../../src/index.js";
+
 const response = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ETag: '"next"' } });
 function setup(replies: Response[] = []) {
@@ -170,7 +171,7 @@ describe("latest public contract", () => {
             },
         });
         expect(fetch.mock.calls[2][0]).toMatch(/\/sessions\/session$/);
-        expect(fetch.mock.calls[2][1]!.method).toBe("PATCH");
+        expect(fetch.mock.calls[2][1]?.method).toBe("PATCH");
         await session.update({ llm: { system_messages: [{ role: "system", content: "" }], params: {} } });
         expect(body(fetch, 3)).toEqual({
             agent: { overrides: { messages: [{ role: "system", content: "" }], pipeline: { llm: { params: {} } } } },
@@ -244,7 +245,7 @@ describe("latest public contract", () => {
         });
         expect(body(fetch).data_policy).toEqual({ retention: "none" });
         expect(body(fetch).transport.call_policy.end_call.on_voicemail).toBe(true);
-        expect(new Headers(fetch.mock.calls[0][1]!.headers).get("Idempotency-Key")).toBe("campaign");
+        expect(new Headers(fetch.mock.calls[0][1]?.headers).get("Idempotency-Key")).toBe("campaign");
         await client.numbers.create({
             number: "+12025550123",
             sip_trunk: { hostname: "sip.example", allowed_ips: ["203.0.113.1"] },

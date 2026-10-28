@@ -1,6 +1,3 @@
-import { createStoredSession } from "./session-backend.js";
-import type { AgentSession } from "./AgentSession.js";
-import type { SessionOptions } from "./types.js";
 import type { AgoraClient } from "../AgoraPoolClient.js";
 import { Area } from "../core/domain/index.js";
 import type { WithRawResponse } from "../core/fetcher/RawResponse.js";
@@ -8,7 +5,9 @@ import { contract } from "../v3/contract.js";
 import { PreconditionFailedError } from "../v3/transport.js";
 import type * as V3 from "../v3/types.js";
 import type { Agent, AgentOptions } from "./Agent.js";
-import type { LlmConfig, MllmConfig, SttConfig, TtsConfig } from "./types.js";
+import type { AgentSession } from "./AgentSession.js";
+import { createStoredSession } from "./session-backend.js";
+import type { LlmConfig, MllmConfig, SessionOptions, SttConfig, TtsConfig } from "./types.js";
 
 export type SecretRef = string & { readonly __secretRef: unique symbol };
 export function secretRef(set: string, key: string): SecretRef {
