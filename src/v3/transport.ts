@@ -98,6 +98,15 @@ export class V3Transport {
             if (body && typeof body === "object" && "idempotencyKey" in body)
                 throw new Error("idempotencyKey is not supported by this operation");
             const bodySnapshot = body === undefined ? undefined : JSON.parse(JSON.stringify(body));
+            // Reject removed preview pipelines even for JavaScript/untyped callers.
+            for (const pipeline of [
+                bodySnapshot?.pipeline,
+                bodySnapshot?.agent?.pipeline,
+                bodySnapshot?.agent?.overrides?.pipeline,
+            ]) {
+                if (pipeline && typeof pipeline === "object" && (pipeline.mode === "realtime" || "mllm" in pipeline))
+                    throw new Error("MLLM is not supported by the preview API");
+            }
             const querySnapshot = JSON.parse(JSON.stringify({ ...query, ...capturedOptions.queryParams }));
             requestOptions = capturedOptions;
             const resolved: Record<string, string> = {};

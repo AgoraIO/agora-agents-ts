@@ -4,7 +4,6 @@ import {
     AgoraClient,
     Area,
     OpenAI,
-    OpenAIRealtime,
     secretRef,
     SavedAgent,
     SensetimeAvatar,
@@ -145,7 +144,13 @@ describe("engineering public contract", () => {
             reply({}),
         ]);
         const session = new Agent({ client })
-            .withMllm(new OpenAIRealtime({ apiKey: secretRef("set", "key"), model: "gpt-realtime" }))
+            .withLlm(
+                new OpenAI({
+                    apiKey: secretRef("set", "key"),
+                    url: "https://api.openai.com/v1/chat/completions",
+                    model: "gpt-4o-mini",
+                }),
+            )
             .createSession({
                 ...opts,
                 values: { customer: "Ada", count: 1, ok: true },

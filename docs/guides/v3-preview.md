@@ -85,6 +85,8 @@ On ephemeral startup, existing `parameters.opt_out` maps to session retention; `
 
 ## Source contract and maintenance
 
-The [OpenAPI handoff](../../openapi.yaml) and [JSON generation snapshot](../../src/v3/openapi.json) describe the same corrected contract, including realtime MLLM and 24-hour idempotency. `python3 scripts/generate-v3-preview.py` regenerates wire types, resource methods, and mapping validators from that single JSON snapshot; run the repository formatter afterward. The handwritten session adapter preserves lifecycle normalization and survives regeneration. This remains a custom generator, not Fern; `.fernignore` protects the source and handoff. Schema inclusion does not claim that every rollout-dependent feature is live.
+The [OpenAPI handoff](../../openapi.yaml) and [JSON generation snapshot](../../src/v3/openapi.json) describe the same corrected contract, including cascaded pipelines and 24-hour idempotency. `python3 scripts/generate-v3-preview.py` regenerates wire types, resource methods, and mapping validators from that single JSON snapshot; run the repository formatter afterward. The handwritten session adapter preserves lifecycle normalization and survives regeneration. This remains a custom generator, not Fern; `.fernignore` protects the source and handoff. Schema inclusion does not claim that every rollout-dependent feature is live.
 
 See the [32-operation reference](../reference/v3.md). Tests are mocked and examples are compiled; no live endpoint verification is claimed.
+
+Realtime/MLLM pipelines are excluded from saved-agent and ephemeral-session APIs in this preview. Existing inline MLLM sessions remain supported, but cannot use saving, secret references, or options that require the new session API. Unsupported combinations fail before HTTP.

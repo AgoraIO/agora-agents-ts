@@ -216,6 +216,9 @@ If you want to bring your own vendor credentials instead of using Agora-managed 
 
 ## MLLM (Realtime / Multimodal)
 
+MLLM is supported for existing inline sessions. Saved agents and ephemeral preview sessions support cascaded pipelines only; saving an MLLM configuration or using preview-only session options with it fails before HTTP.
+
+
 Use `withMllm()` for OpenAI Realtime, Gemini Live, Vertex AI, or xAI Grok — no STT, LLM, or TTS vendor needed. MLLM mode is enabled automatically.
 
 ```typescript

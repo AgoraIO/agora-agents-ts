@@ -66,11 +66,7 @@ const moved = [
     "template_variables",
     "turn_detection",
 ];
-export function toV3Module(
-    config: object,
-    kind: "asr" | "llm" | "tts" | "mllm" | "avatar",
-    errors: string[] = [],
-): Map {
+export function toV3Module(config: object, kind: "asr" | "llm" | "tts" | "avatar", errors: string[] = []): Map {
     const c = { ...config } as Map,
         params = { ...c.params };
     const path = `pipeline.${kind}`;
@@ -100,7 +96,6 @@ export function toV3Module(
             "headers",
         ],
         tts: ["vendor", "url", "headers", "skip_patterns"],
-        mllm: ["vendor", "url", "model", "input_modalities", "output_modalities", "mcp_servers", "headers"],
         avatar: ["vendor"],
     }[kind];
     leftovers(c, [...allowed, ...moved, "api_key", "params", "enable", "_minimaxPresetModel"], path, errors);
@@ -164,14 +159,9 @@ export function toV3Module(
     delete params.api_base_url;
     const result = clean(Object.fromEntries(allowed.map((key) => [key, c[key]])));
     if (url !== undefined) result.url = url;
-    if ((kind === "llm" || kind === "mllm" || kind === "asr") && params.model !== undefined) {
+    if ((kind === "llm" || kind === "asr") && params.model !== undefined) {
         result.model = c.model ?? params.model;
         delete params.model;
-    }
-    if (kind === "mllm") {
-        if (params.instructions !== undefined && typeof params.instructions !== "string")
-            errors.push(`${path}.params.instructions`);
-        delete params.instructions;
     }
     if (kind === "tts" && c._minimaxPresetModel !== undefined) params.model = c._minimaxPresetModel;
     if (kind === "avatar") {
@@ -198,38 +188,7 @@ function interruption(c: Map): Map {
         };
     return { mode: "start_of_speech" };
 }
-function turns(c: Map, realtime: boolean, errors: string[]): Map {
-    if (realtime) {
-        leftovers(
-            c,
-            [
-                "type",
-                "mode",
-                "agora_vad_config",
-                "server_vad_config",
-                "semantic_vad_config",
-                "threshold",
-                "prefix_padding_ms",
-                "silence_duration_ms",
-                "create_response",
-                "interrupt_response",
-                "eagerness",
-            ],
-            "turnDetection",
-            errors,
-        );
-        return clean({
-            ...c,
-            type: c.type ?? c.mode,
-            mode: undefined,
-            ...c.agora_vad_config,
-            ...c.server_vad_config,
-            ...c.semantic_vad_config,
-            agora_vad_config: undefined,
-            server_vad_config: undefined,
-            semantic_vad_config: undefined,
-        });
-    }
+function turns(c: Map, errors: string[]): Map {
     leftovers(c, ["mode", "config", "language"], "turnDetection", errors);
     const config = c.config ?? {},
         result: Map = clean({ speech_threshold: config.speech_threshold });
@@ -343,25 +302,23 @@ export function buildV3Agent(
     for (const key of ["sal", "advancedFeatures", "geofence", "labels", "rtc", "pipelineId"] as const)
         if (config[key] !== undefined) errors.push(key);
     if (config.parameters) leftovers(config.parameters, ["silence_config"], "parameters", errors);
-    const realtime = config.mllm !== undefined;
-    if (realtime && config.turnDetection?.language !== undefined) errors.push("turnDetection.language");
-    if (realtime) for (const key of ["stt", "llm", "tts"] as const) if (config[key] !== undefined) errors.push(key);
-    const pipeline: Map = { mode: realtime ? "realtime" : "cascaded" };
+    if (config.mllm !== undefined)
+        throw new UnsupportedFieldError(["mllm (not available for saved or ephemeral preview sessions)"]);
+    const pipeline: Map = { mode: "cascaded" };
     for (const [key, kind] of [
         ["stt", "asr"],
         ["llm", "llm"],
         ["tts", "tts"],
-        ["mllm", "mllm"],
         ["avatar", "avatar"],
     ] as const)
         if (config[key]) pipeline[kind] = toV3Module(config[key]!, kind, errors);
-    if (!realtime && config.turnDetection?.language !== undefined) {
+    if (config.turnDetection?.language !== undefined) {
         // Language controls the interaction ASR, while provider-specific language
         // settings remain in params. Keep direct mapper callers lossless too.
         pipeline.asr ??= toV3Module({ vendor: config.client.area === Area.CN ? "fengming" : "ares" }, "asr", errors);
         pipeline.asr.language = config.turnDetection.language;
     }
-    const vendor: Map = config.mllm ?? config.llm ?? {};
+    const vendor: Map = config.llm ?? {};
     const body: Map = { agent_name: name, pipeline };
     const messages = vendor.system_messages ?? vendor.messages;
     if (messages !== undefined) {
@@ -375,8 +332,7 @@ export function buildV3Agent(
         if (other.length) body.messages = other;
     }
     if (body.instructions === undefined) {
-        if (realtime && typeof vendor.params?.instructions === "string") body.instructions = vendor.params.instructions;
-        else if (config.instructions !== undefined) body.instructions = config.instructions;
+        if (config.instructions !== undefined) body.instructions = config.instructions;
     }
     const vars: Map = {};
     if (vendor.template_variables && Object.keys(vendor.template_variables).length)
@@ -414,14 +370,12 @@ export function buildV3Agent(
         if (config.maxHistory !== undefined) errors.push("maxHistory");
     }
     const td = vendor.turn_detection ?? config.turnDetection;
-    if (td) pipeline.turn_detection = turns(td, realtime, errors);
+    if (td) pipeline.turn_detection = turns(td, errors);
     if (config.interruption) {
-        if (realtime) errors.push("interruption");
-        else pipeline.turn_detection = { ...pipeline.turn_detection, interruption: interruption(config.interruption) };
+        pipeline.turn_detection = { ...pipeline.turn_detection, interruption: interruption(config.interruption) };
     }
     if (config.parameters?.silence_config) {
-        if (realtime) errors.push("parameters.silence_config");
-        else pipeline.silence_config = { enabled: true, ...config.parameters.silence_config };
+        pipeline.silence_config = { enabled: true, ...config.parameters.silence_config };
     }
     if (config.fillerWords) {
         const f = config.fillerWords;
@@ -467,7 +421,7 @@ function credentialFieldNames(kind: string, vendor?: string): string[] {
 /** Explicitly clear readable stale keys under standard JSON merge-patch semantics. */
 export function redeployPatch(previous: V3.AgentResponse, desired: V3.AgentCreateRequest): V3.AgentPatchRequest {
     const merge = (old: Map, next: Map, path = ""): Map => {
-        const module = /^pipeline\.(asr|llm|tts|mllm|avatar)$/.test(path);
+        const module = /^pipeline\.(asr|llm|tts|avatar)$/.test(path);
         const result: Map = { ...next };
         for (const [key, value] of Object.entries(old)) {
             // Resolved credentials contain read-only metadata; never echo or diff it.
@@ -515,7 +469,7 @@ export async function deployAgent(
     const invalid = validateContract(body, contract.AgentRequest_AgentCreateInput, "agent");
     if (invalid.length) throw new UnsupportedFieldError(invalid);
     for (const [kind, module] of Object.entries(body.pipeline ?? {})) {
-        if (object(module) && module.credential?.mode === "byok") {
+        if (object(module) && "credential" in module && module.credential?.mode === "byok") {
             for (const value of Object.values(module.credential.fields ?? {}))
                 if (typeof value !== "string" || !/^\$secrets\.[A-Za-z0-9_]{1,64}\.[A-Za-z0-9_]{1,64}$/.test(value))
                     throw new Error(

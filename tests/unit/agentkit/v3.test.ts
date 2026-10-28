@@ -11,6 +11,7 @@ import {
     UnsupportedSessionOperationError,
     type SaveOptions,
     OpenAI,
+    OpenAITTS,
     OpenAIRealtime,
     PreconditionFailedError,
     SecretRefNotSupportedError,
@@ -231,76 +232,25 @@ describe("v3 preview", () => {
         expect(body(fetch, 1).pipeline.llm.params.instructions).toBe("Provider-specific setting");
         expect(body(fetch, 1).pipeline).not.toHaveProperty("asr");
     });
-    it("preserves realtime instructions alongside conversation messages", async () => {
-        const { client, fetch } = setup([response(saved()), response(saved())]);
-        const agent = new Agent({ client, instructions: "Agent fallback" }).withMllm(
-            new OpenAIRealtime({
-                apiKey: secretRef("prod", "key"),
-                model: "gpt-realtime",
-                instructions: "Keep answers concise",
-                messages: [{ role: "user", content: "Hi" }],
-            }),
+    it("rejects realtime saved and ephemeral configurations before HTTP", () => {
+        const { client, fetch } = setup();
+        const config = new Agent({ client }).withMllm(new OpenAIRealtime({ apiKey: "inline", model: "gpt-realtime" }));
+        expect(() => config.save()).toThrow("mllm");
+        expect(() =>
+            config.withVariable("name", { type: "str" }).createSession({ channel: "room", remoteUids: ["2"] }),
+        ).toThrow("mllm");
+        expect(() => config.createSession({ channel: "room", remoteUids: ["2"], idempotencyKey: "key" })).toThrow(
+            "mllm",
         );
-        await agent.deploy({ name: "Conversation" });
-        expect(body(fetch).instructions).toBe("Keep answers concise");
-        expect(body(fetch).messages).toEqual([{ role: "user", content: "Hi" }]);
-        expect(body(fetch).pipeline.mllm.params ?? {}).not.toHaveProperty("instructions");
-        await new Agent({ client })
-            .withMllm(
-                new OpenAIRealtime({
-                    apiKey: secretRef("prod", "key"),
-                    instructions: "Vendor fallback",
-                    messages: [
-                        { role: "system", content: "System wins" },
-                        { role: "user", content: "Hi" },
-                    ],
-                }),
-            )
-            .deploy({ name: "System" });
-        expect(body(fetch, 1).instructions).toBe("System wins");
-        expect(body(fetch, 1).messages).toEqual([{ role: "user", content: "Hi" }]);
+        expect(() =>
+            config
+                .withMllm(new OpenAIRealtime({ apiKey: secretRef("prod", "key") }))
+                .createSession({ channel: "room", remoteUids: ["2"] }),
+        ).toThrow("mllm");
+        expect(fetch).not.toHaveBeenCalled();
     });
-
-    it("promotes public realtime vendor instructions without adding an ASR module", async () => {
-        const { client, fetch } = setup([response(saved())]);
-        await new Agent({ client, instructions: "Agent fallback" })
-            .withMllm(
-                new OpenAIRealtime({
-                    apiKey: secretRef("prod", "key"),
-                    model: "gpt-realtime",
-                    instructions: "Realtime instructions",
-                }),
-            )
-            .deploy({ name: "Realtime" });
-        expect(body(fetch).instructions).toBe("Realtime instructions");
-        expect(body(fetch).pipeline.mode).toBe("realtime");
-        expect(body(fetch).pipeline).not.toHaveProperty("asr");
-        expect(body(fetch).pipeline.mllm.params ?? {}).not.toHaveProperty("instructions");
-    });
-    it("maps realtime, greeting, turn detection, filler and silence", () => {
+    it("maps greeting, turn detection, filler and silence", () => {
         const { client } = setup();
-        const realtime = buildV3Agent(
-            {
-                client,
-                mllm: {
-                    vendor: "openai",
-                    api_key: "key",
-                    params: { model: "gpt-realtime", instructions: "Realtime vendor instructions" },
-                    turn_detection: { mode: "agora_vad", agora_vad_config: { threshold: 0.5 } },
-                },
-            },
-            {},
-            "Live",
-        );
-        expect(realtime.instructions).toBe("Realtime vendor instructions");
-        expect((realtime.pipeline?.mode === "realtime" && realtime.pipeline.mllm?.params) || {}).not.toHaveProperty(
-            "instructions",
-        );
-        expect(realtime.pipeline).toMatchObject({
-            mode: "realtime",
-            mllm: { credential: { mode: "byok", fields: { api_key: "key" } } },
-            turn_detection: { type: "agora_vad", threshold: 0.5 },
-        });
         const cascade = buildV3Agent(
             {
                 client,
@@ -533,23 +483,27 @@ describe("configuration lifecycle", () => {
             response({ ...number(), inbound: { agent: "agent-1" } }),
             response(page([{ ...number(), inbound: { agent: "agent-1" } }])),
         ]);
-        const config = new Agent({ client }).withMllm(
-            new OpenAIRealtime({
-                apiKey: "inline-key",
-                model: "gpt-realtime",
-                instructions: "Help callers",
-            }),
-        );
+        const config = new Agent({ client })
+            .withLlm(
+                new OpenAI({
+                    apiKey: "inline-key",
+                    url: "https://api.openai.com/v1/chat/completions",
+                    model: "gpt-4o-mini",
+                    instructions: "Help callers",
+                }),
+            )
+            .withTts(new OpenAITTS({ voice: "alloy" }));
         const original = config.config;
         const session = config.createSession({ channel: "room", agentUid: "1", remoteUids: ["*"], token: "rtc-token" });
         expect(await session.start()).toBe("running-1");
         expect(request(fetch).url).toContain("/join");
         const options: SaveOptions = { name: "Support" };
         await expect(config.save(options)).rejects.toThrow();
-        const persistedConfig = config.withMllm(
-            new OpenAIRealtime({
+        const persistedConfig = config.withLlm(
+            new OpenAI({
                 apiKey: secretRef("support", "key"),
-                model: "gpt-realtime",
+                url: "https://api.openai.com/v1/chat/completions",
+                model: "gpt-4o-mini",
                 instructions: "Help callers",
             }),
         );
@@ -624,28 +578,7 @@ describe("configuration lifecycle", () => {
         expect(first.fetch).toHaveBeenCalledTimes(1);
         expect(second.fetch).not.toHaveBeenCalled();
     });
-    it("rejects realtime interaction language even when vendor turn settings override it", () => {
-        const { client, fetch } = setup();
-        const config = new Agent({ client })
-            .withMllm(
-                new OpenAIRealtime({
-                    apiKey: "key",
-                    model: "gpt-realtime",
-                    turnDetection: { mode: "server_vad" },
-                }),
-            )
-            .withTurnDetection({ language: "ja-JP" });
-        expect(() => config.save()).toThrow(UnsupportedFieldError);
-        try {
-            config.save();
-        } catch (error) {
-            expect((error as UnsupportedFieldError).fields).toContain("turnDetection.language");
-        }
-        expect(fetch).not.toHaveBeenCalled();
-    });
-});
 
-describe("stored and ephemeral session adapters", () => {
     it("starts a saved identity, reads its real session ID, and stops with no body", async () => {
         const { client, fetch } = setup([
             response(saved()),
@@ -703,10 +636,11 @@ describe("stored and ephemeral session adapters", () => {
             response({}),
         ]);
         const config = new Agent({ client })
-            .withMllm(
-                new OpenAIRealtime({
+            .withLlm(
+                new OpenAI({
                     apiKey: secretRef("support", "key"),
-                    model: "gpt-realtime",
+                    url: "https://api.openai.com/v1/chat/completions",
+                    model: "gpt-4o-mini",
                     instructions: "Help",
                 }),
             )
@@ -719,7 +653,7 @@ describe("stored and ephemeral session adapters", () => {
         expect(body(fetch).agent).not.toHaveProperty("agent_name");
         expect(body(fetch)).not.toHaveProperty("agent_id");
         expect(body(fetch).agent.variables).toEqual({ resolved: { type: "bool" } });
-        expect(body(fetch).agent.pipeline.mllm.credential.fields.api_key).toBe("$secrets.support.key");
+        expect(body(fetch).agent.pipeline.llm.credential.fields.api_key).toBe("$secrets.support.key");
         expect(config.config).toEqual(before);
         for (const call of [
             () => session.say("Hi"),

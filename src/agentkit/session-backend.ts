@@ -88,10 +88,8 @@ export function createStoredSession(
             const input = config as Record<string, any>;
             if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Invalid session update");
             for (const key of Object.keys(input))
-                if (!["token", "messages", "llm", "mllm"].includes(key))
+                if (!["token", "messages", "llm"].includes(key))
                     throw new Error(`Unsupported session update field: ${key}`);
-            if (input.llm?.params !== undefined && input.mllm?.params !== undefined)
-                throw new Error("Update one active model pipeline at a time");
             if (input.messages !== undefined && input.llm?.system_messages !== undefined)
                 throw new Error("Provide messages or llm.system_messages, not both");
             const patch: Record<string, any> = {};
@@ -115,7 +113,7 @@ export function createStoredSession(
                     throw new Error("Invalid session messages");
                 overrides.messages = messages;
             }
-            for (const kind of ["llm", "mllm"])
+            for (const kind of ["llm"])
                 if (input[kind] !== undefined) {
                     const module = input[kind];
                     if (

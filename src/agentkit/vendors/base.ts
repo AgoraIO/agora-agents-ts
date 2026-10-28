@@ -304,14 +304,6 @@ abstract class ScopedBaseMLLM<TScope extends VendorScope> {
      * Converts the vendor configuration to the Agora API format.
      */
     abstract toConfig(): MllmConfig;
-
-    /** Internal v3 serialization; deployment performs complete contract validation. */
-    toV3Module(): Record<string, unknown> {
-        const errors: string[] = [];
-        const module = toV3Module(this.toConfig(), "mllm", errors);
-        if (errors.length) throw new UnsupportedFieldError(errors);
-        return module;
-    }
 }
 
 /** Base class for global MLLM vendors. */

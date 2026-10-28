@@ -6,6 +6,7 @@ import {
     AmazonBedrock,
     AmazonSTT,
     AmazonTTS,
+    OpenAI,
     OpenAIRealtime,
     SavedAgent,
     secretRef,
@@ -90,7 +91,9 @@ describe("latest public contract", () => {
     });
     it("rejects inline saved credentials but accepts the same builder for ephemeral sessions with automatic UID", async () => {
         const { client, fetch } = setup([response(started)]);
-        const config = new Agent({ client }).withMllm(new OpenAIRealtime({ apiKey: "inline", model: "gpt-realtime" }));
+        const config = new Agent({ client }).withLlm(
+            new OpenAI({ apiKey: "inline", url: "https://api.openai.com/v1/chat/completions", model: "gpt-4o-mini" }),
+        );
         await expect(config.save()).rejects.toThrow();
         expect(fetch).not.toHaveBeenCalled();
         const session = config
@@ -98,7 +101,7 @@ describe("latest public contract", () => {
             .createSession({ channel: "room", remoteUids: ["user"], values: { name: "Ada" } });
         await session.start();
         expect(body(fetch).transport).not.toHaveProperty("uid");
-        expect(body(fetch).agent.pipeline.mllm.credential).toEqual({ mode: "byok", fields: { api_key: "inline" } });
+        expect(body(fetch).agent.pipeline.llm.credential).toEqual({ mode: "byok", fields: { api_key: "inline" } });
     });
     it("clears known credential names when switching providers, and fields entirely for managed", () => {
         const previous = {
@@ -155,14 +158,14 @@ describe("latest public contract", () => {
         await session.update({
             token: "renewed",
             messages: [{ role: "system", content: "New instructions" }],
-            mllm: { params: { temperature: 0.5 } },
+            llm: { params: { temperature: 0.5 } },
         });
         expect(body(fetch, 2)).toEqual({
             transport: { token: "renewed" },
             agent: {
                 overrides: {
                     messages: [{ role: "system", content: "New instructions" }],
-                    pipeline: { mllm: { params: { temperature: 0.5 } } },
+                    pipeline: { llm: { params: { temperature: 0.5 } } },
                 },
             },
         });
@@ -197,22 +200,29 @@ describe("latest public contract", () => {
         await expect(session.update({ ...update, llm: { system_messages: [] } })).rejects.toThrow("not both");
         expect(fetch).toHaveBeenCalledTimes(2);
     });
-    it("keeps legacy system messages alongside realtime params updates", async () => {
-        const { client, fetch } = setup([response(saved), response(started), response(started)]);
+    it("rejects realtime updates on saved sessions before HTTP", async () => {
+        const { client, fetch } = setup([response(saved), response(started)]);
         const session = (await SavedAgent.get(client, "saved")).createSession({ channel: "room", remoteUids: ["2"] });
         await session.start();
-        await session.update({
-            llm: { system_messages: [{ role: "system", content: "Be brief" }] },
-            mllm: { params: { temperature: 0.4 } },
-        });
-        expect(body(fetch, 2)).toEqual({
-            agent: {
-                overrides: {
-                    messages: [{ role: "system", content: "Be brief" }],
-                    pipeline: { mllm: { params: { temperature: 0.4 } } },
-                },
-            },
-        });
+        await expect(session.update({ mllm: { params: { temperature: 0.4 } } })).rejects.toThrow("mllm");
+        expect(fetch).toHaveBeenCalledTimes(2);
+    });
+    it("rejects low-level realtime payloads before HTTP", async () => {
+        const { client, fetch } = setup();
+        for (const pipeline of [{ mode: "realtime" }, { mllm: { params: {} } }]) {
+            await expect(client.v3.agents.create({ agent_name: "test", pipeline } as any)).rejects.toThrow("MLLM");
+            await expect(client.v3.agents.update({ id: "agent", pipeline } as any)).rejects.toThrow("MLLM");
+            await expect(
+                client.v3.sessions.startEphemeral({
+                    agent: { pipeline },
+                    transport: { type: "rtc", channel: "room", subscribe_uids: ["2"] },
+                } as any),
+            ).rejects.toThrow("MLLM");
+            await expect(
+                client.v3.sessions.update({ agentSessionId: "session", agent: { overrides: { pipeline } } } as any),
+            ).rejects.toThrow("MLLM");
+        }
+        expect(fetch).not.toHaveBeenCalled();
     });
     it("exposes typed session PATCH errors without retries", async () => {
         const { client, fetch } = setup([response({ reason: "TaskConflict" }, 409)]);

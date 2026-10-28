@@ -12,7 +12,7 @@ export type AgentResponse = {
     messages?: Array<Message> | null;
     greeting?: (TextGreeting | AudioGreeting) | null;
     variables?: { [key: string]: VariableDefinition } | null;
-    pipeline?: ResolvedCascadedPipeline | ResolvedRealtimePipeline | null;
+    pipeline?: ResolvedCascadedPipeline | null;
     filler_words?: FillerWords | null;
 };
 export type AsrInput = {
@@ -254,7 +254,7 @@ export type PublicAgentInput = {
     messages?: Array<Message> | null;
     greeting?: (TextGreeting | AudioGreeting) | null;
     variables?: { [key: string]: VariableDefinition } | null;
-    pipeline?: CascadedPipelineInput | RealtimePipelineInput | null;
+    pipeline?: CascadedPipelineInput | null;
     filler_words?: FillerWords | null;
 };
 export type PublicByokCredential = { mode: "byok"; fields: { [key: string]: string } };
@@ -371,7 +371,7 @@ export type SessionData = { count: number; list: Array<SessionSummary> };
 export type SessionList = { data: SessionData; has_more: boolean; next_cursor: string | null };
 export type SessionModulePatch = { params?: { [key: string]: JsonValue } };
 export type SessionPatch = { transport?: SessionTransportPatch; agent?: SessionAgentPatch };
-export type SessionPipelinePatch = { llm?: SessionModulePatch; mllm?: SessionModulePatch };
+export type SessionPipelinePatch = { llm?: SessionModulePatch };
 export type SessionResponse = {
     agent_session_id: string;
     agent_name?: string;
@@ -469,7 +469,7 @@ export type AgentRequest_AgentCreateInput = {
     messages?: Array<AgentRequest_Message> | null;
     greeting?: (AgentRequest_TextGreeting | AgentRequest_AudioGreeting) | null;
     variables?: { [key: string]: AgentRequest_VariableDefinition } | null;
-    pipeline?: AgentRequest_CascadedPipelineInput | AgentRequest_RealtimePipelineInput | null;
+    pipeline?: AgentRequest_CascadedPipelineInput | null;
     filler_words?: AgentRequest_FillerWords | null;
 };
 export type AgentRequest_AgentPatch = {
@@ -478,7 +478,7 @@ export type AgentRequest_AgentPatch = {
     messages?: Array<AgentRequest_Message> | null;
     greeting?: AgentRequest_GreetingPatch | null;
     variables?: { [key: string]: AgentRequest_VariableDefinitionPatch | null } | null;
-    pipeline?: AgentRequest_PipelinePatch | null;
+    pipeline?: AgentRequest_CascadedPipelinePatch | null;
     filler_words?: AgentRequest_FillerWordsPatch | null;
 };
 export type AgentRequest_AsrInput = {
@@ -755,129 +755,6 @@ export type InboundEndCallPolicy = {
     on_voicemail?: boolean;
     on_ai_assistant?: boolean;
     on_fax?: boolean;
-};
-export type AgoraVadTurnDetection = {
-    type: "agora_vad";
-    interrupt_duration_ms?: number;
-    prefix_padding_ms?: number;
-    silence_duration_ms?: number;
-    threshold?: number;
-};
-export type AgentRequest_AgoraVadTurnDetectionPatch = {
-    type?: "agora_vad" | null;
-    interrupt_duration_ms?: number | null;
-    prefix_padding_ms?: number | null;
-    silence_duration_ms?: number | null;
-    threshold?: number | null;
-};
-export type ServerVadTurnDetection = {
-    type: "server_vad";
-    prefix_padding_ms?: number;
-    silence_duration_ms?: number;
-    threshold?: number;
-    idle_timeout_ms?: number;
-    start_of_speech_sensitivity?: "START_SENSITIVITY_HIGH" | "START_SENSITIVITY_LOW";
-    end_of_speech_sensitivity?: "END_SENSITIVITY_HIGH" | "END_SENSITIVITY_LOW";
-};
-export type AgentRequest_ServerVadTurnDetectionPatch = {
-    type?: "server_vad" | null;
-    prefix_padding_ms?: number | null;
-    silence_duration_ms?: number | null;
-    threshold?: number | null;
-    idle_timeout_ms?: number | null;
-    start_of_speech_sensitivity?: "START_SENSITIVITY_HIGH" | "START_SENSITIVITY_LOW" | null;
-    end_of_speech_sensitivity?: "END_SENSITIVITY_HIGH" | "END_SENSITIVITY_LOW" | null;
-};
-export type SemanticVadTurnDetection = { type: "semantic_vad"; eagerness?: "auto" | "low" | "medium" | "high" };
-export type AgentRequest_SemanticVadTurnDetectionPatch = {
-    type?: "semantic_vad" | null;
-    eagerness?: "auto" | "low" | "medium" | "high" | null;
-};
-export type RealtimeTurnDetection = AgoraVadTurnDetection | ServerVadTurnDetection | SemanticVadTurnDetection;
-export type AgentRequest_RealtimeTurnDetectionPatch =
-    | AgentRequest_AgoraVadTurnDetectionPatch
-    | AgentRequest_ServerVadTurnDetectionPatch
-    | AgentRequest_SemanticVadTurnDetectionPatch;
-export type AgentRequest_MllmInput = {
-    mcp_servers?: Array<AgentRequest_McpServer> | null;
-    credential?: (AgentRequest_ManagedCredential | AgentRequest_PublicByokCredential) | null;
-    vendor: string;
-    params?: AgentRequest_JSONObject | null;
-    url?: string | null;
-    model?: string | null;
-    headers?: { [key: string]: string } | null;
-    input_modalities?: Array<"text" | "audio"> | null;
-    output_modalities?: Array<"text" | "audio"> | null;
-};
-export type MllmInput = {
-    mcp_servers?: Array<McpServer> | null;
-    credential?: (ManagedCredential | PublicByokCredential) | null;
-    vendor: string;
-    params?: JSONObject | null;
-    url?: string | null;
-    model?: string | null;
-    headers?: { [key: string]: string } | null;
-    input_modalities?: Array<"text" | "audio"> | null;
-    output_modalities?: Array<"text" | "audio"> | null;
-};
-export type AgentRequest_MllmPatch = {
-    mcp_servers?: Array<AgentRequest_McpServer> | null;
-    credential?: AgentRequest_MllmCredentialPatch | null;
-    vendor?: string | null;
-    params?: AgentRequest_JSONObject | null;
-    url?: string | null;
-    model?: string | null;
-    headers?: { [key: string]: string } | null;
-    input_modalities?: Array<"text" | "audio"> | null;
-    output_modalities?: Array<"text" | "audio"> | null;
-};
-export type ResolvedMllm = {
-    credential?: ResolvedCredential | null;
-    url?: string | null;
-    vendor?: string | null;
-    model?: string | null;
-    params?: { [key: string]: JsonValue } | null;
-    input_modalities?: Array<"text" | "audio"> | null;
-    output_modalities?: Array<"text" | "audio"> | null;
-    mcp_servers?: Array<McpServer> | null;
-};
-export type AgentRequest_MllmCredentialPatch = {
-    mode?: "managed" | "byok" | null;
-    fields?: { [key: string]: string | null } | null;
-};
-export type AgentRequest_RealtimePipelineInput = {
-    mode: "realtime";
-    avatar?: AgentRequest_AvatarInput | null;
-    turn_detection?: RealtimeTurnDetection | null;
-    mllm?: AgentRequest_MllmInput | null;
-};
-export type RealtimePipelineInput = {
-    mode: "realtime";
-    avatar?: AvatarInput | null;
-    turn_detection?: RealtimeTurnDetection | null;
-    mllm?: MllmInput | null;
-};
-export type ResolvedRealtimePipeline = {
-    mode: "realtime";
-    avatar?: ResolvedAvatar | null;
-    turn_detection?: RealtimeTurnDetection | null;
-    mllm?: ResolvedMllm | null;
-};
-export type AgentRequest_RealtimePipelinePatch = {
-    mode?: "realtime" | null;
-    avatar?: AgentRequest_AvatarPatch | null;
-    turn_detection?: AgentRequest_RealtimeTurnDetectionPatch | null;
-    mllm?: AgentRequest_MllmPatch | null;
-};
-export type AgentRequest_PipelinePatch = {
-    mode?: "cascaded" | "realtime" | null;
-    avatar?: AgentRequest_AvatarPatch | null;
-    turn_detection?: AgentRequest_CascadedTurnDetectionPatch | AgentRequest_RealtimeTurnDetectionPatch | null;
-    asr?: AgentRequest_AsrPatch | null;
-    tts?: AgentRequest_TtsPatch | null;
-    llm?: AgentRequest_LlmPatch | null;
-    silence_config?: AgentRequest_SilenceConfigPatch | null;
-    mllm?: AgentRequest_MllmPatch | null;
 };
 
 export type {

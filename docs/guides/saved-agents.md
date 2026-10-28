@@ -7,14 +7,14 @@ description: Configure once, start a conversation or save the configuration, the
 
 `Agent` is an immutable configuration builder. Choose `createSession()` for an idle session that you start, or `await save()` for a saved configuration. Continue with the returned session or `SavedAgent` handle. Saving never starts a conversation.
 
-Saving, ephemeral sessions, and project provisioning require this preview checkout. Configure a client with app credentials or `authToken`; [public transport setup](./v3-preview.md#1-configure-client) needs no internal gateway headers.
+Saving and ephemeral sessions support cascaded pipelines only; MLLM remains available for existing inline sessions. Saving, ephemeral sessions, and project provisioning require this preview checkout. Configure a client with app credentials or `authToken`; [public transport setup](./v3-preview.md#1-configure-client) needs no internal gateway headers.
 
 ```ts
-import { Agent, AgoraClient, Area, OpenAIRealtime, SavedAgent, secretRef } from 'agora-agents';
+import { Agent, AgoraClient, Area, OpenAI, SavedAgent, secretRef } from 'agora-agents';
 const client = new AgoraClient({ area: Area.US, appId: process.env.AGORA_APP_ID!, appCertificate: process.env.AGORA_APP_CERTIFICATE! });
 await client.secrets.create({ name: 'support', secrets: { openai: process.env.OPENAI_API_KEY! } });
-const config = new Agent({ client }).withMllm(new OpenAIRealtime({
-  apiKey: secretRef('support', 'openai'), model: 'gpt-realtime', instructions: 'Help callers briefly.',
+const config = new Agent({ client }).withLlm(new OpenAI({
+  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', instructions: 'Help callers briefly.',
 }));
 const session = config.createSession({ channel: 'room', agentUid: '1002', remoteUids: ['1001'] });
 await session.start();
@@ -27,8 +27,8 @@ Ordinary inline sessions retain their existing transport and conversation contro
 ## Update, load, and assign numbers
 
 ```ts
-const revised = config.withMllm(new OpenAIRealtime({
-  apiKey: secretRef('support', 'openai'), model: 'gpt-realtime', instructions: 'Ask one question at a time.',
+const revised = config.withLlm(new OpenAI({
+  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', instructions: 'Ask one question at a time.',
 }));
 const updated = await saved.update(revised);
 const loaded = await SavedAgent.get(client, updated.id);
@@ -46,8 +46,8 @@ Use an authorized number/trunk and a complete supported pipeline. Assignment doe
 
 ```ts
 await client.secrets.create({ name: 'support', secrets: { openai: process.env.OPENAI_API_KEY! } });
-const referenced = config.withMllm(new OpenAIRealtime({
-  apiKey: secretRef('support', 'openai'), model: 'gpt-realtime', instructions: 'Help {{customer}}.',
+const referenced = config.withLlm(new OpenAI({
+  apiKey: secretRef('support', 'openai'), url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini', instructions: 'Help {{customer}}.',
 })).withVariable('customer', { type: 'str', required: true });
 const ephemeral = referenced.createSession({
   channel: 'ephemeral-room', agentUid: '1002', remoteUids: ['1001'],
@@ -91,11 +91,11 @@ Retention `none` disables stored recordings/transcripts/turns and extraction; it
 await fromSaved.update({
   token: 'renewed-rtc-token',
   messages: [{ role: 'system', content: 'Keep replies concise.' }],
-  mllm: { params: { temperature: 0.5 } },
+  llm: { params: { temperature: 0.5 } },
 });
 ```
 
-Use `llm.params` for cascaded models or `mllm.params` for realtime models; each supplied params object **replaces** the current provider params, so include settings you want to retain. `messages` replaces the conversation message list; the existing `llm.system_messages` spelling also maps to that field for saved/ephemeral sessions. Endpoint aliases (`url`, `base_url`, `api_base_url`, `endpoint`) cannot change at runtime. The same `messages` option works with existing inline sessions, where the SDK maps it to `llm.system_messages`; original `update({token,llm,mllm})` calls retain their behavior. Updates require a running session and propagate backend errors.
+Use `llm.params` for cascaded models; each supplied params object **replaces** the current provider params, so include settings you want to retain. `messages` replaces the conversation message list; the existing `llm.system_messages` spelling also maps to that field for saved/ephemeral sessions. Endpoint aliases (`url`, `base_url`, `api_base_url`, `endpoint`) cannot change at runtime. The same `messages` option works with existing inline sessions, where the SDK maps it to `llm.system_messages`; legacy MLLM sessions retain their existing update behavior. Saved and ephemeral preview sessions reject MLLM updates. Updates require a running session and propagate backend errors.
 
 ## Campaigns and advanced access
 
