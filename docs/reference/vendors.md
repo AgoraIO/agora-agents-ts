@@ -651,7 +651,7 @@ Chinese mainland Alibaba Cloud Qwen Omni Realtime wrapper. It emits `mllm.vendor
 
 ## Avatar vendors
 
-AgentKit auto-fills `agora_token` only for vendors that publish a separate RTC video identity: `HeyGenAvatar`, `LiveAvatarAvatar`, `GenericAvatar`, `SensetimeAvatar`, and `SpatiusAvatar`. When `agoraToken` is omitted on those vendors, AgentKit generates it at `session.start()` from the session App ID, channel, app certificate, and avatar `agoraUid`. Avatar tokens use the same ConvoAI token format as agent tokens, scoped to the avatar UID. Explicit `agoraToken` values are preserved. `AkoolAvatar` and `AnamAvatar` never receive an auto-generated token (the avatar provider handles publishing). Use `isAvatarTokenManaged(avatar)` to check whether a config is in the managed group.
+AgentKit auto-fills `agora_token` only for vendors that publish a separate RTC video identity: `HeyGenAvatar`, `LiveAvatarAvatar`, `GenericAvatar`, `Tavus`, `Protoface`, `LemonSlice`, `SensetimeAvatar`, and `SpatiusAvatar`. When `agoraToken` is omitted on those vendors, AgentKit generates it at `session.start()` from the session App ID, channel, app certificate, and avatar `agoraUid`. Avatar tokens use the same ConvoAI token format as agent tokens, scoped to the avatar UID. Explicit `agoraToken` values are preserved. `AkoolAvatar` and `AnamAvatar` never receive an auto-generated token (the avatar provider handles publishing). Use `isAvatarTokenManaged(avatar)` to check whether a config is in the managed group.
 
 ### HeyGenAvatar
 
@@ -761,6 +761,20 @@ Generic avatars can omit `agoraAppId`, `agoraChannel`, and `agoraToken`. AgentKi
 | `agoraChannel` | `string` | No | Agora channel override |
 | `agoraToken` | `string` | No | Avatar token override |
 | `enable` | `boolean` | No | Enable/disable the avatar (default: true) |
+
+### Branded generic providers
+
+These branded wrappers reuse `GenericAvatar`, serialize with `vendor: "generic"`, and share its session field and token auto-fill behavior. `apiKey` and `agoraUid` remain required. Tavus and Protoface also require `avatarId`. Explicit `apiBaseUrl` overrides remain supported; `GenericAvatar` itself still requires an endpoint.
+
+| Provider | Default `apiBaseUrl` | Default `avatarId` |
+|---|---|---|
+| `Tavus` | `https://tavusapi.com/v2/conversations/agora` | Required |
+| `Protoface` | `https://api.protoface.com/v1/agora` | Required |
+| `LemonSlice` | `https://lemonslice.com/api/liveai/agora` | `lemonslice` |
+
+LemonSlice recommends the fixed `avatarId: 'lemonslice'`; explicit overrides are retained for backwards compatibility. Its `LemonSliceOptions` accepts optional `agentId`, `agentImageUrl`, `agentImageBase64`, and `aspectRatio`. These serialize directly as `agent_id`, `agent_image_url`, `agent_image_base64`, and `aspect_ratio` inside `avatar.params`.
+
+Supply exactly one nonempty string selector among `agentId`, `agentImageUrl`, and `agentImageBase64`, or their snake_case keys in `additionalParams`. Validation uses the final merged parameters; explicitly supplied typed fields override matching additional parameters. Empty, whitespace-only, and nonstring selectors are rejected, including malformed alternative selectors. Inputs are not mutated. `aspectRatio` (or `additionalParams.aspect_ratio`) accepts only `2x3`, `9x16`, or `1x1`. When unset it is omitted, allowing the provider default `2x3`.
 
 ## CN vendors
 
