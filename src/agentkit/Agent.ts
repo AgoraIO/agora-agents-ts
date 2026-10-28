@@ -1,4 +1,4 @@
-import { createStoredSession } from "./session-backend.js";
+import { callSessionOptions, createStoredSession } from "./session-backend.js";
 import {
     assertNoSecretRefs,
     buildV3Agent,
@@ -829,10 +829,12 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
 
     /** Create an outbound phone-call session from this unsaved configuration. */
     call(options: CallOptions): AgentSession {
-        return this._createPlatformSession(
-            { ...options, channel: "", remoteUids: [] },
-            { type: "telephony", from: options.from, to: options.to, call_policy: options.callPolicy },
-        );
+        return this._createPlatformSession(callSessionOptions(options), {
+            type: "telephony",
+            from: options.from,
+            to: options.to,
+            call_policy: options.callPolicy,
+        });
     }
 
     private _createPlatformSession(

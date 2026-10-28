@@ -5,7 +5,7 @@ import type { AgentCreateRequest, SessionStartOptions, TelephonyTransport } from
 import type { Agent } from "./Agent.js";
 import { AgentSession } from "./AgentSession.js";
 import { ExpiresIn, generateConvoAIToken, generateRtcTokenWithAccount } from "./token.js";
-import type { AgentConfigUpdate, SessionInfo, SessionOptions } from "./types.js";
+import type { AgentConfigUpdate, CallOptions, SessionInfo, SessionOptions } from "./types.js";
 
 export interface SessionBackend {
     start(): Promise<{ id: string; status: "starting" | "running" }>;
@@ -19,6 +19,25 @@ export class UnsupportedSessionOperationError extends Error {
         this.name = "UnsupportedSessionOperationError";
     }
 }
+/** Validate mixed transports before replacing internal RTC placeholders. */
+export function callSessionOptions(options: CallOptions): SessionOptions {
+    for (const key of [
+        "channel",
+        "remoteUids",
+        "agentUid",
+        "token",
+        "encryption",
+        "audioScenario",
+        "geofence",
+        "enableStringUid",
+        "expiresIn",
+    ] as const) {
+        if ((options as unknown as Record<string, unknown>)[key] !== undefined)
+            throw new Error(`Phone calls do not accept RTC option ${key}`);
+    }
+    return { ...options, channel: "", remoteUids: [] };
+}
+
 export function createStoredSession(
     client: AgoraClient,
     options: SessionOptions,

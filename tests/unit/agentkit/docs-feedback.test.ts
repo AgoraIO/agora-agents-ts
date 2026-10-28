@@ -282,4 +282,16 @@ describe("Platform docs feedback", () => {
             signing.mockRestore();
         }
     });
+    it("rejects mixed RTC and phone options before replacing transport placeholders", () => {
+        const { client, fetch } = setup();
+        const config = new Agent({ client });
+        const saved = new SavedAgent(client, { agent_id: "saved", agent_name: "Support" } as never, '"1"');
+        for (const handle of [config, saved])
+            for (const extra of [{ channel: "room" }, { remoteUids: ["2"] }, { expiresIn: 60 }]) {
+                expect(() => handle.call({ from: "number", to: "+12025550123", ...extra } as never)).toThrow(
+                    "RTC option",
+                );
+            }
+        expect(fetch).not.toHaveBeenCalled();
+    });
 });

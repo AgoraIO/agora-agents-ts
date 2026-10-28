@@ -6,7 +6,7 @@ import { PreconditionFailedError } from "../v3/transport.js";
 import type * as V3 from "../v3/types.js";
 import type { Agent, AgentOptions } from "./Agent.js";
 import type { AgentSession } from "./AgentSession.js";
-import { createStoredSession } from "./session-backend.js";
+import { callSessionOptions, createStoredSession } from "./session-backend.js";
 import type { CallOptions, LlmConfig, MllmConfig, SessionOptions, SttConfig, TtsConfig } from "./types.js";
 
 export type SecretRef = string & { readonly __secretRef: unique symbol };
@@ -551,13 +551,12 @@ export class SavedAgent {
     }
     /** Create an outbound phone-call session using this saved agent. */
     call(options: CallOptions): AgentSession {
-        return createStoredSession(
-            this.client,
-            { ...options, channel: "", remoteUids: [] },
-            { agent_id: this.id },
-            undefined,
-            { type: "telephony", from: options.from, to: options.to, call_policy: options.callPolicy },
-        );
+        return createStoredSession(this.client, callSessionOptions(options), { agent_id: this.id }, undefined, {
+            type: "telephony",
+            from: options.from,
+            to: options.to,
+            call_policy: options.callPolicy,
+        });
     }
     /** Save a revised configuration to this stored identity, preserving its name by default. */
     update(config: Agent, options: { name?: string } = {}): Promise<SavedAgent> {
