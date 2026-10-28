@@ -70,16 +70,14 @@ Names are not unique. `save()` without an ID creates another agent; persist the 
 | Configuration | Stored representation |
 |---|---|
 | ASR/LLM/TTS vendors | Cascaded pipeline |
-| Realtime vendor | Realtime pipeline; no cascaded mixture |
 | Provider credentials / secret references | Vendor-specific `credential.fields`; saved writes require references, ephemeral input permits inline values |
 | Provider without a key | Managed credential; omit URLs |
 | Vendor system messages | Joined instructions; other messages retained |
-| Realtime vendor instructions | Fallback unless system messages supplied instructions |
 | Greeting, modern turn boundaries, interruption | Structured greeting and turn detection |
 | Static/generated filler | Flattened trigger/content |
 | Supported avatars | Akool, LiveAvatar, Anam, SenseTime, Spatius, Generic |
 
-ASR interaction language follows existing builder precedence and remains separate from provider `params.language`. Realtime interaction-language overrides are rejected. Unknown or unrepresentable settings produce `UnsupportedFieldError.fields` before transport; the SDK never silently drops them.
+ASR interaction language follows existing builder precedence and remains separate from provider `params.language`. Unknown or unrepresentable settings produce `UnsupportedFieldError.fields` before transport; the SDK never silently drops them.
 
 On ephemeral startup, existing `parameters.opt_out` maps to session retention; `farewell_config` maps to graceful-stop settings; `audio_scenario` maps to RTC audio scenario; builder labels map to session labels. Explicit session options take precedence. These session-only settings are not saved as agent fields. SAL/voiceprint is deferred. RTM/data-channel and metrics/error-message switches are unsupported. Optional RTC `geofence` accepts `area` (`global`, `north_america`, `europe`, `asia`, `india`, `japan`) and `exclude_area` only with `global`; the excluded area cannot be `global`. This corrected field depends on backend rollout. Existing builder geofence maps into transport during ephemeral startup and is not saved. RTC accepts matching numeric/string UID types and omitted UID or UID `0` for auto-selection, with exactly one nonzero, non-wildcard subscriber; servers awaiting rollout may reject string UIDs.
 

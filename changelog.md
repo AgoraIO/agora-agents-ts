@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Aligned the preview with the bundled [OpenAPI contract](openapi.yaml): vendor-specific `credential.fields`, explicit secret references for saved credentials, optional session UID, session runtime PATCH, 50,000-contact/10 MiB campaigns, and current number/call-policy fields. Session and campaign create/action idempotency lasts 24 hours; writes do not retry automatically. Removed public campaign retry fields and advertised session analysis results.
 - The current preview service rollout is US-only. Regional availability may expand independently of SDK releases; this rollout note does not introduce a new SDK region restriction.
 
+- Saved-agent and ephemeral-session preview APIs support cascaded pipelines only. Removed realtime/MLLM from the preview contract and reject unsupported MLLM requests before HTTP. Existing inline MLLM sessions remain supported.
+
 ## [v2.12.0] — 2026-10-07
 
 ### Added
