@@ -107,14 +107,7 @@ new OpenAI(options: OpenAIOptions)
 | `templateVariables` | `Record<string, string>` | No | Template variables for messages |
 | `tools` | `LlmTool[]` | No | Inline synchronous REST function-calling tools; requires `agent.withTools(true)` |
 
-For supported Agora-managed models, `apiKey` is optional:
-
-- `gpt-4o-mini`
-- `gpt-4.1-mini`
-- `gpt-5-nano`
-- `gpt-5-mini`
-
-For those models, omit `apiKey` to use Agora-managed credentials. This option is only available with the default OpenAI endpoint and without a custom vendor hint. If `apiKey` is provided, AgentKit uses BYOK instead.
+Omit `apiKey` to use Agora-managed credentials. Platform model availability is validated by the service, so newly supported models such as `gpt-5.6-luna` do not require an SDK allowlist update. Managed OpenAI uses the default endpoint and vendor `openai`; an explicit `vendor: 'openai'` is also accepted. Providing `apiKey` selects BYOK and requires `url`. For other OpenAI-compatible providers, set their `vendor` explicitly (for example, `xai`).
 
 ### AzureOpenAI
 
@@ -199,7 +192,7 @@ The SDK also includes named helpers for the remaining Agora-supported LLM provid
 |---|---|---|
 | `Groq` | Groq | `apiKey`, `model`, `url` |
 | `VertexAILLM` | Google Vertex AI | `apiKey`, `model`, `projectId`, `location`, `url?` |
-| `AmazonBedrock` | Amazon Bedrock | `accessKey`, `secretKey`, `region`, `model` |
+| `AmazonBedrock` | Amazon Bedrock | `apiKey` **or** `accessKey` + `secretKey`; `region`, `model` |
 | `Dify` | Dify | `apiKey`, `url`, `model`, `user?`, `conversationId?` |
 | `CustomLLM` | OpenAI-compatible LLM | `apiKey`, `model`, `url` |
 
