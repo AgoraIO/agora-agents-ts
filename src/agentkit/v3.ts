@@ -76,7 +76,12 @@ export function toV3Module(config: object, kind: "asr" | "llm" | "tts" | "avatar
     }
     if (kind === "asr") {
         c.language ??= params.language ?? (c.vendor === "ares" ? "en-US" : undefined);
-        delete params.language;
+        if (["assemblyai", "google", "microsoft", "sarvam", "speechmatics"].includes(c.vendor)) {
+            // These providers require their own language in addition to the interaction language.
+            params.language ??= c.language;
+        } else {
+            delete params.language;
+        }
     }
     if (kind === "llm" && (c.vendor === "gemini" || c.style === "gemini") && c.url) {
         // Legacy Gemini uses a query key; Platform credentials must never live in URLs.

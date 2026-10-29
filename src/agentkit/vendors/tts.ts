@@ -1113,7 +1113,7 @@ export interface SarvamTTSOptions<SR extends number = number> {
     sampleRate?: SR;
     /** Whether to normalize English words and numeric entities. */
     enablePreprocessing?: boolean;
-    /** TTS model to use. Defaults server-side to `bulbul:v3`. */
+    /** TTS model to use. Defaults to `bulbul:v3`. */
     model?: string;
     /** Additional vendor-specific parameters. Explicit options take precedence. */
     additionalParams?: Record<string, unknown>;
@@ -1161,6 +1161,7 @@ export class SarvamTTS<SR extends number = number> extends BaseTTS<SR> {
         return {
             vendor: "sarvam",
             params: {
+                model: "bulbul:v3",
                 ...additionalParams,
                 api_subscription_key: key,
                 speaker,

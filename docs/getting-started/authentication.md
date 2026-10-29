@@ -6,7 +6,7 @@ description: Configure AgoraClient with app credentials and understand other sup
 
 # Authentication
 
-Create `AgoraClient` with `appId` and `appCertificate` only. The SDK mints a fresh ConvoAI REST token for each API call and generates the RTC join token when the session starts.
+Create `AgoraClient` with `appId` and `appCertificate` only. Generated REST tokens include the ConvoAI service (service 9), RTC, and RTM. Externally supplied `authToken` values must include the ConvoAI service for Platform session routes; an RTC+RTM-only token is insufficient. The SDK mints a fresh ConvoAI REST token for each API call and generates the RTC join token when the session starts.
 
 ## App credentials
 

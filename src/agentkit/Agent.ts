@@ -1108,13 +1108,16 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
 
     private _resolvePlatformAsrConfig(): SttConfig | undefined {
         const config = this._stt ? { ...this._stt } : { vendor: this._client.area === Area.CN ? "fengming" : "ares" };
-        const params = (config as { params?: Record<string, unknown> }).params;
+        const params = { ...(config as { params?: Record<string, unknown> }).params };
+        if (["assemblyai", "google", "microsoft", "sarvam", "speechmatics"].includes(config.vendor)) {
+            params.language ??= (config as { language?: string }).language;
+        }
         const language =
             this._turnDetection?.language ??
             (config as { language?: string }).language ??
             params?.language ??
             (["ares", "fengming"].includes(config.vendor) ? DEFAULT_TURN_DETECTION_LANGUAGE : undefined);
-        return { ...config, ...(typeof language === "string" ? { language } : {}) } as SttConfig;
+        return { ...config, params, ...(typeof language === "string" ? { language } : {}) } as SttConfig;
     }
 
     private _resolveAsrConfig(turnDetectionConfig: TurnDetectionConfig): SttConfig | undefined {

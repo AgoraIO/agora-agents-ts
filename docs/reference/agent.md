@@ -226,7 +226,7 @@ const session = agent.createSession({
 | `channel` | `string` | Yes | Channel name to join |
 | `agentUid` | `string` | Yes | The agent's RTC UID |
 | `remoteUids` | `string[]` | Yes | Remote user UIDs to subscribe to |
-| `token` | `string` | No | Pre-built RTC+RTM token (omit to auto-generate) |
+| `token` | `string` | No | Pre-built RTC token (omit to auto-generate) |
 | `expiresIn` | `number` | No | Token lifetime in seconds (default: `86400` = 24 h, Agora max). Only applies when the token is auto-generated. Use `ExpiresIn.hours()` or `ExpiresIn.minutes()` for clarity. Valid range: 1–86400. |
 | `idleTimeout` | `number` | No | Seconds before auto-exit if no audio (0 = disabled) |
 | `enableStringUid` | `boolean` | No | Use string UIDs instead of numeric |

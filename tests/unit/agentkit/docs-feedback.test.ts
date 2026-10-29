@@ -121,7 +121,7 @@ describe("Platform docs feedback", () => {
             await new Agent({ client }).withStt(stt).save();
             const asr = body(fetch).pipeline.asr;
             expect(asr.language).toBe(language);
-            expect(asr.params?.language).toBeUndefined();
+            expect(asr.params?.language).toBe(asr.vendor === "deepgram" ? undefined : language);
             expect(asr.url).toBe(url);
         }
     });
