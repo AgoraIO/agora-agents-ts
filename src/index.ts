@@ -181,7 +181,10 @@ export type {
     RimeTTSOptions,
     RimeTts,
     RimeTtsParams,
+    RTZRSTTOptions,
     RtcConfig,
+    RtzrAsr,
+    RtzrAsrParams,
     SalConfig,
     SalMode,
     // Sample rate types
@@ -211,6 +214,7 @@ export type {
     SpatiusAvatarConfig,
     SpatiusAvatarOptions,
     SpatiusAvatarParams,
+    SpeakConfig,
     SpeakPriority,
     SpeechmaticsSTTOptions,
     StartOfSpeechConfig,
@@ -370,11 +374,13 @@ export {
     QwenOmni,
     REDACTED,
     RimeTTS,
+    RTZRSTT,
     redactHeadersForDebug,
     redactSecrets,
     SalModeValues,
     SarvamSTT,
     SarvamTTS,
+    SarvamTTSLanguage,
     SensetimeAvatar,
     SilenceActionValues,
     SmallestAISTT,
@@ -412,8 +418,8 @@ export {
     XfyunDialectSTT,
     XfyunSTT,
 } from "./agentkit/index.js";
-export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./agentkit/preview/gemini-tts.js";
-export { GeminiTTS, GeminiTTSModels } from "./agentkit/preview/gemini-tts.js";
+export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./agentkit/vendors/tts.js";
+export { GeminiTTS, GeminiTTSModels } from "./agentkit/vendors/tts.js";
 export * as Agora from "./api/index.js";
 export type { BaseClientOptions, BaseRequestOptions } from "./BaseClient.js";
 export { Area } from "./core/domain/index.js";

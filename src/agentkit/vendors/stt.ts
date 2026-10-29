@@ -249,7 +249,7 @@ export class DeepgramSTT extends BaseSTT {
             params: {
                 // additionalParams spread first so that explicit fields always win.
                 ...additionalParams,
-                ...(apiKey && { key: apiKey }),
+                ...(apiKey && { api_key: apiKey }),
                 ...(model && { model }),
                 ...(language && { language }),
                 ...(smartFormat !== undefined && { smart_format: smartFormat }),
@@ -616,6 +616,67 @@ export class SarvamSTT extends BaseSTT {
                 api_key: apiKey,
                 language,
                 ...(model !== undefined && { model }),
+            },
+        };
+    }
+}
+
+/** Constructor options for RTZR STT. */
+export interface RTZRSTTOptions {
+    /** RTZR client ID. */
+    clientId: string;
+    /** RTZR client secret. */
+    clientSecret: string;
+    /** RTZR API base URL. */
+    apiBase?: string;
+    /** RTZR recognition model name. */
+    modelName?: string;
+    /** Recognition language code. Defaults server-side to Korean (`ko`). */
+    language?: string;
+    /** Input audio sample rate in Hz. */
+    sampleRate?: number;
+    /** Input audio encoding. */
+    encoding?: string;
+    /** Whether to enable inverse text normalization. */
+    useItn?: boolean;
+    /** Whether to filter disfluencies such as stuttering. */
+    useDisfluencyFilter?: boolean;
+    /** Whether to filter profanity. */
+    useProfanityFilter?: boolean;
+    /** Whether to add punctuation to recognized text. */
+    usePunctuation?: boolean;
+    /** Keywords used to improve recognition accuracy. */
+    keywords?: string[];
+    /** Additional RTZR parameters. Explicit options take precedence. */
+    additionalParams?: Partial<import("../types.js").RtzrAsrParams>;
+}
+
+/** RTZR streaming STT vendor. */
+export class RTZRSTT extends BaseSTT {
+    constructor(private readonly options: RTZRSTTOptions) {
+        super();
+        _requireString(options.clientId, "clientId", "RTZRSTT");
+        _requireString(options.clientSecret, "clientSecret", "RTZRSTT");
+    }
+
+    toConfig(): SttConfig {
+        const o = this.options;
+        return {
+            vendor: "rtzr",
+            params: {
+                ...o.additionalParams,
+                client_id: o.clientId,
+                client_secret: o.clientSecret,
+                ...(o.apiBase !== undefined && { api_base: o.apiBase }),
+                ...(o.modelName !== undefined && { model_name: o.modelName }),
+                ...(o.language !== undefined && { language: o.language }),
+                ...(o.sampleRate !== undefined && { sample_rate: o.sampleRate }),
+                ...(o.encoding !== undefined && { encoding: o.encoding }),
+                ...(o.useItn !== undefined && { use_itn: o.useItn }),
+                ...(o.useDisfluencyFilter !== undefined && { use_disfluency_filter: o.useDisfluencyFilter }),
+                ...(o.useProfanityFilter !== undefined && { use_profanity_filter: o.useProfanityFilter }),
+                ...(o.usePunctuation !== undefined && { use_punctuation: o.usePunctuation }),
+                ...(o.keywords !== undefined && { keywords: o.keywords }),
             },
         };
     }

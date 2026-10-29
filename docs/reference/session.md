@@ -91,6 +91,10 @@ Fetch the conversation history for this session.
 
 Fetch turn-by-turn analytics for this session, including start/end events and latency metrics.
 
+In each turn's `end.metadata`, `playback_duration_ms` is the actual audio playback duration in milliseconds for `ok` and `interrupted` turns. `intended_playback_duration_ms` is the intended playback duration and is included only for `interrupted` turns. For example, actual playback of `120` with an intended duration of `300` means playback was interrupted before the intended duration elapsed.
+
+Both fields are optional. Use optional chaining and check for `undefined` before using them, including for older responses that omit playback metadata; a returned `0` is a valid duration. `getTurns()` and `getAllTurns()` preserve both fields through the `ConversationTurns` and `ConversationSessionTurn` types.
+
 - Requires a valid `agentId` (i.e., `start()` must have been called)
 - `options.page_index`: page number, starting from `1`
 - `options.page_size`: number of turns per page

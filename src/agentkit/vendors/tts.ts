@@ -2,6 +2,8 @@
  * Type-safe TTS (Text-to-Speech) vendor classes.
  */
 
+import type { Tts as GeneratedTts } from "../../api/index.js";
+import { SarvamTtsParams as SarvamTtsParamsNS } from "../../api/types/SarvamTtsParams.js";
 import { CredentialMode } from "../constants.js";
 import {
     type MiniMaxPresetModel,
@@ -12,6 +14,71 @@ import {
 import type { TtsConfig } from "../types.js";
 import type { CartesiaSampleRate, ElevenLabsSampleRate, GoogleTTSSampleRate, MicrosoftSampleRate } from "./base.js";
 import { BaseTTS } from "./base.js";
+
+/** Gemini 3.8 Flash TTS model. */
+export const GeminiTTSModels = {
+    Flash38: "gemini-3.8-flash-tts",
+} as const;
+
+export type GeminiTTSModel = (typeof GeminiTTSModels)[keyof typeof GeminiTTSModels] | (string & {});
+
+export interface GeminiTTSOptions {
+    apiKey: string;
+    /** Sent verbatim; defaults to Gemini 3.8 Flash TTS. */
+    model?: GeminiTTSModel;
+    /** Defaults to Puck. */
+    voice?: string;
+    /** Natural-language speaking instructions. Omitted unless supplied. */
+    style?: string;
+    /** Additional provider-specific parameters merged into `tts.params`. */
+    additionalParams?: Record<string, unknown>;
+    /** Skip patterns for bracketed content. */
+    skipPatterns?: number[];
+}
+
+/** Production Gemini TTS wire shape from the generated schema. */
+export type GeminiTTSConfig = GeneratedTts.Gemini;
+
+/** Gemini TTS uses the client's configured regional production endpoint. */
+export class GeminiTTS extends BaseTTS {
+    private readonly options: GeminiTTSOptions;
+
+    constructor(options: GeminiTTSOptions) {
+        super();
+        for (const field of ["apiKey", "model", "voice"] as const) {
+            const value = options[field];
+            if ((field === "apiKey" || value !== undefined) && (typeof value !== "string" || !value.trim())) {
+                throw new Error(`GeminiTTS requires ${field}`);
+            }
+        }
+        if (options.style !== undefined && typeof options.style !== "string") {
+            throw new Error("GeminiTTS style must be a string");
+        }
+        this.options = { ...options };
+    }
+
+    toConfig(): GeminiTTSConfig {
+        const {
+            apiKey,
+            model = GeminiTTSModels.Flash38,
+            voice = "Puck",
+            style,
+            additionalParams,
+            skipPatterns,
+        } = this.options;
+        return {
+            vendor: "gemini",
+            params: {
+                ...additionalParams,
+                api_key: apiKey,
+                model,
+                voice,
+                ...(style !== undefined && { style }),
+            },
+            ...(skipPatterns !== undefined && { skip_patterns: skipPatterns }),
+        };
+    }
+}
 
 function requireString(value: unknown, field: string, vendor: string): asserts value is string {
     if (typeof value !== "string" || value.length === 0) {
@@ -272,9 +339,7 @@ export class OpenAITTS extends BaseTTS<24000> {
 /**
  * Constructor options for Cartesia TTS.
  */
-export interface CartesiaTTSOptions<SR extends CartesiaSampleRate = CartesiaSampleRate> {
-    /** Cartesia API key */
-    apiKey: string;
+type CartesiaTTSCommonOptions<SR extends CartesiaSampleRate> = {
     /** Voice ID */
     voiceId: string;
     /** Model ID */
@@ -290,7 +355,21 @@ export interface CartesiaTTSOptions<SR extends CartesiaSampleRate = CartesiaSamp
     sampleRate?: SR;
     /** Skip patterns for bracketed content */
     skipPatterns?: number[];
-}
+};
+
+export type CartesiaTTSOptions<SR extends CartesiaSampleRate = CartesiaSampleRate> = CartesiaTTSCommonOptions<SR> &
+    (
+        | {
+              /** Use Agora-managed credentials; the API key is optional. */
+              credentialMode: typeof CredentialMode.Managed;
+              apiKey?: string;
+          }
+        | {
+              /** Bring your own credentials (default when omitted). */
+              credentialMode?: typeof CredentialMode.Byok;
+              apiKey: string;
+          }
+    );
 
 /**
  * Cartesia TTS vendor.
@@ -300,6 +379,7 @@ export interface CartesiaTTSOptions<SR extends CartesiaSampleRate = CartesiaSamp
  * const tts = new CartesiaTTS({
  *   apiKey: process.env.CARTESIA_API_KEY,
  *   voiceId: 'voice-id-here',
+ *   modelId: 'sonic-2',
  *   sampleRate: 24000,
  * });
  * ```
@@ -309,24 +389,37 @@ export class CartesiaTTS<SR extends CartesiaSampleRate = CartesiaSampleRate> ext
 
     constructor(options: CartesiaTTSOptions<SR>) {
         super();
+        if (
+            options.credentialMode !== undefined &&
+            options.credentialMode !== CredentialMode.Managed &&
+            options.credentialMode !== CredentialMode.Byok
+        ) {
+            throw new Error("CartesiaTTS credentialMode must be one of: managed, byok");
+        }
+        if (options.credentialMode !== CredentialMode.Managed) {
+            requireString(options.apiKey, "apiKey", "CartesiaTTS");
+        }
+        requireString(options.voiceId, "voiceId", "CartesiaTTS");
+        requireString(options.modelId, "modelId", "CartesiaTTS");
         this.options = options;
     }
 
     toConfig(): TtsConfig {
-        const { apiKey, voiceId, modelId, baseUrl, language, sampleRate, skipPatterns } = this.options;
+        const { apiKey, credentialMode, voiceId, modelId, baseUrl, language, sampleRate, skipPatterns } = this.options;
 
         return {
             vendor: "cartesia",
+            ...(credentialMode !== undefined && { credential_mode: credentialMode }),
             params: {
-                api_key: apiKey,
+                ...(apiKey && { api_key: apiKey }),
                 voice: { mode: "id", id: voiceId },
                 model_id: modelId,
                 ...(baseUrl && { base_url: baseUrl }),
                 ...(sampleRate && { output_format: { container: "raw", sample_rate: sampleRate } }),
                 ...(language && { language }),
-            } as unknown as import("../types.js").CartesiaTtsParams,
+            },
             ...(skipPatterns && { skip_patterns: skipPatterns }),
-        } as TtsConfig;
+        };
     }
 }
 
@@ -788,16 +881,28 @@ export class RimeTTS extends BaseTTS {
 /**
  * Constructor options for Fish Audio TTS.
  */
-export interface FishAudioTTSOptions {
-    /** Fish Audio API key */
-    key: string;
+type FishAudioTTSCommonOptions = {
     /** Reference ID */
     referenceId: string;
     /** Backend used by Fish Audio */
     backend: string;
     /** Skip patterns for bracketed content */
     skipPatterns?: number[];
-}
+};
+
+export type FishAudioTTSOptions = FishAudioTTSCommonOptions &
+    (
+        | {
+              /** Use Agora-managed credentials; the API key is optional. */
+              credentialMode: typeof CredentialMode.Managed;
+              key?: string;
+          }
+        | {
+              /** Bring your own credentials (default when omitted). */
+              credentialMode?: typeof CredentialMode.Byok;
+              key: string;
+          }
+    );
 
 /**
  * Fish Audio TTS vendor.
@@ -816,16 +921,29 @@ export class FishAudioTTS extends BaseTTS {
 
     constructor(options: FishAudioTTSOptions) {
         super();
+        if (
+            options.credentialMode !== undefined &&
+            options.credentialMode !== CredentialMode.Managed &&
+            options.credentialMode !== CredentialMode.Byok
+        ) {
+            throw new Error("FishAudioTTS credentialMode must be one of: managed, byok");
+        }
+        if (options.credentialMode !== CredentialMode.Managed) {
+            requireString(options.key, "key", "FishAudioTTS");
+        }
+        requireString(options.referenceId, "referenceId", "FishAudioTTS");
+        requireString(options.backend, "backend", "FishAudioTTS");
         this.options = options;
     }
 
     toConfig(): TtsConfig {
-        const { key, referenceId, backend, skipPatterns } = this.options;
+        const { key, credentialMode, referenceId, backend, skipPatterns } = this.options;
 
         return {
             vendor: "fishaudio",
+            ...(credentialMode !== undefined && { credential_mode: credentialMode }),
             params: {
-                api_key: key,
+                ...(key && { api_key: key }),
                 reference_id: referenceId,
                 backend,
             },
@@ -918,21 +1036,34 @@ export class MiniMaxTTS extends BaseTTS {
 /**
  * Constructor options for Sarvam TTS (Beta).
  */
-export interface SarvamTTSOptions {
+export const SarvamTTSLanguage: typeof SarvamTtsParamsNS.TargetLanguageCode = SarvamTtsParamsNS.TargetLanguageCode;
+
+/** Target language supported by Sarvam TTS. */
+export type SarvamTTSLanguage = (typeof SarvamTTSLanguage)[keyof typeof SarvamTTSLanguage];
+
+export interface SarvamTTSOptions<SR extends number = number> {
     /** Sarvam API subscription key */
     key: string;
     /** Speaker/voice ID (e.g., 'anushka', 'abhilash', 'karun', 'hitesh', 'manisha', 'vidya', 'arya') */
     speaker: string;
-    /** Target language code (e.g., 'en-IN', 'hi-IN', 'ta-IN') */
-    targetLanguageCode: import("../types.js").SarvamTtsParams["target_language_code"];
-    /** Pitch adjustment for the voice */
+    /** Target language code. Use `SarvamTTSLanguage` for discoverable values. */
+    targetLanguageCode: SarvamTTSLanguage;
+    /** Pitch control for the `bulbul:v2` model. */
     pitch?: number;
-    /** Speed of speech */
+    /** Speech speed. Defaults server-side to `1.0`. */
     pace?: number;
-    /** Volume level of the speech */
+    /** Audio loudness control for the `bulbul:v2` model. */
     loudness?: number;
-    /** Audio sample rate in Hz */
-    sampleRate?: number;
+    /** Output speech sample rate in Hz. Defaults server-side to 24000. */
+    speechSampleRate?: SR;
+    /** @deprecated Use `speechSampleRate` instead. */
+    sampleRate?: SR;
+    /** Whether to normalize English words and numeric entities. */
+    enablePreprocessing?: boolean;
+    /** TTS model to use. Defaults server-side to `bulbul:v3`. */
+    model?: string;
+    /** Additional vendor-specific parameters. Explicit options take precedence. */
+    additionalParams?: Record<string, unknown>;
     /** Skip patterns for bracketed content */
     skipPatterns?: number[];
 }
@@ -949,27 +1080,44 @@ export interface SarvamTTSOptions {
  * });
  * ```
  */
-export class SarvamTTS extends BaseTTS {
-    private readonly options: SarvamTTSOptions;
+export class SarvamTTS<SR extends number = number> extends BaseTTS<SR> {
+    private readonly options: SarvamTTSOptions<SR>;
 
-    constructor(options: SarvamTTSOptions) {
+    constructor(options: SarvamTTSOptions<SR>) {
         super();
         this.options = options;
     }
 
     toConfig(): TtsConfig {
-        const { key, speaker, targetLanguageCode, pitch, pace, loudness, sampleRate, skipPatterns } = this.options;
+        const {
+            key,
+            speaker,
+            targetLanguageCode,
+            pitch,
+            pace,
+            loudness,
+            speechSampleRate,
+            sampleRate,
+            enablePreprocessing,
+            model,
+            additionalParams,
+            skipPatterns,
+        } = this.options;
+        const resolvedSampleRate = speechSampleRate ?? sampleRate;
 
         return {
             vendor: "sarvam",
             params: {
+                ...additionalParams,
                 api_subscription_key: key,
                 speaker,
                 target_language_code: targetLanguageCode,
                 ...(pitch !== undefined && { pitch }),
                 ...(pace !== undefined && { pace }),
                 ...(loudness !== undefined && { loudness }),
-                ...(sampleRate !== undefined && { sample_rate: sampleRate }),
+                ...(resolvedSampleRate !== undefined && { speech_sample_rate: resolvedSampleRate }),
+                ...(enablePreprocessing !== undefined && { enable_preprocessing: enablePreprocessing }),
+                ...(model !== undefined && { model }),
             },
             ...(skipPatterns && { skip_patterns: skipPatterns }),
         };

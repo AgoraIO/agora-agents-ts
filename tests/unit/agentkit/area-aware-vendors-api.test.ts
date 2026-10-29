@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { Agent, AgoraClient, Area, DeepgramSTT, MiniMaxTTS, OpenAI } from "../../../src/index.js";
+import { Agent, AgoraClient, Area, DeepgramSTT, MiniMaxTTS, OpenAI, RTZRSTT } from "../../../src/index.js";
 
 describe("AgoraClient + Agent API", () => {
+    test("RTZRSTT is exported as a global STT vendor", () => {
+        expect(new RTZRSTT({ clientId: "rtzr-client", clientSecret: "rtzr-secret" }).areaScope).toBe("global");
+    });
+
     test("Agent binds client and creates sessions without re-passing client", () => {
         const client = new AgoraClient({
             area: Area.US,
