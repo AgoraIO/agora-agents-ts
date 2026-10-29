@@ -1,8 +1,8 @@
 import { createHmac } from "node:crypto";
 import { inflateSync } from "node:zlib";
 import { describe, expect, it, vi } from "vitest";
-import { Agent, AgoraClient, Area, SavedAgent } from "../../../src/index.js";
 import { generateConvoAIToken, generateRtcToken } from "../../../src/agentkit/token.js";
+import { Agent, AgoraClient, Area, SavedAgent } from "../../../src/index.js";
 
 const appId = "0123456789abcdef0123456789abcdef";
 const appCertificate = "fedcba9876543210fedcba9876543210";

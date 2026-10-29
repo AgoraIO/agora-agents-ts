@@ -418,8 +418,6 @@ export {
     XfyunDialectSTT,
     XfyunSTT,
 } from "./agentkit/index.js";
-export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./agentkit/vendors/tts.js";
-export { GeminiTTS, GeminiTTSModels } from "./agentkit/vendors/tts.js";
 export { UnsupportedSessionOperationError } from "./agentkit/session-backend.js";
 export type { AssignNumberOptions, DeployOptions, SaveOptions, SecretRef, VariableDefinition } from "./agentkit/v3.js";
 export {
@@ -430,6 +428,8 @@ export {
     secretRef,
     UnsupportedFieldError,
 } from "./agentkit/v3.js";
+export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./agentkit/vendors/tts.js";
+export { GeminiTTS, GeminiTTSModels } from "./agentkit/vendors/tts.js";
 export * as Agora from "./api/index.js";
 export type { BaseClientOptions, BaseRequestOptions } from "./BaseClient.js";
 export { Area } from "./core/domain/index.js";

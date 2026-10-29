@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { toV3Module } from "../../../src/agentkit/v3.js";
 import {
     Agent,
     AgoraClient,
@@ -11,7 +12,6 @@ import {
     SpeechmaticsSTT,
     secretRef,
 } from "../../../src/index.js";
-import { toV3Module } from "../../../src/agentkit/v3.js";
 
 const vendors = (key: string) => [
     new AssemblyAISTT({ apiKey: key, language: "en" }),
