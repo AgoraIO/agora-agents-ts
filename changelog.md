@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased
+## [Unreleased]
+
+## [v3.0.0-alpha.3] — 2026-10-29
 
 - Generate Platform authorization with the official ConvoAI service, using agora-token 2.0.7 while preserving RTC and RTM expiration behavior.
 - Retain required provider language parameters for AssemblyAI, Google, Microsoft, Sarvam, and Speechmatics ASR. Default Sarvam TTS to bulbul:v3 without overriding explicit models.

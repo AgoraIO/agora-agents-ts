@@ -31,7 +31,7 @@ The `agora-agents` package lets you build real-time voice AI agents on the [Agor
 ## Install
 
 ```sh
-npm install agora-agents@3.0.0-alpha.2
+npm install agora-agents@3.0.0-alpha.3
 ```
 
 ## Documentation

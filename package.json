@@ -1,6 +1,6 @@
 {
     "name": "agora-agents",
-    "version": "3.0.0-alpha.2",
+    "version": "3.0.0-alpha.3",
     "private": false,
     "repository": "github:AgoraIO/agora-agents-ts",
     "type": "commonjs",
