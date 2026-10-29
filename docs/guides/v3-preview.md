@@ -1,6 +1,6 @@
 ---
 title: Stored-agent API transport
-description: Public routing, token authentication, supported configuration mappings, and update semantics.
+description: Public routing, token and Basic authentication, supported configuration mappings, and update semantics.
 ---
 
 # Stored-agent API transport
@@ -21,7 +21,7 @@ const client = new AgoraClient({
 
 The public default is `https://preview.ai.agora.io/conversational-ai/v1/projects/{appid}`. The SDK supplies the path and project. Optional `v3.baseUrl` or `AGORA_AGENTS_V3_BASE_URL` changes the origin; the explicit option wins. API naming in the advanced `client.v3` namespace is retained for compatibility even though the public wire path is `v1`.
 
-Use app credentials for fresh ConvoAI REST tokens, or supply `authToken`. Customer/Client ID and Secret options and Basic authorization overrides are rejected. Do not supply internal gateway headers or `X-Studio-Region`; they are rejected before network calls. Normal custom headers, timeout, cancellation, and custom fetch remain available. See the [release notes](../../changelog.md) for current regional availability. Preview availability is release guidance rather than an SDK region restriction; existing inline-session regional routing remains intact.
+Use app credentials for fresh ConvoAI REST tokens, supply `authToken`, or configure `customerId` and `customerSecret` for HTTP Basic authentication. Basic credentials and an explicit `authToken` are mutually exclusive; an optional App Certificate still enables RTC token signing. Do not supply internal gateway headers or `X-Studio-Region`; they are rejected before network calls. Normal custom headers, timeout, cancellation, and custom fetch remain available. See the [release notes](../../changelog.md) for current regional availability. Preview availability is release guidance rather than an SDK region restriction; existing inline-session regional routing remains intact.
 
 ## 2. Session routing
 

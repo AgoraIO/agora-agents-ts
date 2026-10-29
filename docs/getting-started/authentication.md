@@ -49,8 +49,26 @@ console.log(client.authMode); // "app-credentials"
 
 ## Pre-minted tokens
 
-Alternatively, set `authToken` to a raw Agora REST token. The SDK sends `Authorization: agora token=<value>`. Keep `appId` and `appCertificate` for existing RTC token generation. `client.authMode` is `"token"` in this mode.
+Alternatively, set `authToken` to a raw Agora REST token. The SDK sends `Authorization: agora token=<value>`. `appId` remains required; `appCertificate` is optional and enables automatic RTC token generation. `client.authMode` is `"token"` in this mode.
 
-The public client accepts only app credentials or `authToken`. Customer/Client ID and Secret options are removed and rejected, including JavaScript calls. Basic authorization overrides are rejected before network calls on both current and legacy resources. Internal gateway and `X-Studio-Region` headers are not public options.
+## HTTP Basic authentication
 
-Saved-agent/session/campaign resources use `https://preview.ai.agora.io/conversational-ai/v1/projects/{appid}` by default. Existing ordinary inline sessions retain their established endpoint routing and use token authentication.
+Use the existing Agora Customer ID and Customer Secret for REST authentication on both Platform and legacy resources:
+
+```typescript
+import { AgoraClient, Area } from 'agora-agents';
+
+const basicClient = new AgoraClient({
+  area: Area.US,
+  appId: 'your-app-id',
+  customerId: 'your-customer-id',
+  customerSecret: 'your-customer-secret',
+  // appCertificate: 'your-app-certificate', // Optional automatic RTC token signing
+});
+```
+
+The SDK sends `Authorization: Basic <base64(customerId:customerSecret)>`; `authMode` is `"basic"`. Provide both non-empty credentials. Customer IDs cannot contain a colon. Do not combine this pair with `authToken`. An optional App Certificate signs RTC tokens without changing Basic REST authentication. Without a certificate, supply an RTC token when required by the session transport.
+
+The existing public authorization/header overrides accept Agora tokens or Basic authorization. `clientId`/`clientSecret`, `username`/`password`, internal gateway headers, and `X-Studio-Region` are not public constructor options.
+
+Saved-agent/session/campaign resources use `https://preview.ai.agora.io/conversational-ai/v1/projects/{appid}` by default. Existing ordinary inline sessions retain their established endpoint routing and use the configured authentication mode.

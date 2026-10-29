@@ -29,23 +29,17 @@ const opts = { channel: "room", agentUid: "1", remoteUids: ["2"] };
 const stored = { agent_id: "saved", agent_name: "Support" };
 const start = { agent_session_id: "session", create_ts: 123, status: "STARTING" };
 describe("engineering public contract", () => {
+    it.each(["clientId", "clientSecret", "CustomerId", "ClientSecret", "username", "password"])(
+        "rejects removed credential %s",
+        (key) => {
+            expect(
+                () => new AgoraClient({ area: Area.US, appId: "a", appCertificate: "b", [key]: "secret" } as any),
+            ).toThrow("not supported");
+        },
+    );
     it.each([
-        "customerId",
-        "customerSecret",
-        "clientId",
-        "clientSecret",
-        "CustomerId",
-        "ClientSecret",
-        "username",
-        "password",
-    ])("rejects removed credential %s", (key) => {
-        expect(
-            () => new AgoraClient({ area: Area.US, appId: "a", appCertificate: "b", [key]: "secret" } as any),
-        ).toThrow("not supported");
-    });
-    it.each([
-        { authorization: "Basic c2VjcmV0" },
-        { headers: { Authorization: () => Promise.resolve("Basic c2VjcmV0") } },
+        { authorization: "Bearer secret" },
+        { headers: { Authorization: () => Promise.resolve("Bearer secret") } },
         { headers: { "x-studio-region": "us" } },
         { headers: { "X-Studio-V2-Gateway-Secret": "secret" } },
         { headers: { "X-Consumer-Username": "company" } },
@@ -68,9 +62,9 @@ describe("engineering public contract", () => {
         await expect(client.v3.agents.get({ id: "a" }, { [key]: "old" } as any)).rejects.toThrow("not supported");
         expect(fetch).not.toHaveBeenCalled();
     });
-    it("prevents Basic overrides on inherited legacy resources too", async () => {
+    it("prevents unsupported Bearer overrides on inherited legacy resources too", async () => {
         const { client, fetch } = setup();
-        for (const options of [{ headers: { Authorization: "Basic c2VjcmV0" }, maxRetries: 0 }]) {
+        for (const options of [{ headers: { Authorization: "Bearer secret" }, maxRetries: 0 }]) {
             await expect(client.agents.get({ appid: "app", agentId: "running" }, options)).rejects.toThrow();
         }
         expect(fetch).not.toHaveBeenCalled();

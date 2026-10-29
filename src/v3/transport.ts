@@ -1,4 +1,5 @@
 import type { BaseClientOptions, BaseRequestOptions } from "../BaseClient.js";
+import { validatePublicAuthorization } from "../core/auth/publicAuthorization.js";
 import { fetcher } from "../core/fetcher/Fetcher.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import type { RawResponse } from "../core/fetcher/RawResponse.js";
@@ -93,7 +94,9 @@ export class V3Transport {
                         key.replace(/_/g, "").toLowerCase(),
                     )
                 )
-                    throw new Error(`${key} is not supported; use token authorization`);
+                    throw new Error(
+                        `${key} is not supported; configure credentials on AgoraClient or use an authorization override`,
+                    );
             }
             if (body && typeof body === "object" && "idempotencyKey" in body)
                 throw new Error("idempotencyKey is not supported by this operation");
@@ -126,8 +129,7 @@ export class V3Transport {
                     const value = await (typeof supplier === "function" ? supplier() : supplier);
                     if (value == null) continue;
                     if (isInternalHeader(key)) throw new Error(`${name} is an internal header and is not supported`);
-                    if (key === "authorization" && !/^agora token=\S+$/i.test(value))
-                        throw new Error("Only Agora token authorization is supported");
+                    if (key === "authorization") validatePublicAuthorization(value);
                     if (key === "idempotency-key") validateIdempotencyKey(value);
                     if (
                         key === "idempotency-key" &&

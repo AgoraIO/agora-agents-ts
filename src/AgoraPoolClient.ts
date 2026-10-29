@@ -5,6 +5,8 @@ import type { AgoraArea } from "./agentkit/area.js";
 import { generateConvoAIToken } from "./agentkit/token.js";
 import type { BaseClientOptions, BaseRequestOptions } from "./BaseClient.js";
 import { AgoraClient as BaseAgoraClient } from "./Client.js";
+import { BasicAuth } from "./core/auth/BasicAuth.js";
+import { validateBasicCredentials, validatePublicAuthorization } from "./core/auth/publicAuthorization.js";
 import { Area, CNAPIPath, GlobalAPIPath, Pool } from "./core/domain/index.js";
 import { isInternalHeader } from "./core/publicHeaders.js";
 import { AgoraError } from "./errors/index.js";
@@ -58,11 +60,12 @@ function createClientPool(area: AgoraArea): Pool {
 
 /**
  * Auth mode for the client:
+ * - `basic`: Customer ID and Secret for HTTP Basic authentication
  * - `token`: Pre-built `agora token=<value>` auth header
  * - `app-credentials`: appId + appCertificate only; AgentSession generates
  *   a fresh ConvoAI token per API call
  */
-export type AgoraAuthMode = "token" | "app-credentials";
+export type AgoraAuthMode = "basic" | "token" | "app-credentials";
 
 export declare namespace AgoraClient {
     export type Options<TArea extends AgoraArea = AgoraArea> = BaseOptions<TArea> & AuthOptions;
@@ -77,8 +80,18 @@ export declare namespace AgoraClient {
         appId: string;
     }
 
+    /** Use Customer ID and Customer Secret for HTTP Basic REST authentication. */
+    interface BasicAuthOptions {
+        customerId: string;
+        customerSecret: string;
+        appCertificate?: string;
+        authToken?: never;
+    }
+
     /** Use a pre-built Agora token for REST API authentication. Pass the raw token; the SDK sets `Authorization: agora token=<authToken>` automatically. */
     interface TokenAuthOptions {
+        customerId?: never;
+        customerSecret?: never;
         appCertificate?: string;
         authToken: string;
     }
@@ -88,11 +101,13 @@ export declare namespace AgoraClient {
      * ConvoAI token per API call — no Customer Secret required.
      */
     interface AppCredentialsOptions {
+        customerId?: never;
+        customerSecret?: never;
         appCertificate: string;
         authToken?: never;
     }
 
-    type AuthOptions = TokenAuthOptions | AppCredentialsOptions;
+    type AuthOptions = BasicAuthOptions | TokenAuthOptions | AppCredentialsOptions;
 
     export interface RequestOptions extends BaseRequestOptions {}
 }
@@ -101,7 +116,8 @@ export declare namespace AgoraClient {
  * AgoraClient extends the base client with domain pool support for
  * regional URL cycling and automatic domain selection.
  *
- * Two authentication modes are supported:
+ * Three authentication modes are supported. For HTTP Basic authentication,
+ * supply customerId and customerSecret; appCertificate is optional for RTC signing.
  *
  * **App credentials (recommended)** — no Customer Secret needed; AgentSession
  * generates a short-lived ConvoAI token per API call:
@@ -151,6 +167,7 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
         const pool = createClientPool(options.area);
 
         for (const key of Object.keys(options)) {
+            if (key === "customerId" || key === "customerSecret") continue;
             if (
                 [
                     "customerid",
@@ -162,31 +179,38 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
                     "authorization",
                 ].includes(key.replace(/_/g, "").toLowerCase())
             ) {
-                throw new Error(`${key} is not supported; use appId/appCertificate or authToken`);
+                throw new Error(
+                    `${key} is not supported; use appId/appCertificate, authToken, or customerId/customerSecret`,
+                );
             }
         }
-        const authMode: AgoraAuthMode = options.authToken !== undefined ? "token" : "app-credentials";
-        const { authToken, appId, appCertificate, ...rest } = options;
+        const { authToken, appId, appCertificate, customerId, customerSecret, ...rest } = options;
+        const basic = customerId !== undefined || customerSecret !== undefined;
+        if (basic && authToken !== undefined)
+            throw new Error("customerId/customerSecret cannot be combined with authToken");
+        if (basic) validateBasicCredentials(customerId, customerSecret);
+        const authMode: AgoraAuthMode = basic ? "basic" : authToken !== undefined ? "token" : "app-credentials";
         if (authMode === "app-credentials" && !appCertificate)
-            throw new Error("appCertificate or authToken is required");
-        const authorization = (): string =>
-            authMode === "token"
-                ? `agora token=${authToken}`
-                : `agora token=${generateConvoAIToken({ appId, appCertificate: appCertificate!, channelName: "", uid: 0 })}`;
+            throw new Error("appCertificate, authToken, or customerId/customerSecret is required");
+        const authorization = (): string => {
+            if (authMode === "basic")
+                return BasicAuth.toAuthorizationHeader({ username: customerId!, password: customerSecret! })!;
+            if (authMode === "token") return `agora token=${authToken}`;
+            return `agora token=${generateConvoAIToken({ appId, appCertificate: appCertificate!, channelName: "", uid: 0 })}`;
+        };
         const originalFetch = options.fetch ?? globalThis.fetch;
-        const tokenOnlyFetch: typeof fetch = async (input, init) => {
+        const authenticatedFetch: typeof fetch = async (input, init) => {
             const finalHeaders = new Headers(input instanceof Request ? input.headers : undefined);
             new Headers(init?.headers).forEach((value, key) => finalHeaders.set(key, value));
             const auth = finalHeaders.get("authorization");
-            if (auth !== null && !/^agora token=\S+$/i.test(auth))
-                throw new Error("Only Agora token authorization is supported");
+            if (auth !== null) validatePublicAuthorization(auth);
             for (const name of finalHeaders.keys())
                 if (isInternalHeader(name)) throw new Error(`${name} is an internal header and is not supported`);
             return originalFetch(input, init);
         };
         super({
             ...rest,
-            fetch: tokenOnlyFetch,
+            fetch: authenticatedFetch,
             username: "",
             password: "",
             authorization,
