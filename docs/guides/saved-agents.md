@@ -7,7 +7,7 @@ description: Configure once, start a conversation or save the configuration, the
 
 `Agent` is an immutable configuration builder. Choose `createSession()` for an idle session that you start, or `await save()` for a saved configuration. Continue with the returned session or `SavedAgent` handle. Saving never starts a conversation.
 
-Saving and ephemeral sessions support cascaded pipelines only; MLLM remains available for existing inline sessions. Saving, ephemeral sessions, and project provisioning are part of SDK preview `3.0.0-alpha.1`. Configure a client with app credentials or `authToken`; [public transport setup](./v3-preview.md#1-configure-client) needs no internal gateway headers.
+Saving and ephemeral sessions support cascaded pipelines only; MLLM remains available for existing inline sessions. Saving, ephemeral sessions, and project provisioning are part of SDK preview `3.0.0-alpha.2`. Configure a client with app credentials or `authToken`; [public transport setup](./v3-preview.md#1-configure-client) needs no internal gateway headers.
 
 ```ts
 import { Agent, AgoraClient, Area, OpenAI, SavedAgent, secretRef } from 'agora-agents';

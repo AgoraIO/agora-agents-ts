@@ -4,11 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased
+## [v3.0.0-alpha.2] — 2026-10-29
 
 - Fix Platform provider defaults, Gemini/Bedrock credentials, ASR keywords/language/endpoints, and generic/HeyGen avatar mapping. Add typed MiniMax voice/audio controls.
 - Add explicit ephemeral and outbound-call session helpers, fixed-UID RTC token generation, full inbound call policy, optional extraction/secret metadata response types, and token-only client typing.
-- Make source builds portable and build Git installs through prepare. Correct saved-agent examples. Model availability for managed OpenAI is validated by the service.
+- Make source builds portable and build Git installs through prepare. Keep compatibility CI tarball capture independent of prepare output. Correct saved-agent examples. Model availability for managed OpenAI is validated by the service.
+- Preserve Gemini credentials during endpoint normalization and capture RTC signing identity per session. Retain generated RTC tokens across failed-start retries, refresh them for new unkeyed session lifecycles, and leave unsupported UIDs to server provisioning. Reject mixed telephony and RTC options before normalization.
 
 ## [v3.0.0-alpha.1] — 2026-10-28
 
