@@ -397,11 +397,13 @@ export class AgentSession {
         // Sample-rate fields vary by provider, so check the generated wire names dynamically.
         const ttsParams = tts && typeof tts !== "string" ? tts.params : undefined;
         const sampleRate =
-            ttsParams && "sample_rate" in ttsParams
-                ? (ttsParams as { sample_rate?: number }).sample_rate
-                : ttsParams && "speech_sample_rate" in ttsParams
-                  ? (ttsParams as { speech_sample_rate?: number }).speech_sample_rate
-                  : undefined;
+            tts && typeof tts !== "string" && tts.vendor === "minimax_duplex"
+                ? tts.params.audio_setting?.sample_rate
+                : ttsParams && "sample_rate" in ttsParams
+                  ? (ttsParams as { sample_rate?: number }).sample_rate
+                  : ttsParams && "speech_sample_rate" in ttsParams
+                    ? (ttsParams as { speech_sample_rate?: number }).speech_sample_rate
+                    : undefined;
 
         if (typeof sampleRate === "number") {
             if (isHeyGenAvatar(strictAvatar) || isLiveAvatarAvatar(strictAvatar) || isAkoolAvatar(strictAvatar)) {
