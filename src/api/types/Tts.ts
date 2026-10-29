@@ -15,6 +15,7 @@ export type Tts =
     | Agora.Tts.Rime
     | Agora.Tts.Fishaudio
     | Agora.Tts.Google
+    | Agora.Tts.Gemini
     | Agora.Tts.Amazon
     | Agora.Tts.Sarvam
     | Agora.Tts.GenericHttp
@@ -75,6 +76,10 @@ export namespace Tts {
 
     export interface Google extends Agora.GoogleTts {
         vendor: "google";
+    }
+
+    export interface Gemini extends Agora.GeminiTts {
+        vendor: "gemini";
     }
 
     export interface Amazon extends Agora.AmazonTts {

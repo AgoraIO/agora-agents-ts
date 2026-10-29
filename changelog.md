@@ -19,9 +19,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - Saved-agent and ephemeral-session preview APIs support cascaded pipelines only. Removed realtime/MLLM from the preview contract and reject unsupported MLLM requests before HTTP. Existing inline MLLM sessions remain supported.
 
-## [v2.13.0] — 2026-10-09
+## [v2.13.0] — 2026-10-29
+
+### Added
+
+- Added the global `RTZRSTT` AgentKit vendor and typed RTZR ASR aliases.
+- Added `SpeakConfig` and `withParameters()` support for the new `parameters.speak.batch` setting.
+- Added Sarvam TTS preprocessing, model, speech sample-rate options, and the `SarvamTTSLanguage` enum.
 
 ### Changed
+
+- **Turn end playback metadata** — Turn analytics now expose optional `intended_playback_duration_ms` for interrupted turns. `playback_duration_ms` reports actual playback for both normal and interrupted turns. Session documentation, type assertions, and regression tests cover missing values, zero durations, and pagination.
+ - Updated Deepgram STT credentials to serialize as `api_key` and Sarvam TTS sample rate to serialize as `speech_sample_rate`, matching the v2.14 generated API contract.
+
+- **Gemini TTS production routing** — `GeminiTTS` and raw `tts.vendor = "gemini"` configurations now use the configured regional production endpoint without the `gemini-live` preview gate for the full session lifecycle. The implementation and types live in the production TTS vendor module; package-root and historical preview exports alias the same implementation, with v2.11.0 options, defaults, validation, optional `style`, and `tts.params` wire fields preserved.
+- **Gemini TTS generated schema support** — The production vendor now uses the generated Gemini TTS shape and accepts `additionalParams` and `skipPatterns` while keeping preview-era calls compatible.
 
 - Tavus, Protoface, and LemonSlice now wrap GenericAvatar with provider endpoint defaults. Explicit endpoint overrides, generic wire serialization, and session/token handling remain supported.
 - LemonSlice defaults `avatarId` to the vendor-recommended fixed value `lemonslice`; explicit overrides remain supported. Typed `agentId`, `agentImageUrl`, `agentImageBase64`, and `aspectRatio` serialize directly as snake_case avatar parameters. Exactly one nonempty string selector is required in effective merged parameters; malformed selectors and invalid aspect ratios are rejected. Typed fields override additional parameters without mutating caller inputs. Ratios are `2x3`, `9x16`, or `1x1`; omitted ratios use the provider default `2x3`.

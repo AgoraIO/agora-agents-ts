@@ -7,7 +7,7 @@ import type * as Agora from "../index.js";
  */
 export interface CartesiaTtsParams {
     /** Cartesia API key */
-    api_key: string;
+    api_key?: string;
     /** Model ID (for example, sonic-2) */
     model_id: string;
     /** WebSocket URL for the Cartesia streaming API */

@@ -6,24 +6,28 @@
 export interface SarvamTtsParams {
     /** Sarvam API subscription key */
     api_subscription_key: string;
-    /** Voice ID (e.g., anushka, abhilash, karun, hitesh, manisha, vidya, arya) */
+    /** Speaker voice to use. */
     speaker: string;
-    /** Target language code (e.g., en-IN) */
+    /** Target language code in BCP-47 format (e.g., `hi-IN`, `bn-IN`, `en-IN`). */
     target_language_code: SarvamTtsParams.TargetLanguageCode;
-    /** Pitch adjustment for the voice */
+    /** Pitch control for the `bulbul:v2` model. */
     pitch?: number;
-    /** Speed of speech */
+    /** Speech speed. Defaults to `1.0`. */
     pace?: number;
-    /** Volume level of the speech */
+    /** Audio loudness control for the `bulbul:v2` model. */
     loudness?: number;
-    /** Audio sample rate in Hz */
-    sample_rate?: number;
+    /** Output speech sample rate in Hz. Defaults to `24000`. */
+    speech_sample_rate?: number;
+    /** Whether to normalize English words and numeric entities. Defaults to `false`. */
+    enable_preprocessing?: boolean;
+    /** TTS model to use. Defaults to `bulbul:v3`. */
+    model?: string;
     /** Accepts any additional properties */
     [key: string]: any;
 }
 
 export namespace SarvamTtsParams {
-    /** Target language code (e.g., en-IN) */
+    /** Target language code in BCP-47 format (e.g., `hi-IN`, `bn-IN`, `en-IN`). */
     export const TargetLanguageCode = {
         EnIn: "en-IN",
         HiIn: "hi-IN",

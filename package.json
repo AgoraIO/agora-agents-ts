@@ -52,7 +52,7 @@
         "prepare": "npm run build"
     },
     "dependencies": {
-        "agora-token": "^2.0.5"
+        "agora-token": "^2.0.6"
     },
     "devDependencies": {
         "webpack": "^5.97.1",

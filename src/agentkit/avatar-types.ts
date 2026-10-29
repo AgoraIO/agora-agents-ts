@@ -81,6 +81,12 @@ export interface AnamAvatarConfig {
         api_key: string;
         /** Anam avatar ID (optional) */
         avatar_id?: string;
+        /** Anam avatar model, such as `cara_mk4` for Cara 4 portrait mode */
+        avatar_model?: string;
+        /** Output video width in pixels; set together with `video_height` */
+        video_width?: number;
+        /** Output video height in pixels; set together with `video_width` */
+        video_height?: number;
         [key: string]: unknown;
     };
 }
