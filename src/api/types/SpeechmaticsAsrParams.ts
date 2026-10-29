@@ -3,9 +3,7 @@
 /**
  * Speechmatics ASR configuration parameters.
  */
-export interface SpeechmaticsAsrParams {
-    /** Speechmatics API key */
-    api_key: string;
+interface SpeechmaticsAsrParamsBase {
     /** Language code to use for transcription */
     language: string;
     /** WebSocket URL for the Speechmatics streaming API */
@@ -13,3 +11,18 @@ export interface SpeechmaticsAsrParams {
     /** Accepts any additional properties */
     [key: string]: any;
 }
+
+export type SpeechmaticsAsrParams = SpeechmaticsAsrParamsBase &
+    (
+        | {
+              /** Speechmatics API key */
+              key: string;
+              /** @deprecated Use `key` instead. The client normalizes this alias to `key`. */
+              api_key?: string;
+          }
+        | {
+              key?: undefined;
+              /** @deprecated Use `key` instead. The client normalizes this alias to `key`. */
+              api_key: string;
+          }
+    );
