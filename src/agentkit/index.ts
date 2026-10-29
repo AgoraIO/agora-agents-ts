@@ -19,11 +19,6 @@
  *    parts that need manual updates when adding new sugar.
  */
 
-// Re-export the underlying client type for advanced usage
-export type { AgentsClient } from "../api/resources/agents/client/Client.js";
-export type { AgentOptions } from "./Agent.js";
-// Core classes
-export { Agent } from "./Agent.js";
 export type {
     MinimaxDuplexTts,
     MinimaxDuplexTtsParams,
@@ -32,6 +27,11 @@ export type {
     StepfunAsr,
     StepfunAsrParams,
 } from "../api/index.js";
+// Re-export the underlying client type for advanced usage
+export type { AgentsClient } from "../api/resources/agents/client/Client.js";
+export type { AgentOptions } from "./Agent.js";
+// Core classes
+export { Agent } from "./Agent.js";
 
 export type {
     AgentSessionEvent,
@@ -343,8 +343,8 @@ export type {
     MiniMaxDuplexTTSOptions,
     SensetimeAvatarOptions,
     SpatiusAvatarOptions,
-    StepFunTTSOptions,
     StepFunSTTOptions,
+    StepFunTTSOptions,
     TencentLLMOptions,
     TencentSTTOptions,
     TencentTTSOptions,
@@ -366,8 +366,8 @@ export {
     MiniMaxDuplexTTS,
     SensetimeAvatar,
     SpatiusAvatar,
-    StepFunTTS,
     StepFunSTT,
+    StepFunTTS,
     TencentLLM,
     TencentSTT,
     TencentTTS,
