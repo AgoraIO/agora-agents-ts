@@ -25,6 +25,15 @@ export type { AgentOptions } from "./Agent.js";
 // Core classes
 export { Agent } from "./Agent.js";
 export type {
+    MinimaxDuplexTts,
+    MinimaxDuplexTtsParams,
+    SonioxTts,
+    SonioxTtsParams,
+    StepfunAsr,
+    StepfunAsrParams,
+} from "../api/index.js";
+
+export type {
     AgentSessionEvent,
     AgentSessionEventHandler,
     AgentSessionOptions,
@@ -331,9 +340,11 @@ export type {
     MicrosoftCNSTTOptions,
     MicrosoftCNTTSOptions,
     MiniMaxCNTTSOptions,
+    MiniMaxDuplexTTSOptions,
     SensetimeAvatarOptions,
     SpatiusAvatarOptions,
     StepFunTTSOptions,
+    StepFunSTTOptions,
     TencentLLMOptions,
     TencentSTTOptions,
     TencentTTSOptions,
@@ -352,9 +363,11 @@ export {
     MicrosoftCNSTT,
     MicrosoftCNTTS,
     MiniMaxCNTTS,
+    MiniMaxDuplexTTS,
     SensetimeAvatar,
     SpatiusAvatar,
     StepFunTTS,
+    StepFunSTT,
     TencentLLM,
     TencentSTT,
     TencentTTS,
@@ -469,6 +482,7 @@ export type {
     RimeTTSOptions,
     SarvamTTSOptions,
     SmallestAITTSOptions,
+    SonioxTTSOptions,
     TypecastTTSOptions,
     XAiTTSOptions,
 } from "./vendors/tts.js";
@@ -494,6 +508,7 @@ export {
     SarvamTTS,
     SarvamTTSLanguage,
     SmallestAITTS,
+    SonioxTTS,
     TypecastTTS,
     XAiTTS,
 } from "./vendors/tts.js";
