@@ -4,9 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
-
-## [v3.0.0-alpha.3] — 2026-10-29
+## [v3.0.0-alpha.3] — 2026-10-30
 
 - Support existing Customer ID/Secret HTTP Basic authentication alongside token007 for Platform and legacy requests. Optional App Certificates continue to sign RTC tokens without changing Basic REST authentication.
 
