@@ -226,7 +226,7 @@ const session = agent.createSession({
 | `channel` | `string` | Yes | Channel name to join |
 | `agentUid` | `string` | Yes | The agent's RTC UID |
 | `remoteUids` | `string[]` | Yes | Remote user UIDs to subscribe to |
-| `token` | `string` | No | Pre-built RTC+RTM token (omit to auto-generate) |
+| `token` | `string` | No | Pre-built RTC token (omit to auto-generate) |
 | `expiresIn` | `number` | No | Token lifetime in seconds (default: `86400` = 24 h, Agora max). Only applies when the token is auto-generated. Use `ExpiresIn.hours()` or `ExpiresIn.minutes()` for clarity. Valid range: 1–86400. |
 | `idleTimeout` | `number` | No | Seconds before auto-exit if no audio (0 = disabled) |
 | `enableStringUid` | `boolean` | No | Use string UIDs instead of numeric |
@@ -267,3 +267,11 @@ Builder vendor unions: `LlmVendor`, `TtsVendor<SR>`, `SttVendor`, `AvatarVendor<
 Wire vendor name aliases: `AsrVendorName` (ASR vendor string), `AvatarWireVendor` (avatar vendor string on `AvatarConfig`).
 
 Think value constants: `ThinkOnListeningActionInject`, `ThinkOnListeningActionInterrupt`, `ThinkOnListeningActionIgnore`, `ThinkOnThinkingActionInterrupt`, `ThinkOnThinkingActionIgnore`, `ThinkOnSpeakingActionInterrupt`, `ThinkOnSpeakingActionIgnore`.
+
+## Saving configurations (preview)
+
+`agent.save(options?: SaveOptions): Promise<SavedAgent>` persists the builder without starting a session. `SaveOptions` accepts optional `name` and `agentId`; omitting the ID creates a new stored agent. The returned handle exposes `id`, `name`, `etag`, `raw`, `update(config, {name?})`, `delete()`, `assignNumber()`, `unassignNumber()`, and `listNumbers()`.
+
+`SavedAgent.get(client, id)` loads a handle. `saved.update(config)` preserves its ID and name, requires the same client instance, and uses a fresh ETag for a conditional update. It returns a new snapshot. The builder and previous handle remain unchanged. `Agent.deploy` and `DeployedAgent` remain compatibility aliases.
+
+See [Saving agents](../guides/saved-agents.md) for the lifecycle and [the full signatures and transport behavior](./v3.md#agentkit-surface). Saved handles expose `createSession(options)`; start, stop and get-info are supported through the new session adapter. Builder configurations containing secret references or variables automatically use ephemeral startup. See the guide for unsupported session controls/options.

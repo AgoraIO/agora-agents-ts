@@ -343,7 +343,7 @@ export type McpServersItem = McpServer & Record<string, unknown>;
 export type AgentConfig = StartAgentsRequest.Properties;
 
 /** Agent configuration update (for runtime updates) */
-export type AgentConfigUpdate = UpdateAgentsRequest.Properties;
+export type AgentConfigUpdate = UpdateAgentsRequest.Properties & { messages?: import("../v3/types.js").Message[] };
 
 // =============================================================================
 // Session Types
@@ -351,14 +351,24 @@ export type AgentConfigUpdate = UpdateAgentsRequest.Properties;
 
 /** Options for creating a session via {@link Agent.createSession} */
 export interface SessionOptions {
+    /** Runtime values for declared template variables; selects ephemeral startup for inline builders. */
+    values?: Record<string, string | number | boolean>;
+    idempotencyKey?: string;
+    labels?: Record<string, string>;
+    maxDuration?: number;
+    encryption?: import("../v3/session-schema.js").RtcEncryption;
+    audioScenario?: "aiserver" | "chorus";
+    geofence?: import("../v3/session-lifecycle.js").SessionGeofence;
+    gracefulStop?: import("../v3/session-schema.js").GracefulStop;
+    dataPolicy?: import("../v3/session-schema.js").DataPolicy;
     /** Unique agent instance name sent to the Agora API. Omit to auto-generate `agent-{timestamp}`. */
     name?: string;
     /** The channel to join */
     channel: string;
     /** Authentication token for the channel. Omit to auto-generate (requires appCertificate on the session). */
     token?: string;
-    /** The agent's RTC UID */
-    agentUid: string;
+    /** The agent's RTC UID. Omit for server auto-assignment (legacy inline sessions use 0). */
+    agentUid?: string;
     /** Remote user UIDs to subscribe to */
     remoteUids: string[];
     /** Idle timeout in seconds (0 = no auto-exit) */
@@ -381,11 +391,35 @@ export interface SessionOptions {
     warn?: (message: string) => void;
 }
 
+/** Outbound telephony options; from is a registered number ID, to is an E.164 number. */
+export type CallOptions = Pick<
+    SessionOptions,
+    | "name"
+    | "values"
+    | "idempotencyKey"
+    | "labels"
+    | "maxDuration"
+    | "idleTimeout"
+    | "gracefulStop"
+    | "dataPolicy"
+    | "debug"
+    | "warn"
+> & {
+    from: string;
+    to: string;
+    callPolicy?: import("../v3/types.js").CallPolicy;
+};
+
 /** Session status */
 export type SessionStatus = ListAgentsResponse.Data.List.Item.Status;
 
 /** Session info (from get endpoint) */
-export type SessionInfo = GetAgentsResponse;
+export type SessionInfo = GetAgentsResponse & {
+    agent_session_id?: string;
+    agent_name?: string;
+    /** Extraction analysis, when returned by the service. */
+    analysis?: import("../v3/types.js").SessionAnalysis | null;
+};
 
 /** Session list response */
 export type SessionListResponse = ListAgentsResponse;

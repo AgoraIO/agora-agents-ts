@@ -25,12 +25,13 @@ The `agora-agents` package lets you build real-time voice AI agents on the [Agor
 | Layer | What it does | When to use |
 |---|---|---|
 | **AgentKit** (`Agent`, `AgentSession`, vendor classes) | High-level builder pattern, lifecycle, typed vendors | Most use cases |
+| **Saved agents** (`Agent.save`, `SavedAgent`, `client.secrets`, `client.numbers`) | Save configurations and manage their number assignments | Preview checkout; see [Saving agents](./guides/saved-agents.md) |
 | **Generated REST clients** (`client.agents`, `client.telephony`) | Typed access to REST APIs not covered by AgentKit | Advanced use cases |
 
 ## Install
 
 ```sh
-npm install agora-agents
+npm install agora-agents@3.0.0-alpha.3
 ```
 
 ## Documentation
@@ -47,6 +48,9 @@ npm install agora-agents
 | [Vendors](./concepts/vendors.md) | LLM, TTS, STT, MLLM, and Avatar provider catalog |
 | [Cascading Flow Guide](./guides/cascading-flow.md) | Step-by-step ASR -> LLM -> TTS |
 | [MLLM Flow Guide](./guides/mllm-flow.md) | Global MLLM providers and Chinese mainland Qwen Omni |
+| [Saving agents](./guides/saved-agents.md) | Configure once, then create a session or save an agent |
+| [v3 Preview Guide](./guides/v3-preview.md) | Staging setup, stored-agent deployment, secrets, numbers, and v2 migration |
+| [v3 Preview Reference](./reference/v3.md) | 32 operations, pagination, ETags, errors, and AgentKit helpers |
 | [Preview Endpoint](./guides/preview-endpoint.md) | Legacy preview routing and production migration compatibility |
 | [Avatar Integration](./guides/avatars.md) | LiveAvatar, Generic Avatar, Anam, Akool, SenseTime (CN), and HeyGen integration |
 | [Agent Builder Features](./guides/agent-builder-features.md) | Turn detection, SAL, filler words, and advanced agent options |
@@ -56,7 +60,6 @@ npm install agora-agents
 | [Pagination](./guides/pagination.md) | Iterate over paginated list endpoints |
 | [Advanced](./guides/advanced.md) | Headers, retries, timeouts, logging, custom fetcher |
 | [Low-Level API](./guides/low-level-api.md) | Generated REST APIs |
-| [Preview Endpoint](./guides/preview-endpoint.md) | `AgoraPreviewClient`, the `agora-feature` gate header, and preview routing |
 | [AgoraClient Reference](./reference/client.md) | Constructor options, public methods |
 | [Agent Reference](./reference/agent.md) | Full builder API with TypeScript signatures |
 | [AgentSession Reference](./reference/session.md) | All methods, events, and payload types |

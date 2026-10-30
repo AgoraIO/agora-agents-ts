@@ -7,10 +7,18 @@
 
 The Agora Agents SDK for TypeScript lets you build real-time voice agents on Agora Conversational AI with a high-level `Agent` / `AgentSession` API and a generated REST client.
 
+## Configure once, then run or save
+
+`Agent` is the configuration builder. Choose `config.createSession(...).start()` for a running conversation, or `await config.save({name})` for a `SavedAgent`. Continue with the returned session or saved handle: `saved.update(revisedConfig)`, `assignNumber()`, `unassignNumber()`, `listNumbers()`, and `delete()`.
+
+**Saving agents and project provisioning are part of SDK preview `3.0.0-alpha.3`.** Existing session behavior is unchanged. Use `client.secrets` and `secretRef()` for stored credentials, `withVariable()` for template/extraction definitions, and `client.numbers` to register numbers. Number listing scans project pages and filters assignments locally. `client.campaigns` provides typed campaign creation, reads, updates, pause/resume/cancel, and deletion.
+
+Start with [Saving agents](docs/guides/saved-agents.md). Use `saved.createSession(...).start()` to run a saved configuration. Builders with secret references or variable definitions automatically start an ephemeral session without saving first. These sessions support values, labels, optional RTC token/encryption, retention, graceful stop, start, stop, and get-info. Runtime updates support RTC token, messages, and complete model params replacement; conversation actions remain unavailable. The public client supports Agora token007 and Customer ID/Secret HTTP Basic authentication at the public preview origin; no internal gateway headers are needed. Advanced users can access 32 operations, ETags, raw headers, pagination, and project session reads and start/stop/update through the [transport reference](docs/reference/v3.md). [Staging setup and mapping limits](docs/guides/v3-preview.md) remain documented separately.
+
 ## Installation
 
 ```sh
-npm install agora-agents
+npm install agora-agents@3.0.0-alpha.3
 ```
 
 ## Quick Start
@@ -208,6 +216,9 @@ If you want to bring your own vendor credentials instead of using Agora-managed 
 
 ## MLLM (Realtime / Multimodal)
 
+MLLM is supported for existing inline sessions. Saved agents and ephemeral preview sessions support cascaded pipelines only; saving an MLLM configuration or using preview-only session options with it fails before HTTP.
+
+
 Use `withMllm()` for OpenAI Realtime, Gemini Live, Vertex AI, or xAI Grok — no STT, LLM, or TTS vendor needed. MLLM mode is enabled automatically.
 
 ```typescript
@@ -228,6 +239,21 @@ const agent = new Agent({ client }).withMllm(
 );
 ```
 
+For Gemini 3.8 Live Extended Thinking, use the same single `GeminiLive` class as the regular Live model:
+
+```typescript
+import { GeminiLive } from 'agora-agents';
+
+const geminiAgent = new Agent({ client }).withMllm(new GeminiLive({
+  apiKey: process.env.GOOGLE_API_KEY!,
+  model: 'models/gemini-3.8-live-extended-thinking',
+  thinkingLevel: 'medium',
+  greetingMessage: 'Hello! Ready to chat.',
+}));
+```
+
+Use `models/gemini-3.8-live` without `thinkingLevel` for the lower-latency model. Gemini sessions use the preview gateway and `agora-feature: gemini-live`; the Google key is sent as `mllm.api_key`. See the [Preview Endpoint guide](./docs/guides/preview-endpoint.md).
+
 See the [MLLM Flow guide](./docs/guides/mllm-flow.md) for full examples with Gemini Live, Vertex AI, and xAI Grok.
 
 > Avatars are not supported with MLLM. The avatar publisher requires the cascading ASR + LLM + TTS pipeline; combining `withMllm()` with `withAvatar()` throws at `Agent.toProperties()` and `AgentSession.start()`.
@@ -246,8 +272,17 @@ See the [Avatar Integration guide](./docs/guides/avatars.md) for sample-rate req
 - [BYOK Guide](./docs/guides/byok.md)
 - [MLLM Flow](./docs/guides/mllm-flow.md)
 - [Low-Level API](./docs/guides/low-level-api.md)
+- [Saving agents](./docs/guides/saved-agents.md)
+- [v3 Preview Guide](./docs/guides/v3-preview.md)
+- [v3 Preview Reference](./docs/reference/v3.md)
 
 ## Reference
 
 - [SDK Reference](./reference.md)
 - [Agora Conversational AI Docs](https://docs.agora.io/en/conversational-ai/overview)
+
+### Installing a preview checkout
+
+The v3 alpha preview is distributed separately from stable 2.x packages. This checkout targets `3.0.0-alpha.3`. Git installs run `prepare` to build importable CommonJS/ESM output; lifecycle scripts and development dependencies must be enabled. To build a checkout on Windows, PowerShell, Command Prompt, macOS, or Linux, run `npm install` then `npm run build` (the clean step uses Node).
+
+Use `agent.createEphemeralSession(options)` to explicitly start an unsaved Platform configuration. Use `agent.call(options)` or `saved.call(options)` for an outbound phone session, then call `start()` on the returned handle.

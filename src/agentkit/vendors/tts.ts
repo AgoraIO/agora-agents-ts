@@ -965,6 +965,16 @@ type MiniMaxTTSCommonOptions = {
     model: string;
     /** Voice style identifier (e.g., 'English_captivating_female1') */
     voiceId?: string;
+    /** Speech speed (default 1). */
+    speed?: number;
+    volume?: number;
+    pitch?: number;
+    emotion?: string;
+    sampleRate?: number;
+    bitrate?: number;
+    format?: string;
+    channel?: number;
+    additionalParams?: Record<string, unknown>;
     /** WebSocket endpoint (e.g., 'wss://api-uw.minimax.io/ws/v1/t2a_v2') */
     url?: string;
     /** Skip patterns for bracketed content */
@@ -980,6 +990,16 @@ export type MiniMaxTTSOptions =
           model: MiniMaxPresetModel;
           groupId?: string;
           voiceId?: string;
+          /** Speech speed (default 1). */
+          speed?: number;
+          volume?: number;
+          pitch?: number;
+          emotion?: string;
+          sampleRate?: number;
+          bitrate?: number;
+          format?: string;
+          channel?: number;
+          additionalParams?: Record<string, unknown>;
           url?: string;
       });
 
@@ -1014,15 +1034,48 @@ export class MiniMaxTTS extends BaseTTS {
     }
 
     toConfig(): TtsConfig {
-        const { key, groupId, model, voiceId, url, skipPatterns } = this.options;
+        const {
+            key,
+            groupId,
+            model,
+            voiceId,
+            url,
+            skipPatterns,
+            speed,
+            volume,
+            pitch,
+            emotion,
+            sampleRate,
+            bitrate,
+            format,
+            channel,
+            additionalParams,
+        } = this.options;
+        const voice = {
+            ...(additionalParams?.voice_setting as Record<string, unknown>),
+            ...(voiceId !== undefined && { voice_id: voiceId }),
+            speed: speed ?? (additionalParams?.voice_setting as Record<string, unknown>)?.speed ?? 1,
+            ...(volume !== undefined && { vol: volume }),
+            ...(pitch !== undefined && { pitch }),
+            ...(emotion !== undefined && { emotion }),
+        };
+        const audio = {
+            ...(additionalParams?.audio_setting as Record<string, unknown>),
+            ...(sampleRate !== undefined && { sample_rate: sampleRate }),
+            ...(bitrate !== undefined && { bitrate }),
+            ...(format !== undefined && { format }),
+            ...(channel !== undefined && { channel }),
+        };
 
         return {
             vendor: "minimax",
             params: {
+                ...additionalParams,
                 ...(key && { key }),
                 ...(key && groupId && { group_id: groupId }),
                 ...(key && { model }),
-                ...(voiceId && { voice_setting: { voice_id: voiceId } }),
+                voice_setting: voice,
+                ...(Object.keys(audio).length && { audio_setting: audio }),
                 ...(key && url && { url }),
             } as unknown as import("../types.js").MinimaxTtsParams,
             // Preset path: model not in params; stored as top-level hint for preset
@@ -1060,7 +1113,7 @@ export interface SarvamTTSOptions<SR extends number = number> {
     sampleRate?: SR;
     /** Whether to normalize English words and numeric entities. */
     enablePreprocessing?: boolean;
-    /** TTS model to use. Defaults server-side to `bulbul:v3`. */
+    /** TTS model to use. Defaults to `bulbul:v3`. */
     model?: string;
     /** Additional vendor-specific parameters. Explicit options take precedence. */
     additionalParams?: Record<string, unknown>;
@@ -1108,6 +1161,7 @@ export class SarvamTTS<SR extends number = number> extends BaseTTS<SR> {
         return {
             vendor: "sarvam",
             params: {
+                model: "bulbul:v3",
                 ...additionalParams,
                 api_subscription_key: key,
                 speaker,

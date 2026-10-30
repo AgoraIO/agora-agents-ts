@@ -31,3 +31,12 @@ pnpm-lock.yaml
 .fern/replay.lock
 .fern/replay.yml
 .gitattributes
+
+# Hand-maintained additive v3 preview, pending shared Fern generation
+src/v3/
+
+# Shared public gateway-header policy is handwritten.
+src/core/publicHeaders.ts
+
+# Corrected preview release contract handoff
+openapi.yaml

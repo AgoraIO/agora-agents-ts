@@ -30,22 +30,22 @@ const client = new AgoraClient<TArea>(options: AgoraClient.Options<TArea>);
 |---|---|---|---|
 | `area` | `AgoraArea` | Yes | Region for API routing (`Area.US`, `Area.EU`, `Area.AP`, `Area.CN`) |
 | `appId` | `string` | Yes | Agora App ID |
-| `appCertificate` | `string` | Yes | Agora App Certificate (keep secret) |
-| `customerId` | `string` | No | Customer ID for Basic Auth |
-| `customerSecret` | `string` | No | Customer Secret for Basic Auth |
-| `authToken` | `string` | No | Pre-built `agora token=<value>` string |
+| `appCertificate` | `string` | For generated REST tokens | Optional with Basic or `authToken`; enables automatic RTC signing |
+| `authToken` | `string` | No | Raw Agora token; the SDK adds `agora token=` |
+| `customerId`, `customerSecret` | `string` | Together for Basic | Customer credentials; mutually exclusive with `authToken` |
 | `timeoutInSeconds` | `number` | No | Request timeout in seconds |
 | `maxRetries` | `number` | No | Max retry attempts (default from Fern config) |
 | `logging` | `LogConfig \| Logger` | No | SDK logger configuration |
+| `v3` | `V3Options` | No | Optional public origin/custom headers; see the [v3 reference](./v3.md) |
 | `fetch` | `typeof fetch` | No | Custom fetch implementation |
 
 Authentication mode is determined by which options you provide:
 
 | Options provided | Resolved mode |
 |---|---|
-| `customerId` + `customerSecret` | `"basic"` |
 | `authToken` | `"token"` |
-| Neither | `"app-credentials"` |
+| `customerId` + `customerSecret` | `"basic"` |
+| `appCertificate` without either above | `"app-credentials"` |
 
 See [Authentication](../getting-started/authentication.md) for details on each mode.
 
@@ -54,7 +54,7 @@ See [Authentication](../getting-started/authentication.md) for details on each m
 | Property | Type | Description |
 |---|---|---|
 | `appId` | `string` (readonly) | The Agora App ID |
-| `appCertificate` | `string` (readonly) | The Agora App Certificate |
+| `appCertificate` | `string \| undefined` (readonly) | The Agora App Certificate |
 | `authMode` | `AgoraAuthMode` (readonly) | `"basic"`, `"token"`, or `"app-credentials"` |
 | `area` | `TArea` (readonly) | The configured routing area |
 | `pool` | `Pool` (readonly) | The domain pool instance |
@@ -88,3 +88,7 @@ The client exposes Fern-generated sub-clients for direct API access:
 | `client.phoneNumbers` | Phone number management |
 
 See the [API Reference](../../reference.md) for the full sub-client method signatures.
+
+## Project provisioning (preview)
+
+`client.campaigns` exposes campaign CRUD and pause/resume/cancel operations. `client.secrets` manages project secret sets and keys. `client.numbers` registers, lists, retrieves, updates, and deletes project numbers. These accessors share the exact underlying instances, transport, and auth of `client.v3.secrets` and `client.v3.numbers`; existing `client.agents` and `client.phoneNumbers` keep their meanings. See [Saving agents](../guides/saved-agents.md) and [operation signatures](./v3.md).

@@ -418,6 +418,16 @@ export {
     XfyunDialectSTT,
     XfyunSTT,
 } from "./agentkit/index.js";
+export { UnsupportedSessionOperationError } from "./agentkit/session-backend.js";
+export type { AssignNumberOptions, DeployOptions, SaveOptions, SecretRef, VariableDefinition } from "./agentkit/v3.js";
+export {
+    DeployedAgent,
+    NumberNotFoundError,
+    SavedAgent,
+    SecretRefNotSupportedError,
+    secretRef,
+    UnsupportedFieldError,
+} from "./agentkit/v3.js";
 export type { GeminiTTSConfig, GeminiTTSModel, GeminiTTSOptions } from "./agentkit/vendors/tts.js";
 export { GeminiTTS, GeminiTTSModels } from "./agentkit/vendors/tts.js";
 export * as Agora from "./api/index.js";
@@ -426,3 +436,5 @@ export { Area } from "./core/domain/index.js";
 export { AgoraEnvironment } from "./environments.js";
 export { AgoraError, AgoraTimeoutError } from "./errors/index.js";
 export * from "./exports.js";
+export type { V3, V3Options } from "./v3/index.js";
+export { PreconditionFailedError, V3Client, V3Error } from "./v3/index.js";

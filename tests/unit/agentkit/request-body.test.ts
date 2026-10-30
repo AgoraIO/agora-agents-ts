@@ -1167,7 +1167,7 @@ describe("LLM vendor coverage", () => {
             )
             .toProperties({ ...SESSION_OPTS, ...ALLOW_ALL });
 
-        expect(p.llm?.api_key).toBeUndefined();
+        expect(p.llm?.api_key).toBe("gemini-key");
         expect(p.llm?.url).toBe(
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:streamGenerateContent?alt=sse&key=gemini-key",
         );
@@ -1504,6 +1504,7 @@ describe("TTS vendor coverage", () => {
         expect((p.tts?.params as Record<string, unknown>)?.url).toBe("wss://api-uw.minimax.io/ws/v1/t2a_v2");
         expect((p.tts?.params as Record<string, unknown>)?.voice_setting).toEqual({
             voice_id: "English_captivating_female1",
+            speed: 1,
         });
     });
 

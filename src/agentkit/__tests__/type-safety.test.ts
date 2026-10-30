@@ -147,8 +147,8 @@ new MiniMaxTTS({
 new DeepgramSTT({ model: "enhanced" });
 // @ts-expect-error Smallest AI boolean options use booleans in AgentKit, not wire-format strings.
 new SmallestAISTT({ apiKey: "test", wordTimestamps: "true" });
-// @ts-expect-error Missing apiKey is only allowed for Agora-managed OpenAI models.
-new OpenAI({ model: "gpt-4o" });
+// Managed model availability is validated by the Platform server.
+new OpenAI({ model: "gpt-5.6-luna" });
 // @ts-expect-error Missing apiKey cannot be combined with a custom vendor hint.
 new OpenAI({ model: "gpt-5-mini", vendor: "custom" });
 // @ts-expect-error Missing apiKey cannot be combined with a custom URL.

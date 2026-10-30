@@ -271,3 +271,5 @@ You do not need to call `withLlm()`, `withTts()`, or `withStt()` — doing so ha
 
 - [Cascading Flow](./cascading-flow.md) — if you need separate STT, LLM, and TTS vendors
 - [Vendors](../concepts/vendors.md) — full MLLM vendor options
+
+MLLM is supported for existing inline sessions. Saved agents and ephemeral preview sessions support cascaded pipelines only; saving an MLLM configuration or using preview-only session options with it fails before HTTP.

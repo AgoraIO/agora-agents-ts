@@ -6,7 +6,7 @@
  * - ConvoAI tokens are RTC + RTM + ConvoAI tokens used to authenticate
  *   ConvoAI REST API calls via `Authorization: agora token=<token>`.
  *
- * The `agora-token` library handles the JWT signing.
+ * The `agora-token` library handles the AccessToken2 signing.
  */
 
 import agoraToken from "agora-token";
@@ -204,7 +204,8 @@ export interface GenerateConvoAITokenOptions {
     /** Seconds until the token expires (default: 86400) */
     tokenExpire?: number;
     /**
-     * Seconds until privileges expire. Defaults to the same value as `tokenExpire`.
+     * Seconds until RTC privileges expire. Defaults to `tokenExpire`.
+     * RTM login retains the token lifetime; ConvoAI carries no privilege map.
      * Per Agora docs, setting this to 0 would expire privileges immediately — the SDK
      * always substitutes `tokenExpire` when this is 0 or omitted.
      */
@@ -216,7 +217,7 @@ export interface GenerateConvoAITokenOptions {
  *
  * The resulting token is used as: `Authorization: agora token=<token>`
  *
- * Uses `ConvoAITokenBuilder.buildToken`, which adds the ConvoAI service marker
+ * Uses `ConvoAITokenBuilder.buildTokenWithPrivilege`, which adds the ConvoAI service marker
  * required by the ConvoAI REST API alongside RTC channel access and RTM login
  * privileges in a single AccessToken2 token.
  */
@@ -228,7 +229,7 @@ export function generateConvoAIToken(opts: GenerateConvoAITokenOptions): string 
     const privilegeExpire = configuredPrivilegeExpire === 0 ? tokenExpire : configuredPrivilegeExpire;
     const account = _uidToAccount(opts.uid);
     return _requireBuiltToken(
-        agoraToken.ConvoAITokenBuilder.buildToken(
+        agoraToken.ConvoAITokenBuilder.buildTokenWithPrivilege(
             opts.appId,
             opts.appCertificate,
             opts.channelName,
@@ -240,7 +241,7 @@ export function generateConvoAIToken(opts: GenerateConvoAITokenOptions): string 
             privilegeExpire,
             privilegeExpire,
             account,
-            privilegeExpire,
+            tokenExpire,
         ),
         opts.appId,
         opts.appCertificate,

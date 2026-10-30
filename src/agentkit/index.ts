@@ -126,6 +126,7 @@ export type {
     SttVendor,
     TtsVendor,
 } from "./region-vendors.js";
+export { UnsupportedSessionOperationError } from "./session-backend.js";
 export type {
     GenerateConvoAITokenOptions,
     GenerateTokenOptions,
@@ -149,6 +150,7 @@ export type {
     AsrVendorName,
     AvatarConfig,
     AvatarWireVendor,
+    CallOptions,
     CartesiaTts,
     CartesiaTtsParams,
     // Conversation types
@@ -272,6 +274,15 @@ export type {
     XAiTts,
     XAiTtsParams,
 } from "./types.js";
+export type { AssignNumberOptions, DeployOptions, SaveOptions, SecretRef, VariableDefinition } from "./v3.js";
+export {
+    DeployedAgent,
+    NumberNotFoundError,
+    SavedAgent,
+    SecretRefNotSupportedError,
+    secretRef,
+    UnsupportedFieldError,
+} from "./v3.js";
 export type {
     AkoolAvatarOptions,
     AnamAvatarOptions,

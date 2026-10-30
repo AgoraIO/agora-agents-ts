@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v3.0.0-alpha.3] — 2026-10-30
+
+- Support existing Customer ID/Secret HTTP Basic authentication alongside token007 for Platform and legacy requests. Optional App Certificates continue to sign RTC tokens without changing Basic REST authentication.
+
+- Generate Platform authorization with the official ConvoAI service, using agora-token 2.0.7 while preserving RTC and RTM expiration behavior.
+- Retain required provider language parameters for AssemblyAI, Google, Microsoft, Sarvam, and Speechmatics ASR. Default Sarvam TTS to bulbul:v3 without overriding explicit models.
+
+## [v3.0.0-alpha.2] — 2026-10-29
+
+- Fix Platform provider defaults, Gemini/Bedrock credentials, ASR keywords/language/endpoints, and generic/HeyGen avatar mapping. Add typed MiniMax voice/audio controls.
+- Add explicit ephemeral and outbound-call session helpers, fixed-UID RTC token generation, full inbound call policy, optional extraction/secret metadata response types, and token-only client typing.
+- Make source builds portable and build Git installs through prepare. Keep compatibility CI tarball capture independent of prepare output. Correct saved-agent examples. Model availability for managed OpenAI is validated by the service.
+- Preserve Gemini credentials during endpoint normalization and capture RTC signing identity per session. Retain generated RTC tokens across failed-start retries, refresh them for new unkeyed session lifecycles, and leave unsupported UIDs to server provisioning. Reject mixed telephony and RTC options before normalization.
+
+## [v3.0.0-alpha.1] — 2026-10-28
+
+- Saved agents, ephemeral and saved-agent sessions, project secrets/numbers, and campaign resources are available in the preview checkout. See [Saving agents](docs/guides/saved-agents.md).
+- Aligned the preview with the bundled [OpenAPI contract](openapi.yaml): vendor-specific `credential.fields`, explicit secret references for saved credentials, optional session UID, session runtime PATCH, 50,000-contact/10 MiB campaigns, and current number/call-policy fields. Session and campaign create/action idempotency lasts 24 hours; writes do not retry automatically. Removed public campaign retry fields and advertised session analysis results.
+- The current preview service rollout is US-only. Regional availability may expand independently of SDK releases; this rollout note does not introduce a new SDK region restriction.
+
+- Saved-agent and ephemeral-session preview APIs support cascaded pipelines only. Removed realtime/MLLM from the preview contract and reject unsupported MLLM requests before HTTP. Existing inline MLLM sessions remain supported.
+
 ## [v2.13.0] — 2026-10-29
 
 ### Added

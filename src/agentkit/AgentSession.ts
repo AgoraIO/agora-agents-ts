@@ -10,6 +10,7 @@ import type * as Agora from "../api/index.js";
 import type { AgentManagementClient } from "../api/resources/agentManagement/client/Client.js";
 import type { AgentsClient } from "../api/resources/agents/client/Client.js";
 import { AgoraError } from "../errors/index.js";
+import { V3Error } from "../v3/transport.js";
 import type { Agent } from "./Agent.js";
 import type { AgoraArea } from "./area.js";
 import {
@@ -42,6 +43,7 @@ import {
     previewRequestHeaders,
     requiredPreviewFeatures,
 } from "./preview/client.js";
+import { type SessionBackend, UnsupportedSessionOperationError } from "./session-backend.js";
 import { ExpiresIn as ExpiresInHelper, generateConvoAIToken } from "./token.js";
 import type {
     AgentConfigUpdate,
@@ -71,7 +73,9 @@ export interface AgentSessionOptions {
     /** The Agora client instance */
     client: AgoraClient<AgoraArea>;
     /** The agent configuration */
-    agent: Agent<number, AgoraArea>;
+    agent?: Agent<number, AgoraArea>;
+    /** @internal Transport adapter for stored/ephemeral session identities. */
+    backend?: SessionBackend;
     /** The App ID */
     appId: string;
     /** The App Certificate — enables automatic RTC token generation when starting sessions */
@@ -144,7 +148,8 @@ export interface AgentSessionOptions {
  */
 export class AgentSession {
     private readonly _client: AgoraClient<AgoraArea>;
-    private readonly _agent: Agent<number, AgoraArea>;
+    private readonly _agent?: Agent<number, AgoraArea>;
+    private readonly _backend?: SessionBackend;
     private readonly _appId: string;
     private readonly _appCertificate?: string;
     private readonly _name: string;
@@ -165,12 +170,30 @@ export class AgentSession {
     private _sessionBaseUrl?: string;
     private _agentId: string | null = null;
     private _status: "idle" | "starting" | "running" | "stopping" | "stopped" | "error" = "idle";
+    private _lifecycleRevision = 0;
+    private _infoReadRevision = 0;
+    private _pendingLifecycle: number | undefined;
+
+    private _beginLifecycle(): number {
+        const revision = ++this._lifecycleRevision;
+        this._pendingLifecycle = revision;
+        return revision;
+    }
+
+    private _finishLifecycle(revision: number | undefined): void {
+        if (revision !== undefined && this._pendingLifecycle === revision) {
+            this._pendingLifecycle = undefined;
+            ++this._lifecycleRevision;
+        }
+    }
+
     private _eventHandlers: Map<AgentSessionEvent, Set<AgentSessionEventHandler>> = new Map();
     private readonly _warn: (message: string) => void;
 
     constructor(options: AgentSessionOptions) {
         this._client = options.client;
         this._agent = options.agent;
+        this._backend = options.backend;
         this._appId = options.appId;
         this._appCertificate = options.appCertificate;
         this._name = options.name;
@@ -185,8 +208,8 @@ export class AgentSession {
         this._expiresIn = options.expiresIn;
         this._debug = options.debug;
         this._warn = options.warn ?? ((msg) => console.warn(msg));
-        // Read authMode from pool client if available, else fall back to basic
-        this._authMode = (options.client as { authMode?: AgoraAuthMode }).authMode ?? "basic";
+        // Read authMode from pool client if available, else leave authorization to the supplied client
+        this._authMode = (options.client as { authMode?: AgoraAuthMode }).authMode ?? "token";
         this._agentsClient = options.client.agents;
         this._agentManagementClient = options.client.agentManagement;
         this._sessionBaseUrl = this._clientCurrentUrl();
@@ -273,6 +296,7 @@ export class AgentSession {
      * The agent configuration.
      */
     get agent(): Agent<number, AgoraArea> {
+        if (!this._agent) throw new Error("This session uses a saved agent; no local configuration is available");
         return this._agent;
     }
 
@@ -303,6 +327,7 @@ export class AgentSession {
      * ```
      */
     get raw(): AgentsClient {
+        if (this._backend) throw new UnsupportedSessionOperationError("raw running-agent client");
         return this._agentsClient;
     }
 
@@ -310,6 +335,7 @@ export class AgentSession {
      * Direct access to the underlying Fern-generated AgentManagement client.
      */
     get rawAgentManagement(): AgentManagementClient {
+        if (this._backend) throw new UnsupportedSessionOperationError("rawAgentManagement");
         return this._agentManagementClient;
     }
 
@@ -317,7 +343,7 @@ export class AgentSession {
      * Returns true when the agent is configured for MLLM (multimodal end-to-end audio).
      */
     private _isMllmMode(): boolean {
-        const mllm = this._agent.mllm;
+        const mllm = this.agent.mllm;
         if (mllm?.enable === true) {
             return true;
         }
@@ -333,10 +359,10 @@ export class AgentSession {
      * and the only symptom is off-persona replies.
      */
     private _warnOnDroppedMllmInstructions(): void {
-        if (!this._isMllmMode() || this._agent.instructions === undefined) {
+        if (!this._isMllmMode() || this.agent.instructions === undefined) {
             return;
         }
-        const params = this._agent.mllm?.params as { instructions?: unknown } | undefined;
+        const params = this.agent.mllm?.params as { instructions?: unknown } | undefined;
         if (typeof params?.instructions === "string" && params.instructions.length > 0) {
             return;
         }
@@ -356,9 +382,9 @@ export class AgentSession {
      * @throws {Error} If configuration is invalid
      */
     private _validateAvatarConfig(): void {
-        const agentConfig = this._agent.config;
+        const agentConfig = this.agent.config;
         const avatar = agentConfig.avatar;
-        const tts = this._agent.tts;
+        const tts = this.agent.tts;
 
         // Skip validation if no avatar is configured
         if (!avatar || avatar.enable === false) {
@@ -549,13 +575,13 @@ export class AgentSession {
             }
         }
 
-        if (inferAsrPreset(this._agent.stt as Agora.Asr | undefined)) {
+        if (inferAsrPreset(this.agent.stt as Agora.Asr | undefined)) {
             skipVendorValidationCategories.add("asr");
         }
-        if (inferLlmPreset(this._agent.llm as Agora.Llm | undefined)) {
+        if (inferLlmPreset(this.agent.llm as Agora.Llm | undefined)) {
             skipVendorValidationCategories.add("llm");
         }
-        if (inferTtsPreset(this._agent.tts as Agora.Tts | undefined)) {
+        if (inferTtsPreset(this.agent.tts as Agora.Tts | undefined)) {
             skipVendorValidationCategories.add("tts");
         }
 
@@ -575,6 +601,25 @@ export class AgentSession {
             throw new Error(`Cannot start session in ${this._status} state`);
         }
 
+        if (this._backend) {
+            const lifecycle = this._beginLifecycle();
+            this._agentId = null;
+            this._status = "starting";
+            try {
+                const started = await this._backend.start();
+                this._agentId = started.id;
+                this._status = started.status;
+                this._finishLifecycle(lifecycle);
+                this._emit("started", { agentId: this._agentId, sessionId: this._agentId });
+                return this._agentId;
+            } catch (error) {
+                this._status = "error";
+                this._finishLifecycle(lifecycle);
+                this._emit("error", error);
+                throw error;
+            }
+        }
+
         // Validate avatar configuration before starting
         this._validateAvatarConfig();
         this._warnOnDroppedMllmInstructions();
@@ -590,7 +635,7 @@ export class AgentSession {
         this._status = "starting";
 
         try {
-            const pipelineId = this._pipelineId ?? this._agent.pipelineId;
+            const pipelineId = this._pipelineId ?? this.agent.pipelineId;
             // appCertificate presence is guaranteed by the guard above when no token is provided.
             let expiresIn = this._expiresIn;
             if (expiresIn !== undefined) {
@@ -606,7 +651,7 @@ export class AgentSession {
             const { skipVendorValidationCategories, allowMissingVendorCategories } =
                 this._vendorValidationCategories(pipelineId);
 
-            const properties = this._agent.toProperties({
+            const properties = this.agent.toProperties({
                 channel: this._channel,
                 agentUid: this._agentUid,
                 remoteUids: this._remoteUids,
@@ -680,7 +725,7 @@ export class AgentSession {
      * this method will succeed silently rather than throwing an error.
      */
     async stop(): Promise<void> {
-        if (this._status !== "running") {
+        if (this._status !== "running" && !(this._backend && this._status === "starting")) {
             throw new Error(`Cannot stop session in ${this._status} state`);
         }
 
@@ -688,28 +733,49 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
+        const lifecycle = this._backend ? this._beginLifecycle() : undefined;
         this._status = "stopping";
 
         try {
-            await this._agentsClient.stop(
-                {
-                    appid: this._appId,
-                    agentId: this._agentId,
-                },
-                { headers: this._requestHeaders() },
-            );
+            if (this._backend) await this._backend.stop(this._agentId);
+            else
+                await this._agentsClient.stop(
+                    {
+                        appid: this._appId,
+                        agentId: this._agentId,
+                    },
+                    { headers: this._requestHeaders() },
+                );
 
             this._status = "stopped";
-            this._emit("stopped", { agentId: this._agentId });
+            this._finishLifecycle(lifecycle);
+            this._emit("stopped", { agentId: this._agentId, ...(this._backend ? { sessionId: this._agentId } : {}) });
         } catch (error) {
             // Handle 404 "task not found" gracefully - agent is already stopped
-            if (error instanceof AgoraError && error.statusCode === 404) {
+            if (!this._backend && error instanceof AgoraError && error.statusCode === 404) {
                 this._status = "stopped";
-                this._emit("stopped", { agentId: this._agentId });
+                this._emit("stopped", {
+                    agentId: this._agentId,
+                    ...(this._backend ? { sessionId: this._agentId } : {}),
+                });
                 return; // Don't throw - agent is already stopped
             }
 
-            this._status = "error";
+            const reason =
+                error instanceof V3Error &&
+                error.statusCode === 409 &&
+                error.body !== null &&
+                typeof error.body === "object" &&
+                "reason" in error.body
+                    ? error.body.reason
+                    : undefined;
+            this._status =
+                this._backend && reason === "TaskNotRunning"
+                    ? "stopped"
+                    : this._backend && reason === "TaskConflict"
+                      ? "stopping"
+                      : "error";
+            this._finishLifecycle(lifecycle);
             this._emit("error", error);
             throw error;
         }
@@ -722,6 +788,7 @@ export class AgentSession {
      * @param options - Optional speak options
      */
     async say(text: string, options?: SayOptions): Promise<void> {
+        if (this._backend) throw new UnsupportedSessionOperationError("say");
         if (this._status !== "running") {
             throw new Error(`Cannot say in ${this._status} state`);
         }
@@ -746,6 +813,7 @@ export class AgentSession {
      * Interrupt the agent while speaking or thinking.
      */
     async interrupt(): Promise<void> {
+        if (this._backend) throw new UnsupportedSessionOperationError("interrupt");
         if (this._status !== "running") {
             throw new Error(`Cannot interrupt in ${this._status} state`);
         }
@@ -767,6 +835,7 @@ export class AgentSession {
      * Inject a text instruction into the current session pipeline.
      */
     async think(text: string, options?: ThinkOptions): Promise<ThinkResponse> {
+        if (this._backend) throw new UnsupportedSessionOperationError("think");
         if (this._status !== "running") {
             throw new Error(`Cannot think in ${this._status} state`);
         }
@@ -804,11 +873,22 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
+        if (this._backend) {
+            await this._backend.update(this._agentId, config);
+            return;
+        }
+        let properties = config;
+        if (config?.messages !== undefined) {
+            if (config.llm?.system_messages !== undefined)
+                throw new Error("Provide messages or llm.system_messages, not both");
+            const { messages, ...remaining } = config;
+            properties = { ...remaining, llm: { ...remaining.llm, system_messages: messages } };
+        }
         await this._agentsClient.update(
             {
                 appid: this._appId,
                 agentId: this._agentId,
-                properties: config,
+                properties,
             },
             { headers: this._requestHeaders() },
         );
@@ -820,6 +900,7 @@ export class AgentSession {
      * @returns The conversation history
      */
     async getHistory(): Promise<ConversationHistory> {
+        if (this._backend) throw new UnsupportedSessionOperationError("getHistory");
         if (!this._agentId) {
             throw new Error("No agent ID available");
         }
@@ -839,6 +920,7 @@ export class AgentSession {
      * @returns The session's conversation turns
      */
     async getTurns(options?: GetTurnsOptions): Promise<ConversationTurns> {
+        if (this._backend) throw new UnsupportedSessionOperationError("getTurns");
         if (!this._agentId) {
             throw new Error("No agent ID available");
         }
@@ -861,6 +943,7 @@ export class AgentSession {
      * holding all turn data in memory at once.
      */
     async getAllTurns(options?: Omit<GetTurnsOptions, "page_index">): Promise<ConversationTurns> {
+        if (this._backend) throw new UnsupportedSessionOperationError("getAllTurns");
         let page = await this.getTurns({ page_index: 1, page_size: options?.page_size });
         const allTurns = [...(page.turns ?? [])];
         let currentPage = page.pagination?.page_index ?? 1;
@@ -911,6 +994,24 @@ export class AgentSession {
             throw new Error("No agent ID available");
         }
 
+        if (this._backend) {
+            const id = this._agentId;
+            const lifecycle = this._lifecycleRevision;
+            const read = ++this._infoReadRevision;
+            const info = await this._backend.getInfo(id);
+            if (
+                this._pendingLifecycle !== undefined ||
+                lifecycle !== this._lifecycleRevision ||
+                read !== this._infoReadRevision ||
+                id !== this._agentId
+            )
+                return info;
+            const status = info.status?.toLowerCase();
+            if (status === "failed") this._status = "error";
+            else if (status && ["idle", "starting", "running", "stopping", "stopped"].includes(status))
+                this._status = status as typeof this._status;
+            return info;
+        }
         return this._agentsClient.get(
             {
                 appid: this._appId,

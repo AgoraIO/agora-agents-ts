@@ -173,3 +173,11 @@ Supported Agora-managed models:
 - OpenAI LLM: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5-nano`, `gpt-5-mini`
 - OpenAI TTS: `tts-1`
 - MiniMax TTS: `speech-2.6-turbo`, `speech-2.8-turbo`
+
+## Saved and ephemeral sessions (preview)
+
+`SavedAgent.createSession(options)` and automatic ephemeral `Agent.createSession(options)` return the same `AgentSession`. Secret references, variable definitions, and supported preview-only options select ephemeral startup; ordinary inline configurations retain their existing transport.
+
+Both implement `start`, `stop`, `getInfo`, status, IDs and events. `STARTING` remains `starting` locally until a read reports progress; it permits stop. `FAILED` maps to the existing `error` state. `getInfo` exposes `agent_session_id` without substituting it into `agent_id`. Stop errors propagate. Conversation controls and legacy raw-client getters fail locally with `UnsupportedSessionOperationError`. Saved sessions have no local `agent` builder.
+
+Options include `channel`, `agentUid`, `remoteUids`, `idleTimeout` and `maxDuration` (seconds), `values`, `labels`, `token`, `encryption`, `audioScenario`, `geofence`, `gracefulStop`, `dataPolicy`, and `idempotencyKey`. `name` is local; removed `clientReference` and unsupported legacy preset/pipeline options fail locally. See [saved and ephemeral lifecycle examples](../guides/saved-agents.md).

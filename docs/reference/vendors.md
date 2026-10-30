@@ -91,7 +91,7 @@ new OpenAI(options: OpenAIOptions)
 
 | Option | Type | Required | Description |
 |---|---|---|---|
-| `apiKey` | `string` | BYOK only | OpenAI API key. Optional for supported Agora-managed OpenAI models. |
+| `apiKey` | `string` | BYOK only | OpenAI API key. Omit for Agora-managed credentials; the server validates model availability. |
 | `model` | `string` | Yes | Model name (e.g., `'gpt-4o-mini'`, `'gpt-4'`) |
 | `url` | `string` | BYOK only | API endpoint URL. Required when `apiKey` is set. |
 | `maxHistory` | `number` | No | Max conversation history to cache |
@@ -107,14 +107,7 @@ new OpenAI(options: OpenAIOptions)
 | `templateVariables` | `Record<string, string>` | No | Template variables for messages |
 | `tools` | `LlmTool[]` | No | Inline synchronous REST function-calling tools; requires `agent.withTools(true)` |
 
-For supported Agora-managed models, `apiKey` is optional:
-
-- `gpt-4o-mini`
-- `gpt-4.1-mini`
-- `gpt-5-nano`
-- `gpt-5-mini`
-
-For those models, omit `apiKey` to use Agora-managed credentials. This option is only available with the default OpenAI endpoint and without a custom vendor hint. If `apiKey` is provided, AgentKit uses BYOK instead.
+Omit `apiKey` to use Agora-managed credentials. Platform model availability is validated by the service, so newly supported models such as `gpt-5.6-luna` do not require an SDK allowlist update. Managed OpenAI uses the default endpoint and vendor `openai`; an explicit `vendor: 'openai'` is also accepted. Providing `apiKey` selects BYOK and requires `url`. For other OpenAI-compatible providers, set their `vendor` explicitly (for example, `xai`).
 
 ### AzureOpenAI
 
@@ -199,7 +192,7 @@ The SDK also includes named helpers for the remaining Agora-supported LLM provid
 |---|---|---|
 | `Groq` | Groq | `apiKey`, `model`, `url` |
 | `VertexAILLM` | Google Vertex AI | `apiKey`, `model`, `projectId`, `location`, `url?` |
-| `AmazonBedrock` | Amazon Bedrock | `accessKey`, `secretKey`, `region`, `model` |
+| `AmazonBedrock` | Amazon Bedrock | `apiKey` **or** `accessKey` + `secretKey`; `region`, `model` |
 | `Dify` | Dify | `apiKey`, `url`, `model`, `user?`, `conversationId?` |
 | `CustomLLM` | OpenAI-compatible LLM | `apiKey`, `model`, `url` |
 
@@ -855,3 +848,11 @@ CN TTS helpers reuse shared vendor names where possible. `GenericTTS` is availab
 |---|---|
 | `SensetimeAvatar` | `agoraUid`, `appId`, `appKey`; optional `sceneList`, `agoraToken`, `enable`, `additionalParams` |
 | `SpatiusAvatar` | `spatiusApiKey`, `spatiusAppId`, `spatiusAvatarId`, `agoraUid`; optional `agoraToken`, `region`, `sampleRate`, `sessionExpireMinutes`, `enable`, `additionalParams` |
+
+### Platform provider mapping
+
+Provider classes set the Platform vendor automatically. OpenAI managed model names are validated by the service instead of an SDK allowlist. Gemini credentials use `credential.fields.api_key`; query keys are removed from Platform URLs. Bedrock supports either `apiKey` or the mutually exclusive `accessKey`/`secretKey` pair, with vendor `amazon`.
+
+MiniMax accepts `speed` (default `1`), `volume`, `pitch`, `emotion`, `sampleRate`, `bitrate`, `format`, `channel`, and `additionalParams`. Typed options override their corresponding nested additional parameters without dropping other nested settings.
+
+Platform ASR language comes from an explicit turn-detection language, otherwise the vendor's language; ARES defaults to `en-US`. It is sent once at the ASR block level. ARES keywords are sent in `params.keywords`. AssemblyAI `ws_url` and Speechmatics `uri` map to the block endpoint. Generic avatar endpoints remain `params.api_base_url`; HeyGen maps to the supported `liveavatar` vendor.
