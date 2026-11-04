@@ -4,7 +4,7 @@ import { validateSessionStart } from "../v3/session-lifecycle.js";
 import type { AgentCreateRequest, SessionStartOptions, TelephonyTransport } from "../v3/types.js";
 import type { Agent } from "./Agent.js";
 import { AgentSession } from "./AgentSession.js";
-import { ExpiresIn, generateConvoAIToken, generateRtcTokenWithAccount } from "./token.js";
+import { ExpiresIn, generateConvoAIToken } from "./token.js";
 import type { AgentConfigUpdate, CallOptions, SessionInfo, SessionOptions } from "./types.js";
 
 export interface SessionBackend {
@@ -125,21 +125,15 @@ export function createStoredSession(
             ) {
                 // Larger numeric identities remain opaque; the service provisions
                 // their token instead of coercing them through the local signer.
-                payload.transport.token = /^\d+$/.test(signing.uid)
-                    ? generateConvoAIToken({
-                          appId: signing.appId,
-                          appCertificate: signing.appCertificate,
-                          channelName: signing.channel,
-                          uid: Number(signing.uid),
-                          tokenExpire: expiry,
-                      })
-                    : generateRtcTokenWithAccount({
-                          appId: signing.appId,
-                          appCertificate: signing.appCertificate,
-                          channel: signing.channel,
-                          account: signing.uid,
-                          expirySeconds: expiry,
-                      });
+                // String accounts get the same RTC + RTM + ConvoAI token as numeric
+                // UIDs: RTM is the session's only data channel.
+                payload.transport.token = generateConvoAIToken({
+                    appId: signing.appId,
+                    appCertificate: signing.appCertificate,
+                    channelName: signing.channel,
+                    uid: /^\d+$/.test(signing.uid) ? Number(signing.uid) : signing.uid,
+                    tokenExpire: expiry,
+                });
             }
             const result =
                 "agent_id" in payload

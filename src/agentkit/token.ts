@@ -4,7 +4,10 @@
  * - RTC tokens authenticate a specific (appId, channel, uid) combination with
  *   the Agora RTC network.
  * - ConvoAI tokens are RTC + RTM + ConvoAI tokens used to authenticate
- *   ConvoAI REST API calls via `Authorization: agora token=<token>`.
+ *   ConvoAI REST API calls via `Authorization: agora token=<token>`. Keep them
+ *   on the server.
+ * - Client tokens are RTC + RTM only, for front-end token routes. They join a
+ *   channel and log in to RTM but cannot call the ConvoAI REST API.
  *
  * The `agora-token` library handles the AccessToken2 signing.
  */
@@ -199,8 +202,12 @@ export interface GenerateConvoAITokenOptions {
     appCertificate: string;
     /** The channel the agent will join — must match the channel used in the start request */
     channelName: string;
-    /** Numeric ConvoAI participant UID. Use the RTC UID for a user, agent, or avatar. */
-    uid: number;
+    /**
+     * ConvoAI participant UID: a numeric RTC UID or a string user account. Use the
+     * RTC UID for a user, agent, or avatar. Both forms are signed as the UID's
+     * string form, which is also the RTM user ID.
+     */
+    uid: number | string;
     /** Seconds until the token expires (default: 86400) */
     tokenExpire?: number;
     /**
@@ -248,9 +255,63 @@ export function generateConvoAIToken(opts: GenerateConvoAITokenOptions): string 
     );
 }
 
-function _uidToAccount(uid: number): string {
+function _uidToAccount(uid: number | string): string {
+    if (typeof uid === "string") {
+        return uid;
+    }
     if (!Number.isInteger(uid)) {
         throw new Error("uid must be an integer when provided as a number");
     }
     return String(uid);
+}
+
+export interface GenerateClientTokenOptions {
+    appId: string;
+    appCertificate: string;
+    /** The channel the client will join. */
+    channelName: string;
+    /**
+     * The client's RTC UID or string user account. It is also the RTM user ID, so
+     * it must be nonzero and nonempty.
+     */
+    uid: number | string;
+    /** Seconds until the token expires (default: 86400) */
+    tokenExpire?: number;
+    /**
+     * Seconds until RTC privileges expire. Defaults to `tokenExpire`. RTM login
+     * keeps the token lifetime.
+     */
+    privilegeExpire?: number;
+}
+
+/**
+ * Builds an RTC + RTM token for a front-end client. Use it in token routes that
+ * hand tokens to browsers or apps.
+ *
+ * The token joins the RTC channel as a publisher and logs in to RTM, the data
+ * channel for agent transcripts and state. It carries no ConvoAI service, so it
+ * cannot authenticate ConvoAI REST calls. Use {@link generateConvoAIToken} for
+ * server-side REST authentication and agent tokens instead.
+ */
+export function generateClientToken(opts: GenerateClientTokenOptions): string {
+    const account = _uidToAccount(opts.uid);
+    if (account === "" || /^0+$/.test(account)) {
+        throw new Error("uid must be nonzero and nonempty: it is also the RTM user ID");
+    }
+    const tokenExpire = opts.tokenExpire ?? DEFAULT_EXPIRY_SECONDS;
+    // Per Agora docs, privilegeExpire=0 means "expires immediately", which is invalid.
+    const privilegeExpire = opts.privilegeExpire || tokenExpire;
+    return _requireBuiltToken(
+        agoraToken.RtcTokenBuilder.buildTokenWithRtm(
+            opts.appId,
+            opts.appCertificate,
+            opts.channelName,
+            account,
+            agoraToken.RtcRole.PUBLISHER,
+            tokenExpire,
+            privilegeExpire,
+        ),
+        opts.appId,
+        opts.appCertificate,
+    );
 }

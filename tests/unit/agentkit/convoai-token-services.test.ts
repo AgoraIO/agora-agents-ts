@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { inflateSync } from "node:zlib";
 import { describe, expect, it, vi } from "vitest";
-import { generateConvoAIToken, generateRtcToken } from "../../../src/agentkit/token.js";
+import { generateClientToken, generateConvoAIToken, generateRtcToken } from "../../../src/agentkit/token.js";
 import { Agent, AgoraClient, Area, SavedAgent } from "../../../src/index.js";
 
 const appId = "0123456789abcdef0123456789abcdef";
@@ -121,6 +121,34 @@ describe("ConvoAI authorization services", () => {
             expect(Object.keys(decode(payload.transport.token).services)).toEqual(["1", "2", "9"]);
         }
     });
+    it.each([
+        [42, "42"],
+        ["agent-a", "agent-a"],
+    ] as const)("signs numeric and string UIDs alike: %s", (uid, account) => {
+        const { services } = decode(
+            generateConvoAIToken({ appId, appCertificate, channelName: "room", uid, tokenExpire: 600 }),
+        );
+        expect(services[1]).toMatchObject({ channel: "room", account });
+        expect(services[2]).toMatchObject({ account });
+        expect(services[9]).toEqual({ privileges: {} });
+    });
+    it("signs string-UID agent transport tokens with RTC, RTM, and ConvoAI", async () => {
+        const fetch = vi.fn(
+            async () =>
+                new Response(JSON.stringify({ agent_session_id: "session", status: "RUNNING", create_ts: 1 }), {
+                    headers: { "Content-Type": "application/json" },
+                }),
+        );
+        const client = new AgoraClient({ area: Area.US, appId, appCertificate, fetch });
+        await new Agent({ client })
+            .createEphemeralSession({ channel: "room", agentUid: "agent-a", remoteUids: ["user-b"] })
+            .start();
+        const init = (fetch.mock.calls as unknown as [unknown, RequestInit][])[0][1];
+        const { services } = decode(JSON.parse(init.body as string).transport.token);
+        expect(Object.keys(services)).toEqual(["1", "2", "9"]);
+        expect(services[1]).toMatchObject({ channel: "room", account: "agent-a" });
+        expect(services[2]).toMatchObject({ account: "agent-a" });
+    });
     it("preserves externally supplied authorization", async () => {
         const fetch = vi.fn(
             async () => new Response('{"items":[]}', { headers: { "Content-Type": "application/json" } }),
@@ -128,5 +156,32 @@ describe("ConvoAI authorization services", () => {
         await new AgoraClient({ area: Area.US, appId, authToken: "external-token", fetch }).v3.sessions.list();
         const init = (fetch.mock.calls as unknown as [unknown, RequestInit][])[0][1];
         expect(new Headers(init.headers).get("authorization")).toBe("agora token=external-token");
+    });
+});
+
+describe("client tokens", () => {
+    it.each([
+        [42, "42", undefined],
+        ["user-a", "user-a", 120],
+    ] as const)("grant RTC and RTM without ConvoAI: %s", (uid, account, privilegeExpire) => {
+        const decoded = decode(
+            generateClientToken({ appId, appCertificate, channelName: "room", uid, tokenExpire: 600, privilegeExpire }),
+        );
+        const ttl = privilegeExpire ?? 600;
+        expect(decoded.expiry).toBe(600);
+        expect(decoded.services).toEqual({
+            1: { channel: "room", account, privileges: { 1: ttl, 2: ttl, 3: ttl, 4: ttl } },
+            2: { account, privileges: { 1: 600 } },
+        });
+    });
+    it.each([0, "0", "", "000"])("reject a UID that cannot be an RTM user ID: %j", (uid) => {
+        expect(() => generateClientToken({ appId, appCertificate, channelName: "room", uid })).toThrow(
+            /nonzero and nonempty/,
+        );
+    });
+    it("names a malformed credential instead of returning an empty token", () => {
+        expect(() => generateClientToken({ appId: `${appId}\n`, appCertificate, channelName: "room", uid: 1 })).toThrow(
+            /appId is 33 characters/,
+        );
     });
 });

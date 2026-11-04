@@ -72,3 +72,21 @@ The SDK sends `Authorization: Basic <base64(customerId:customerSecret)>`; `authM
 The existing public authorization/header overrides accept Agora tokens or Basic authorization. `clientId`/`clientSecret`, `username`/`password`, internal gateway headers, and `X-Studio-Region` are not public constructor options.
 
 Saved-agent/session/campaign resources use `https://preview.ai.agora.io/conversational-ai/v1/projects/{appid}` by default. Existing ordinary inline sessions retain their established endpoint routing and use the configured authentication mode.
+
+## Client tokens
+
+Browsers and apps need their own token to join the channel and log in to RTM, which carries agent transcripts and state. Mint it on your server with `generateClientToken`:
+
+```typescript
+import { generateClientToken } from 'agora-agents';
+
+const token = generateClientToken({
+  appId: process.env.AGORA_APP_ID!,
+  appCertificate: process.env.AGORA_APP_CERTIFICATE!,
+  channelName: 'my-room',
+  uid: 100, // or a string user account; also the RTM user ID
+  tokenExpire: 3600,
+});
+```
+
+The token grants RTC (publisher) and RTM login only. Never hand a client a token from `generateConvoAIToken`: its ConvoAI service authenticates REST calls, so a client holding it could control agents in your project. Keep ConvoAI tokens on the server.

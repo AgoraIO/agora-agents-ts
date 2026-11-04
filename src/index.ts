@@ -89,6 +89,7 @@ export type {
     GeminiSTTModel,
     GeminiSTTOptions,
     GeminiThinkingLevel,
+    GenerateClientTokenOptions,
     GenerateConvoAITokenOptions,
     GenerateTokenOptions,
     GenericAvatarConfig,
@@ -324,6 +325,7 @@ export {
     GoogleTTS,
     GradiumTTS,
     Groq,
+    generateClientToken,
     generateConvoAIToken,
     generateRtcToken,
     // Avatar vendors

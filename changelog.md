@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+- Add `generateClientToken` for front-end token routes. It grants RTC and RTM only, with no ConvoAI service, so client tokens cannot authenticate ConvoAI REST calls. It accepts a numeric UID or a string user account.
+- `generateConvoAIToken` accepts a string user account as well as a numeric UID. String-UID agents on Platform sessions now get an RTC + RTM + ConvoAI transport token instead of an RTC-only one, so they can log in to RTM, the session's data channel.
+
 ## [v3.0.0-alpha.3] — 2026-10-30
 
 - Support existing Customer ID/Secret HTTP Basic authentication alongside token007 for Platform and legacy requests. Optional App Certificates continue to sign RTC tokens without changing Basic REST authentication.
