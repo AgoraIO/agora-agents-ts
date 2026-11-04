@@ -221,7 +221,10 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
         this.appCertificate = appCertificate;
         this.authMode = authMode;
         this.area = options.area as TArea;
-        const v3Base = options.v3?.baseUrl ?? process.env.AGORA_AGENTS_V3_BASE_URL;
+        // A blank option or environment value (e.g. `AGORA_AGENTS_V3_BASE_URL=` in
+        // a .env file) means "unset" and surrounding whitespace is ignored,
+        // matching the Go and Python SDKs.
+        const v3Base = nonBlank(options.v3?.baseUrl) ?? nonBlank(process.env.AGORA_AGENTS_V3_BASE_URL);
         if (v3Base !== undefined) {
             let origin: URL;
             try {
@@ -321,4 +324,9 @@ export class AgoraClient<TArea extends AgoraArea = AgoraArea> extends BaseAgoraC
             throw error;
         }
     }
+}
+
+function nonBlank(value: string | undefined): string | undefined {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : undefined;
 }

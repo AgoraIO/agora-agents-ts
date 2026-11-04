@@ -19,7 +19,7 @@ const client = new AgoraClient({
 });
 ```
 
-The public default is `https://preview.ai.agora.io/conversational-ai/v1/projects/{appid}`. The SDK supplies the path and project. Optional `v3.baseUrl` or `AGORA_AGENTS_V3_BASE_URL` changes the origin; the explicit option wins. API naming in the advanced `client.v3` namespace is retained for compatibility even though the public wire path is `v1`.
+The public default is `https://preview.ai.agora.io/conversational-ai/v1/projects/{appid}`. The SDK supplies the path and project. Optional `v3.baseUrl` or `AGORA_AGENTS_V3_BASE_URL` changes the origin; the explicit option wins. A blank or whitespace-only value counts as unset, and surrounding whitespace is ignored. API naming in the advanced `client.v3` namespace is retained for compatibility even though the public wire path is `v1`.
 
 Use app credentials for fresh ConvoAI REST tokens, supply `authToken`, or configure `customerId` and `customerSecret` for HTTP Basic authentication. Basic credentials and an explicit `authToken` are mutually exclusive; an optional App Certificate still enables RTC token signing. Do not supply internal gateway headers or `X-Studio-Region`; they are rejected before network calls. Normal custom headers, timeout, cancellation, and custom fetch remain available. See the [release notes](../../changelog.md) for current regional availability. Preview availability is release guidance rather than an SDK region restriction; existing inline-session regional routing remains intact.
 
