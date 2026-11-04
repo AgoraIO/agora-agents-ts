@@ -2,7 +2,7 @@ import type { AgoraClient } from "../AgoraPoolClient.js";
 import { Area } from "../core/domain/index.js";
 import type { WithRawResponse } from "../core/fetcher/RawResponse.js";
 import { contract } from "../v3/contract.js";
-import { PreconditionFailedError } from "../v3/transport.js";
+import { PreconditionFailedError, registerV3ErrorClass, V3Error, V3ValidationError } from "../v3/errors.js";
 import type * as V3 from "../v3/types.js";
 import type { Agent, AgentOptions } from "./Agent.js";
 import type { AgentSession } from "./AgentSession.js";
@@ -12,41 +12,48 @@ import type { CallOptions, LlmConfig, MllmConfig, SessionOptions, SttConfig, Tts
 export type SecretRef = string & { readonly __secretRef: unique symbol };
 export function secretRef(set: string, key: string): SecretRef {
     if (![set, key].every((v) => /^[A-Za-z0-9_]{1,64}$/.test(v)))
-        throw new Error("Secret names and keys must be 1–64 letters, digits or underscores");
+        throw new V3ValidationError("Secret names and keys must be 1–64 letters, digits or underscores");
     return `$secrets.${set}.${key}` as SecretRef;
 }
-export class SecretRefNotSupportedError extends Error {
+/** A `secretRef()` value was used where only saved agents can resolve it. A {@link V3ValidationError}. */
+export class SecretRefNotSupportedError extends V3ValidationError {
     constructor() {
         super("secretRef requires save()");
         this.name = "SecretRefNotSupportedError";
     }
 }
-export class UnsupportedFieldError extends Error {
+/** The configuration uses fields the v3 API does not accept. A {@link V3ValidationError}. */
+export class UnsupportedFieldError extends V3ValidationError {
     constructor(public readonly fields: string[]) {
         super(`Unsupported v3 fields: ${fields.join(", ")}`);
         this.name = "UnsupportedFieldError";
     }
 }
-export class NumberNotFoundError extends Error {
+/** A phone number given by E.164 value is not registered in the project. A {@link V3ValidationError}. */
+export class NumberNotFoundError extends V3ValidationError {
     constructor(number: string, appid: string) {
         super(`Number ${number} not found in project ${appid}; create it first with client.v3.numbers.create()`);
         this.name = "NumberNotFoundError";
     }
 }
+registerV3ErrorClass(SecretRefNotSupportedError, "SecretRefNotSupportedError");
+registerV3ErrorClass(UnsupportedFieldError, "UnsupportedFieldError");
+registerV3ErrorClass(NumberNotFoundError, "NumberNotFoundError");
 export function assertNoSecretRefs(value: unknown): void {
     if (typeof value === "string" && value.startsWith("$secrets.")) throw new SecretRefNotSupportedError();
     if (value && typeof value === "object") for (const item of Object.values(value)) assertNoSecretRefs(item);
 }
 export type VariableDefinition = V3.Contract_VariableDefinition;
 export function validateVariable(name: string, def: VariableDefinition): void {
-    if (!/^[a-z][a-z0-9_]{0,63}$/.test(name)) throw new Error("Invalid v3 variable name");
+    if (!/^[a-z][a-z0-9_]{0,63}$/.test(name)) throw new V3ValidationError("Invalid v3 variable name");
     if (!["str", "int", "float", "bool", "date", "datetime"].includes(def.type))
-        throw new Error("Invalid v3 variable type");
+        throw new V3ValidationError("Invalid v3 variable type");
     if (def.options && new Set(def.options.map((value) => JSON.stringify(value))).size !== def.options.length)
-        throw new Error("Variable options must be unique");
-    if (def.extract && !def.description?.trim()) throw new Error("Extracted variables require a description");
+        throw new V3ValidationError("Variable options must be unique");
+    if (def.extract && !def.description?.trim())
+        throw new V3ValidationError("Extracted variables require a description");
     if (validateContract(def, contract.AgentRequest_VariableDefinition, `variables.${name}`).length)
-        throw new Error("Invalid v3 variable definition");
+        throw new V3ValidationError("Invalid v3 variable definition");
 }
 type Config = AgentOptions & { llm?: LlmConfig; tts?: TtsConfig; stt?: SttConfig; mllm?: MllmConfig };
 // Mapping operates on the serialized v2 vendor configs, never on private vendor state.
@@ -493,7 +500,10 @@ export function redeployPatch(previous: V3.AgentResponse, desired: V3.AgentCreat
 }
 function etag(response: WithRawResponse<unknown>): string {
     const tag = response.rawResponse.headers.get("ETag");
-    if (!tag) throw new Error("v3 response is missing ETag");
+    if (!tag)
+        throw new V3Error(response.rawResponse.status, response.data, response.rawResponse, {
+            message: "v3 response is missing ETag",
+        });
     return tag;
 }
 export interface SaveOptions {
@@ -513,7 +523,7 @@ export async function deployAgent(
         if (object(module) && "credential" in module && module.credential?.mode === "byok") {
             for (const value of Object.values(module.credential.fields ?? {}))
                 if (typeof value !== "string" || !/^\$secrets\.[A-Za-z0-9_]{1,64}\.[A-Za-z0-9_]{1,64}$/.test(value))
-                    throw new Error(
+                    throw new V3ValidationError(
                         `Saved ${kind} credentials require secretRef(); use an ephemeral session for inline credentials`,
                     );
         }
@@ -566,7 +576,7 @@ export class SavedAgent {
     /** Save a revised configuration to this stored identity, preserving its name by default. */
     update(config: Agent, options: { name?: string } = {}): Promise<SavedAgent> {
         if (config.config.client !== this.client) {
-            throw new Error("SavedAgent.update requires a configuration bound to the same client");
+            throw new V3ValidationError("SavedAgent.update requires a configuration bound to the same client");
         }
         return config.save({ agentId: this.id, name: options.name ?? this.name });
     }

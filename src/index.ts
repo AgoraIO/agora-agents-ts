@@ -438,5 +438,21 @@ export { Area } from "./core/domain/index.js";
 export { AgoraEnvironment } from "./environments.js";
 export { AgoraError, AgoraTimeoutError } from "./errors/index.js";
 export * from "./exports.js";
-export type { V3, V3Options } from "./v3/index.js";
-export { PreconditionFailedError, V3Client, V3Error } from "./v3/index.js";
+export type {
+    AnyV3Error,
+    V3,
+    V3ApiErrorOptions,
+    V3ErrorCategory,
+    V3ErrorOptions,
+    V3Options,
+} from "./v3/index.js";
+export {
+    AgoraV3Error,
+    PreconditionFailedError,
+    V3Client,
+    V3ConfigurationError,
+    V3ConnectionError,
+    V3Error,
+    V3TimeoutError,
+    V3ValidationError,
+} from "./v3/index.js";

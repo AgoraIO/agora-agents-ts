@@ -61,6 +61,8 @@ try {
 }
 ```
 
+`PreconditionFailedError` is a `V3Error`, and every v3 failure is an `AgoraV3Error` with a `category` of `validation`, `configuration`, `connection` (including `V3TimeoutError`), or `api` (non-2xx responses, and 2xx responses that violate the API contract). Branch on these classes instead of parsing messages or checking for status `0`. See [errors](../reference/v3.md#responses-errors-and-retries).
+
 Names are not unique. `save()` without an ID creates another agent; persist the ID and use `saved.update(config)`. Updates preserve the handle's name unless overridden, require the same client instance, fetch the current ETag, and make one conditional PATCH. The builder remains unchanged.
 
 **Full replacement and creation upsert are planned, not currently assumed.** Until confirmed available, the SDK keeps the supported merge-patch adapter: recursively null stale readable mutable fields and explicitly resubmit credentials. GET hides write-only settings, so the adapter cannot guarantee removal of every stale hidden field. Use a deliberate low-level patch or create a new agent when exact removal is required. Do not search by name as an upsert key.
