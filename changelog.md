@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [v3.0.0-alpha.4] — 2026-11-06
+
 - Add `generateClientToken` for front-end token routes. It grants RTC and RTM only, with no ConvoAI service, so client tokens cannot authenticate ConvoAI REST calls. It accepts a numeric UID or a string user account.
 - `generateConvoAIToken` accepts a string user account as well as a numeric UID. String-UID agents on Platform sessions now get an RTC + RTM + ConvoAI transport token instead of an RTC-only one, so they can log in to RTM, the session's data channel.
 - Treat a blank or whitespace-only `v3.baseUrl` option or `AGORA_AGENTS_V3_BASE_URL` value as unset, so the client uses the next configured origin or the public default instead of throwing, and ignore surrounding whitespace. This matches the Go and Python SDKs.

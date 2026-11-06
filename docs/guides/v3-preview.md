@@ -5,7 +5,7 @@ description: Public routing, token and Basic authentication, supported configura
 
 # Stored-agent API transport
 
-Start with [Saving agents](./saved-agents.md) for the configuration → session or saved-agent workflow. This guide covers the advanced transport, configuration mapping, and rollout limits for SDK preview `3.0.0-alpha.3`.
+Start with [Saving agents](./saved-agents.md) for the configuration → session or saved-agent workflow. This guide covers the advanced transport, configuration mapping, and rollout limits for SDK preview `3.0.0-alpha.4`.
 
 ## 1. Configure client
 
