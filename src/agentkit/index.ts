@@ -128,12 +128,14 @@ export type {
 } from "./region-vendors.js";
 export { UnsupportedSessionOperationError } from "./session-backend.js";
 export type {
+    GenerateClientTokenOptions,
     GenerateConvoAITokenOptions,
     GenerateTokenOptions,
 } from "./token.js";
 // Token generation
 export {
     ExpiresIn,
+    generateClientToken,
     generateConvoAIToken,
     generateRtcToken,
     MAX_EXPIRY_SECONDS,

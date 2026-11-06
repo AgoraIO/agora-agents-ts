@@ -4,6 +4,8 @@
 import type { BaseRequestOptions } from "../BaseClient.js";
 import type { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import { HttpResponsePromise as ResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
+import type { RawResponse } from "../core/fetcher/RawResponse.js";
+import { V3Error, V3ValidationError } from "./errors.js";
 import type * as Schema from "./session-schema.js";
 import { omit, segment, type V3Transport, validateIdempotencyKey } from "./transport.js";
 
@@ -29,7 +31,7 @@ export interface SessionStartResponse {
     status: "STARTING" | "RUNNING";
     create_ts: number;
 }
-export function normalizeSessionStart(value: unknown): SessionStartResponse {
+export function normalizeSessionStart(value: unknown, rawResponse: RawResponse): SessionStartResponse {
     const data = value as Record<string, unknown>;
     const status = typeof data?.status === "string" ? data.status.toUpperCase() : "";
     const timestamp = data?.create_ts ?? data?.created_at;
@@ -42,7 +44,7 @@ export function normalizeSessionStart(value: unknown): SessionStartResponse {
         !Number.isInteger(timestamp) ||
         timestamp < 0
     )
-        throw new Error("Invalid session start response");
+        throw new V3Error(rawResponse.status, value, rawResponse, { message: "Invalid session start response" });
     return {
         agent_session_id: data.agent_session_id,
         status: status as SessionStartResponse["status"],
@@ -51,23 +53,23 @@ export function normalizeSessionStart(value: unknown): SessionStartResponse {
 }
 function range(value: number | undefined, min: number, max: number, field: string): void {
     if (value !== undefined && (!Number.isInteger(value) || value < min || value > max))
-        throw new Error(`${field} must be an integer between ${min} and ${max}`);
+        throw new V3ValidationError(`${field} must be an integer between ${min} and ${max}`);
 }
 export function validateSessionStart(request: SessionStartRequest | EphemeralSessionStartRequest): void {
     if ("client_reference" in request || "clientReference" in request)
-        throw new Error(
+        throw new V3ValidationError(
             "client_reference is being removed; use application-side correlation with the returned session ID",
         );
     if (request.idempotencyKey !== undefined) validateIdempotencyKey(request.idempotencyKey);
     const transport = request.transport;
     if (transport.type === "rtc") {
         if (!transport.channel || [...transport.channel].length > 256)
-            throw new Error("channel must contain 1–256 characters");
+            throw new V3ValidationError("channel must contain 1–256 characters");
         if (
             transport.uid !== undefined &&
             (typeof transport.uid !== "string" || !transport.uid.trim() || [...transport.uid].length > 255)
         )
-            throw new Error("uid must be nonempty");
+            throw new V3ValidationError("uid must be nonempty");
         if (
             !Array.isArray(transport.subscribe_uids) ||
             transport.subscribe_uids.length !== 1 ||
@@ -77,16 +79,16 @@ export function validateSessionStart(request: SessionStartRequest | EphemeralSes
             transport.subscribe_uids[0] === "*" ||
             /^0+$/.test(transport.subscribe_uids[0])
         )
-            throw new Error("Exactly one non-wildcard subscriber UID is required");
+            throw new V3ValidationError("Exactly one non-wildcard subscriber UID is required");
         const numeric = (uid: string) => /^[0-9]+$/.test(uid);
         if (
             transport.uid !== undefined &&
             transport.uid !== "0" &&
             numeric(transport.uid) !== numeric(transport.subscribe_uids[0])
         )
-            throw new Error("Agent and subscriber must use the same UID type");
+            throw new V3ValidationError("Agent and subscriber must use the same UID type");
         if (transport.audio_scenario !== undefined && !["aiserver", "chorus"].includes(transport.audio_scenario))
-            throw new Error("Invalid audio_scenario");
+            throw new V3ValidationError("Invalid audio_scenario");
         if (transport.geofence !== undefined) {
             const areas = ["global", "north_america", "europe", "asia", "india", "japan"];
             const fence = transport.geofence;
@@ -95,7 +97,7 @@ export function validateSessionStart(request: SessionStartRequest | EphemeralSes
                 (fence.exclude_area !== undefined &&
                     (fence.area !== "global" || !areas.slice(1).includes(fence.exclude_area)))
             )
-                throw new Error("Invalid geofence: exclude_area requires global area");
+                throw new V3ValidationError("Invalid geofence: exclude_area requires global area");
         }
         if (transport.encryption) {
             if (
@@ -111,27 +113,27 @@ export function validateSessionStart(request: SessionStartRequest | EphemeralSes
                 ].includes(transport.encryption.mode) ||
                 !transport.encryption.key
             )
-                throw new Error("Invalid RTC encryption mode/key");
+                throw new V3ValidationError("Invalid RTC encryption mode/key");
             if (transport.encryption.salt != null && !/^[A-Za-z0-9+/]{43}=$/.test(transport.encryption.salt))
-                throw new Error("Invalid RTC encryption salt");
+                throw new V3ValidationError("Invalid RTC encryption salt");
         }
     } else if (transport.type === "telephony") {
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transport.from))
-            throw new Error("telephony.from must be a registered number UUID");
-        if (!/^\+[1-9][0-9]{1,14}$/.test(transport.to)) throw new Error("telephony.to must be E.164");
-    } else throw new Error("Unsupported session transport");
+            throw new V3ValidationError("telephony.from must be a registered number UUID");
+        if (!/^\+[1-9][0-9]{1,14}$/.test(transport.to)) throw new V3ValidationError("telephony.to must be E.164");
+    } else throw new V3ValidationError("Unsupported session transport");
     range(request.lifecycle?.idle_timeout_ms, 0, 3600000, "idle_timeout_ms");
     range(request.lifecycle?.max_duration_ms, 1000, 3600000, "max_duration_ms");
     range(request.lifecycle?.graceful_stop?.timeout_ms, 0, 120000, "graceful_stop.timeout_ms");
     if (request.data_policy?.retention !== undefined && !["none", "30_days"].includes(request.data_policy.retention))
-        throw new Error("Invalid data_policy.retention");
+        throw new V3ValidationError("Invalid data_policy.retention");
     for (const [name, value] of Object.entries(request.values ?? {})) {
         if (
             !/^[a-z][a-z0-9_]{0,63}$/.test(name) ||
             !["string", "number", "boolean"].includes(typeof value) ||
             (typeof value === "number" && !Number.isFinite(value))
         )
-            throw new Error("Invalid session variable value");
+            throw new V3ValidationError("Invalid session variable value");
     }
 }
 export class SessionLifecycleResource {
@@ -152,7 +154,10 @@ export class SessionLifecycleResource {
             options,
         );
         return ResponsePromise.fromPromise(
-            raw.withRawResponse().then(({ data, rawResponse }) => ({ data: normalizeSessionStart(data), rawResponse })),
+            raw.withRawResponse().then(({ data, rawResponse }) => ({
+                data: normalizeSessionStart(data, rawResponse),
+                rawResponse,
+            })),
         );
     }
     start(

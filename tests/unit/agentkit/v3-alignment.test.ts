@@ -247,6 +247,59 @@ describe("engineering public contract", () => {
         expect(body(fetch).transport.uid).toBe(agentUid);
     });
     it.each([
+        ["blank option", { v3: { baseUrl: "" } }, undefined],
+        ["whitespace option", { v3: { baseUrl: "  " } }, undefined],
+        ["blank environment value", {}, ""],
+        ["whitespace environment value", {}, " "],
+    ])("treats a %s as unset and uses the public default", async (_label, extra, envValue) => {
+        vi.stubEnv("AGORA_AGENTS_V3_BASE_URL", envValue);
+        try {
+            const fetch = vi.fn(async () => reply({}));
+            const client = new AgoraClient({ area: Area.US, appId: "app", authToken: "token", fetch, ...extra });
+            await client.v3.agents.get({ id: "a" });
+            expect(req(fetch).url).toBe("https://preview.ai.agora.io/conversational-ai/v1/projects/app/agents/a");
+        } finally {
+            vi.unstubAllEnvs();
+        }
+    });
+    it("ignores surrounding whitespace in configured origins", async () => {
+        vi.stubEnv("AGORA_AGENTS_V3_BASE_URL", "  https://env.example/  ");
+        try {
+            const fetch = vi.fn(async () => reply({}));
+            const client = new AgoraClient({ area: Area.US, appId: "app", authToken: "token", fetch });
+            await client.v3.agents.get({ id: "a" });
+            expect(req(fetch).url).toBe("https://env.example/conversational-ai/v1/projects/app/agents/a");
+            const explicit = new AgoraClient({
+                area: Area.US,
+                appId: "app",
+                authToken: "token",
+                fetch,
+                v3: { baseUrl: " https://opt.example " },
+            });
+            await explicit.v3.agents.get({ id: "a" });
+            expect(req(fetch, 1).url).toBe("https://opt.example/conversational-ai/v1/projects/app/agents/a");
+        } finally {
+            vi.unstubAllEnvs();
+        }
+    });
+    it("lets a nonblank environment origin apply when the option is blank", async () => {
+        vi.stubEnv("AGORA_AGENTS_V3_BASE_URL", "https://env.example");
+        try {
+            const fetch = vi.fn(async () => reply({}));
+            const client = new AgoraClient({
+                area: Area.US,
+                appId: "app",
+                authToken: "token",
+                fetch,
+                v3: { baseUrl: "" },
+            });
+            await client.v3.agents.get({ id: "a" });
+            expect(req(fetch).url).toBe("https://env.example/conversational-ai/v1/projects/app/agents/a");
+        } finally {
+            vi.unstubAllEnvs();
+        }
+    });
+    it.each([
         "https://stage.example?route=old",
         "https://stage.example#frag",
         "https://user:pass@stage.example",

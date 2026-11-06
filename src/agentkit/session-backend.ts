@@ -1,10 +1,11 @@
 /** Internal adapter for session identities, without mixing them with running-agent IDs. */
 import type { AgoraClient } from "../AgoraPoolClient.js";
+import { registerV3ErrorClass, V3Error, V3ValidationError } from "../v3/errors.js";
 import { validateSessionStart } from "../v3/session-lifecycle.js";
 import type { AgentCreateRequest, SessionStartOptions, TelephonyTransport } from "../v3/types.js";
 import type { Agent } from "./Agent.js";
 import { AgentSession } from "./AgentSession.js";
-import { ExpiresIn, generateConvoAIToken, generateRtcTokenWithAccount } from "./token.js";
+import { ExpiresIn, generateConvoAIToken } from "./token.js";
 import type { AgentConfigUpdate, CallOptions, SessionInfo, SessionOptions } from "./types.js";
 
 export interface SessionBackend {
@@ -13,12 +14,14 @@ export interface SessionBackend {
     update(id: string, config: AgentConfigUpdate): Promise<void>;
     getInfo(id: string): Promise<SessionInfo>;
 }
-export class UnsupportedSessionOperationError extends Error {
+/** The operation is not available on a v3 Platform session. A {@link V3ValidationError}. */
+export class UnsupportedSessionOperationError extends V3ValidationError {
     constructor(operation: string) {
         super(`${operation} is not supported by this session backend; start, stop, getInfo and update are available`);
         this.name = "UnsupportedSessionOperationError";
     }
 }
+registerV3ErrorClass(UnsupportedSessionOperationError, "UnsupportedSessionOperationError");
 /** Validate mixed transports before replacing internal RTC placeholders. */
 export function callSessionOptions(options: CallOptions): SessionOptions {
     for (const key of [
@@ -33,7 +36,7 @@ export function callSessionOptions(options: CallOptions): SessionOptions {
         "expiresIn",
     ] as const) {
         if ((options as unknown as Record<string, unknown>)[key] !== undefined)
-            throw new Error(`Phone calls do not accept RTC option ${key}`);
+            throw new V3ValidationError(`Phone calls do not accept RTC option ${key}`);
     }
     return { ...options, channel: "", remoteUids: [] };
 }
@@ -47,7 +50,7 @@ export function createStoredSession(
 ): AgentSession {
     for (const key of ["clientReference", "client_reference", "enableStringUid", "preset", "pipelineId"] as const) {
         if (key in options && (options as unknown as Record<string, unknown>)[key] !== undefined)
-            throw new Error(`${key} is not supported by this session backend`);
+            throw new V3ValidationError(`${key} is not supported by this session backend`);
     }
     const lifecycle: NonNullable<SessionStartOptions["lifecycle"]> = {};
     for (const [key, wire] of [
@@ -82,14 +85,14 @@ export function createStoredSession(
         options.expiresIn !== undefined &&
         (!Number.isInteger(options.expiresIn) || !Number.isFinite(options.expiresIn))
     )
-        throw new Error("expiresIn must be a whole number of seconds");
+        throw new V3ValidationError("expiresIn must be a whole number of seconds");
     if (
         telephony &&
         [options.agentUid, options.token, options.encryption, options.audioScenario, options.geofence].some(
             (value) => value !== undefined,
         )
     )
-        throw new Error("RTC options are not supported for phone calls");
+        throw new V3ValidationError("RTC options are not supported for phone calls");
     const expiry = options.expiresIn === undefined ? undefined : ExpiresIn.seconds(options.expiresIn);
     const signing =
         !telephony &&
@@ -108,7 +111,7 @@ export function createStoredSession(
     const backend: SessionBackend = {
         async start() {
             if (payload.idempotencyKey && successfullyStarted)
-                throw new Error(
+                throw new V3ValidationError(
                     "This idempotency key already started a session; create a new handle with a new key for another session",
                 );
             if (successfullyStarted && !payload.idempotencyKey) {
@@ -125,28 +128,24 @@ export function createStoredSession(
             ) {
                 // Larger numeric identities remain opaque; the service provisions
                 // their token instead of coercing them through the local signer.
-                payload.transport.token = /^\d+$/.test(signing.uid)
-                    ? generateConvoAIToken({
-                          appId: signing.appId,
-                          appCertificate: signing.appCertificate,
-                          channelName: signing.channel,
-                          uid: Number(signing.uid),
-                          tokenExpire: expiry,
-                      })
-                    : generateRtcTokenWithAccount({
-                          appId: signing.appId,
-                          appCertificate: signing.appCertificate,
-                          channel: signing.channel,
-                          account: signing.uid,
-                          expirySeconds: expiry,
-                      });
+                // String accounts get the same RTC + RTM + ConvoAI token as numeric
+                // UIDs: RTM is the session's only data channel.
+                payload.transport.token = generateConvoAIToken({
+                    appId: signing.appId,
+                    appCertificate: signing.appCertificate,
+                    channelName: signing.channel,
+                    uid: /^\d+$/.test(signing.uid) ? Number(signing.uid) : signing.uid,
+                    tokenExpire: expiry,
+                });
             }
-            const result =
-                "agent_id" in payload
-                    ? await client.v3.sessions.start(payload)
-                    : await client.v3.sessions.startEphemeral(payload);
+            const { data: result, rawResponse } = await ("agent_id" in payload
+                ? client.v3.sessions.start(payload)
+                : client.v3.sessions.startEphemeral(payload)
+            ).withRawResponse();
             if (typeof result.agent_session_id !== "string" || !result.agent_session_id.trim()) {
-                throw new Error("Session start response is missing agent_session_id");
+                throw new V3Error(rawResponse.status, result, rawResponse, {
+                    message: "Session start response is missing agent_session_id",
+                });
             }
             successfullyStarted = true;
             return { id: result.agent_session_id, status: result.status === "STARTING" ? "starting" : "running" };
@@ -156,15 +155,17 @@ export function createStoredSession(
         },
         async update(id, config) {
             const input = config as Record<string, any>;
-            if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Invalid session update");
+            if (!input || typeof input !== "object" || Array.isArray(input))
+                throw new V3ValidationError("Invalid session update");
             for (const key of Object.keys(input))
                 if (!["token", "messages", "llm"].includes(key))
-                    throw new Error(`Unsupported session update field: ${key}`);
+                    throw new V3ValidationError(`Unsupported session update field: ${key}`);
             if (input.messages !== undefined && input.llm?.system_messages !== undefined)
-                throw new Error("Provide messages or llm.system_messages, not both");
+                throw new V3ValidationError("Provide messages or llm.system_messages, not both");
             const patch: Record<string, any> = {};
             if (input.token !== undefined) {
-                if (typeof input.token !== "string" || !input.token) throw new Error("token must be a string");
+                if (typeof input.token !== "string" || !input.token)
+                    throw new V3ValidationError("token must be a string");
                 patch.transport = { token: input.token };
             }
             const overrides: Record<string, any> = {};
@@ -180,7 +181,7 @@ export function createStoredSession(
                             Object.keys(message).some((key) => !["role", "content"].includes(key)),
                     )
                 )
-                    throw new Error("Invalid session messages");
+                    throw new V3ValidationError("Invalid session messages");
                 overrides.messages = messages;
             }
             for (const kind of ["llm"])
@@ -194,16 +195,16 @@ export function createStoredSession(
                             (key) => !["params", ...(kind === "llm" ? ["system_messages"] : [])].includes(key),
                         )
                     )
-                        throw new Error(`Invalid ${kind} update`);
+                        throw new V3ValidationError(`Invalid ${kind} update`);
                     if (module.params !== undefined) {
                         if (!module.params || typeof module.params !== "object" || Array.isArray(module.params))
-                            throw new Error("params must be an object");
+                            throw new V3ValidationError("params must be an object");
                         if (
                             Object.keys(module.params).some((key) =>
                                 ["url", "base_url", "api_base_url", "endpoint"].includes(key.toLowerCase()),
                             )
                         )
-                            throw new Error("Runtime endpoint aliases are not mutable");
+                            throw new V3ValidationError("Runtime endpoint aliases are not mutable");
                         overrides.pipeline = { [kind]: { params: module.params } };
                     }
                 }

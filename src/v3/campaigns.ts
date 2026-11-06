@@ -2,6 +2,7 @@
 import type { BaseRequestOptions } from "../BaseClient.js";
 import type { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import type * as T from "./campaign-schema.js";
+import { V3Error } from "./errors.js";
 import { omit, segment, snapshotPagination, type V3Transport } from "./transport.js";
 export class CampaignsResource {
     constructor(private transport: V3Transport) {}
@@ -49,11 +50,13 @@ export class CampaignsResource {
         const seen = new Set<string>();
         let cursor = request?.cursor;
         while (true) {
-            const page = await this.list({ ...request, cursor }, options);
+            const { data: page, rawResponse } = await this.list({ ...request, cursor }, options).withRawResponse();
             yield* page.data.list;
             if (!page.has_more) return;
             if (!page.next_cursor || seen.has(page.next_cursor))
-                throw new Error("Invalid repeated or missing pagination cursor");
+                throw new V3Error(rawResponse.status, page, rawResponse, {
+                    message: "Invalid repeated or missing pagination cursor",
+                });
             cursor = page.next_cursor;
             seen.add(cursor);
         }
