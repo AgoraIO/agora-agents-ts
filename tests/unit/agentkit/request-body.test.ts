@@ -731,7 +731,7 @@ describe("Scenario 7 — Pipeline ID supplementary", () => {
 // ---------------------------------------------------------------------------
 
 describe("Scenario 8 — MLLM mode", () => {
-    test("8a: OpenAIRealtime produces mllm.enable=true and correct shape", async () => {
+    test("8a: OpenAIRealtime enables MLLM through advanced_features and has the correct shape", async () => {
         const { client, start } = createClient();
         const agent = new Agent({ client }).withMllm(
             new OpenAIRealtime({
@@ -747,7 +747,8 @@ describe("Scenario 8 — MLLM mode", () => {
 
         const request = start.mock.calls[0]?.[0] as Agora.StartAgentsRequest;
         expect(request.properties.mllm?.vendor).toBe("openai");
-        expect(request.properties.mllm?.enable).toBe(true);
+        expect(request.properties.mllm).not.toHaveProperty("enable");
+        expect(request.properties.advanced_features).toEqual({ enable_mllm: true });
         expect((request.properties.mllm as Record<string, unknown>)?.api_key).toBe("openai-rt-key");
         expect((request.properties.mllm as Record<string, unknown>)?.url).toBe("wss://api.openai.com/v1/realtime");
         expect((request.properties.mllm as Record<string, unknown>)?.params).toMatchObject({
@@ -769,7 +770,8 @@ describe("Scenario 8 — MLLM mode", () => {
 
         const properties = agent.toProperties({ ...SESSION_OPTS });
         expect(properties.mllm?.vendor).toBe("gemini");
-        expect(properties.mllm?.enable).toBe(true);
+        expect(properties.mllm).not.toHaveProperty("enable");
+        expect(properties.advanced_features).toEqual({ enable_mllm: true });
         expect((properties.mllm as Record<string, unknown>)?.api_key).toBe("gemini-key");
         expect((properties.mllm as Record<string, unknown>)?.url).toBe("");
         expect((properties.mllm as Record<string, unknown>)?.params).toMatchObject({
@@ -792,7 +794,8 @@ describe("Scenario 8 — MLLM mode", () => {
 
         const properties = agent.toProperties({ ...SESSION_OPTS });
         expect(properties.mllm?.vendor).toBe("vertexai");
-        expect(properties.mllm?.enable).toBe(true);
+        expect(properties.mllm).not.toHaveProperty("enable");
+        expect(properties.advanced_features).toEqual({ enable_mllm: true });
         expect((properties.mllm as Record<string, unknown>)?.url).toBe("");
         expect((properties.mllm as Record<string, unknown>)?.params).toMatchObject({
             model: "gemini-live-2.5-flash-preview-native-audio-09-2025",
@@ -1709,8 +1712,8 @@ describe("MLLM vendor coverage", () => {
             )
             .toProperties({ ...SESSION_OPTS });
 
+        expect(properties.advanced_features).toEqual({ enable_mllm: true });
         expect(properties.mllm).toEqual({
-            enable: true,
             url: "AZURE_URL",
             api_key: "APIKEY",
             messages: [{ role: "user", content: "can you please count to 3 after greeting。" }],
@@ -1809,8 +1812,8 @@ describe("MLLM vendor coverage", () => {
             )
             .toProperties({ ...SESSION_OPTS });
 
+        expect(properties.advanced_features).toEqual({ enable_mllm: true });
         expect(properties.mllm).toEqual({
-            enable: true,
             vendor: "qwen_omni",
             url: "wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
             api_key: "xxxxxxxx",
@@ -1980,9 +1983,10 @@ test("GPT Live keeps MCP on mllm and main parameters outside vendor params", () 
         .withParameters({ silence_config: silence })
         .toProperties({ ...SESSION_OPTS });
     expect(properties.llm).toBeUndefined();
-    expect(properties.advanced_features?.enable_tools).toBe(true);
+    expect(properties.advanced_features).toEqual({ enable_tools: true, enable_mllm: true });
+    expect(properties.mllm).not.toHaveProperty("enable");
     expect(properties.parameters?.silence_config).toEqual(silence);
-    expect(properties.mllm).toMatchObject({ enable: true, mcp_servers: servers, params: { prompt: "Be brief" } });
+    expect(properties.mllm).toMatchObject({ mcp_servers: servers, params: { prompt: "Be brief" } });
     expect(properties.mllm?.params).not.toHaveProperty("mcp_servers");
     expect(properties.mllm?.params).not.toHaveProperty("silence_config");
 });
