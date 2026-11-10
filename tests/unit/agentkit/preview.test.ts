@@ -382,8 +382,9 @@ test("legacy GPT Live integration routes the full session to production without 
         expect(new Headers(init?.headers).get("agora-feature")).toBeNull();
     }
     const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(body.properties.mllm).not.toHaveProperty("enable");
+    expect(body.properties.advanced_features).toEqual({ enable_mllm: true });
     expect(body.properties.mllm).toMatchObject({
-        enable: true,
         vendor: "openai_gpt_live",
         url: "wss://api.openai.com/v1/live/sessions",
         params: { model: "gpt-live-1", prompt: "Be brief", output_idle_end_ms: 0 },

@@ -317,11 +317,7 @@ export class AgentSession {
      * Returns true when the agent is configured for MLLM (multimodal end-to-end audio).
      */
     private _isMllmMode(): boolean {
-        const mllm = this._agent.mllm;
-        if (mllm?.enable === true) {
-            return true;
-        }
-        return mllm !== undefined;
+        return this._agent.mllm !== undefined;
     }
 
     /**

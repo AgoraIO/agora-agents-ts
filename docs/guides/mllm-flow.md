@@ -16,7 +16,7 @@ In MLLM mode, a single multimodal model handles audio input and output end-to-en
 
 ## Requirements
 
-Call `agent.withMllm(vendor)` — that's it. MLLM mode is enabled automatically through `mllm.enable`. The `withLlm()`, `withTts()`, and `withStt()` methods are not needed — the MLLM vendor handles everything.
+Call `agent.withMllm(vendor)` — that's it. MLLM mode is enabled automatically through `advanced_features.enable_mllm: true`, merged with any advanced features you set (for example `enable_rtm`). The SDK never sends `mllm.enable` and drops it from custom vendor configs: when it is in the start body, RTM `message.metrics` are not delivered. The `withLlm()`, `withTts()`, and `withStt()` methods are not needed — the MLLM vendor handles everything.
 
 `AzureOpenAIRealtime` is a global MLLM (`GlobalMllmVendor`). `QwenOmni` is a Chinese mainland MLLM (`CNMllmVendor`). As with the other explicit vendor helpers, `client.area` controls Agora REST routing but does not prevent you from selecting a provider explicitly.
 

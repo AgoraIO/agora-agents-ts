@@ -51,6 +51,30 @@ function toGeneratedMllm(config: MllmConfig | undefined): Agora.Mllm | undefined
     return config as Agora.Mllm | undefined;
 }
 
+/**
+ * Returns a copy of an MLLM config without `mllm.enable`.
+ *
+ * The SDK enables MLLM with `advanced_features.enable_mllm`, never with
+ * `mllm.enable`. When `mllm.enable` is present in the start body the backend
+ * does not send RTM `message.metrics` (ttfb), even if
+ * `advanced_features.enable_mllm` is also set. Audio and transcripts are not
+ * affected, so the problem is easy to miss. A value set by a custom vendor or a
+ * hand-written config is dropped for the same reason.
+ */
+function withoutMllmEnable(config: MllmConfig): MllmConfig {
+    const { enable: _dropped, ...rest } = config;
+    return rest;
+}
+
+/**
+ * Merges `enable_mllm: true` into the caller's advanced features (for example
+ * `enable_rtm`). Used only for MLLM sessions; the cascading pipeline never
+ * gets `enable_mllm`.
+ */
+function withEnableMllm(features: AdvancedFeatures | undefined): AdvancedFeatures {
+    return { ...features, enable_mllm: true };
+}
+
 const INTERACTION_LANGUAGES = new Set<string>([
     "ar-EG",
     "ar-JO",
@@ -302,9 +326,12 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
      * Returns a new Agent with the specified MLLM vendor.
      *
      * MLLM vendors handle real-time audio end-to-end, bypassing the standard
-     * ASR → LLM → TTS pipeline. Calling this method automatically sets
-     * `mllm.enable: true`, so `withLlm()`, `withTts()`, and `withStt()`
-     * are not needed.
+     * ASR → LLM → TTS pipeline. Calling this method makes the start request
+     * send `advanced_features.enable_mllm: true` (merged with any other
+     * advanced features), so `withLlm()`, `withTts()`, and `withStt()` are not
+     * needed. `mllm.enable` is never sent: when it is present the backend does
+     * not deliver RTM `message.metrics`. A vendor config that sets it has it
+     * removed.
      *
      * Note: avatars are not supported with MLLM. The avatar publisher requires
      * the cascading ASR + LLM + TTS pipeline. Combining `withMllm()` and
@@ -314,12 +341,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
      */
     withMllm(vendor: GlobalMllmVendor | CNMllmVendor): Agent<TTSSampleRate, TArea> {
         const newAgent = this._clone();
-        newAgent._mllm = { ...vendor.toConfig(), enable: true };
-        if (newAgent._advancedFeatures?.enable_mllm !== undefined) {
-            const advancedFeatures = { ...newAgent._advancedFeatures };
-            delete advancedFeatures.enable_mllm;
-            newAgent._advancedFeatures = Object.keys(advancedFeatures).length > 0 ? advancedFeatures : undefined;
-        }
+        newAgent._mllm = withoutMllmEnable(vendor.toConfig());
         return newAgent;
     }
 
@@ -787,7 +809,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
     ): Agora.StartAgentsRequest.Properties {
         // In MLLM mode the backend handles audio end-to-end; LLM, TTS, and ASR
         // are not required.
-        const isMllmMode = this._mllm?.enable === true || this._mllm !== undefined;
+        const isMllmMode = this._mllm !== undefined;
 
         // Reject incompatible combinations before any work (token generation, etc.).
         // Avatars are currently supported only with the cascading ASR/LLM/TTS pipeline;
@@ -852,7 +874,9 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         };
 
         if (isMllmMode) {
-            const mllmConfig = toGeneratedMllm(this._mllm ? { ...this._mllm } : undefined);
+            // `mllm.enable` is never sent; `advanced_features.enable_mllm` enables MLLM.
+            // See withoutMllmEnable() for why.
+            const mllmConfig = toGeneratedMllm(this._mllm ? withoutMllmEnable(this._mllm) : undefined);
             if (mllmConfig) {
                 // Vendor config wins: only apply agent-level values when the vendor hasn't already set them.
                 // Consistent with Python (setdefault) and Go (!exists) semantics.
@@ -871,6 +895,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
             }
             return {
                 ...base,
+                advanced_features: withEnableMllm(this._advancedFeatures),
                 mllm: mllmConfig,
                 ...(!isOpenAIGPTLive &&
                     this._turnDetection !== undefined && {

@@ -80,7 +80,7 @@ If you omit `withStt()`, AgentKit still sends an ASR config automatically based 
 
 ### `withMllm(vendor: GlobalMllmVendor | CNMllmVendor): Agent<TTSSampleRate, TArea>`
 
-Set the MLLM vendor for multimodal mode. Pass a global vendor (`OpenAIRealtime`, `AzureOpenAIRealtime`, `GeminiLive`, `VertexAI`, `XaiGrok`) or the Chinese mainland vendor `QwenOmni`. Calling `withMllm()` automatically sets `mllm.enable = true`. MLLM mode does not require `withTts()` / `withLlm()` / `withStt()`.
+Set the MLLM vendor for multimodal mode. Pass a global vendor (`OpenAIRealtime`, `AzureOpenAIRealtime`, `GeminiLive`, `VertexAI`, `XaiGrok`) or the Chinese mainland vendor `QwenOmni`. Calling `withMllm()` makes the start request send `advanced_features.enable_mllm = true`, merged with any other advanced features. `mllm.enable` is never sent, because its presence stops RTM `message.metrics` from arriving. MLLM mode does not require `withTts()` / `withLlm()` / `withStt()`.
 
 > Avatars are only supported with the cascading ASR + LLM + TTS pipeline. Combining `withMllm()` with `withAvatar()` throws at `toProperties()` and `session.start()`.
 

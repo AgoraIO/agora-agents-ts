@@ -2,8 +2,8 @@
  * Type-safe MLLM (Multimodal Large Language Model) vendor classes.
  *
  * MLLM vendors handle real-time audio end-to-end, bypassing the standard
- * ASR → LLM → TTS pipeline. Calling `agent.withMllm(vendor)` automatically
- * sets `mllm.enable: true`.
+ * ASR → LLM → TTS pipeline. Calling `agent.withMllm(vendor)` makes the start
+ * request send `advanced_features.enable_mllm: true`; `mllm.enable` is never sent.
  */
 
 import type { MllmConfig, MllmTurnDetectionConfig } from "../types.js";
