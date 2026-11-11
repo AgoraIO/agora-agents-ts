@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2.14.0] — 2026-11-11
+
+### Added
+
+- **Soniox TTS** — Added the global `SonioxTTS` AgentKit provider with typed streaming speech options, speed validation, additional parameters, and skip patterns. Only `apiKey` is required; omitted options use provider defaults.
+- **MiniMax Duplex TTS** — Added the mainland China `MiniMaxDuplexTTS` provider with typed voice, audio, pronunciation, and voice modification settings. BYOK credentials, a model, and `voiceSetting.voice_id` are required; fractional voice multipliers and explicit `false` values are preserved.
+- **StepFun ASR** — Added the mainland China `StepFunSTT` provider with `apiKey` and additional parameters. Generated ASR/TTS types and public exports support all three new providers.
+
+### Changed
+
+- **Avatar sample-rate validation** — MiniMax Duplex sessions now validate the nested `audio_setting.sample_rate` against avatar requirements.
+
 ## [v2.13.1] — 2026-11-06
 
 ### Added
