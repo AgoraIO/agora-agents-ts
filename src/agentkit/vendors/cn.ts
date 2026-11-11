@@ -1,3 +1,4 @@
+import type { MinimaxDuplexTtsParams } from "../../api/index.js";
 import type { AvatarConfig, LlmConfig, SttConfig, TtsConfig } from "../types.js";
 import { BaseCNAvatar, BaseCNLLM, BaseCNSTT, BaseCNTTS, type BaseLlmOptions } from "./base.js";
 
@@ -35,6 +36,26 @@ export class FengmingSTT extends BaseCNSTT {
             vendor: "fengming",
             ...(keywords !== undefined && { keywords }),
             ...(hasParams && { params: { ...additionalParams } }),
+        };
+    }
+}
+
+export interface StepFunSTTOptions {
+    apiKey: string;
+    additionalParams?: Record<string, unknown>;
+}
+
+/** StepFun ASR for mainland China. */
+export class StepFunSTT extends BaseCNSTT {
+    constructor(private readonly options: StepFunSTTOptions) {
+        super();
+        requireString(options.apiKey, "apiKey", "StepFunSTT");
+    }
+
+    toConfig(): SttConfig {
+        return {
+            vendor: "stepfun",
+            params: { ...this.options.additionalParams, api_key: this.options.apiKey },
         };
     }
 }
@@ -203,6 +224,74 @@ export class XfyunDialectSTT extends BaseCNSTT {
                 ...(language && { language }),
             },
         } as unknown as SttConfig;
+    }
+}
+
+export interface MiniMaxDuplexTTSOptions {
+    key: string;
+    model: string;
+    url?: string;
+    voiceSetting: MinimaxDuplexTtsParams.VoiceSetting;
+    audioSetting?: MinimaxDuplexTtsParams.AudioSetting;
+    pronunciationDict?: MinimaxDuplexTtsParams.PronunciationDict;
+    voiceModify?: MinimaxDuplexTtsParams.VoiceModify;
+    languageBoost?: string;
+    textNormalizationMode?: string;
+    subtitleEnable?: boolean;
+    subtitleType?: string;
+    continuousSound?: boolean;
+    sessionId?: string;
+    skipPatterns?: number[];
+    additionalParams?: Record<string, unknown>;
+}
+
+/** MiniMax duplex streaming TTS. Currently available only in mainland China. */
+export class MiniMaxDuplexTTS extends BaseCNTTS {
+    constructor(private readonly options: MiniMaxDuplexTTSOptions) {
+        super();
+        requireString(options.key, "key", "MiniMaxDuplexTTS");
+        requireString(options.model, "model", "MiniMaxDuplexTTS");
+        requireString(options.voiceSetting?.voice_id, "voiceSetting.voice_id", "MiniMaxDuplexTTS");
+    }
+
+    toConfig(): TtsConfig {
+        const {
+            key,
+            model,
+            url,
+            voiceSetting,
+            audioSetting,
+            pronunciationDict,
+            voiceModify,
+            languageBoost,
+            textNormalizationMode,
+            subtitleEnable,
+            subtitleType,
+            continuousSound,
+            sessionId,
+            skipPatterns,
+            additionalParams,
+        } = this.options;
+        return {
+            vendor: "minimax_duplex",
+            params: {
+                ...additionalParams,
+                key,
+                model,
+                voice_setting: voiceSetting,
+                ...(url !== undefined && { url }),
+                ...(audioSetting !== undefined && { audio_setting: audioSetting }),
+                ...(pronunciationDict !== undefined && { pronunciation_dict: pronunciationDict }),
+                ...(voiceModify !== undefined && { voice_modify: voiceModify }),
+                ...(languageBoost !== undefined && { language_boost: languageBoost }),
+                ...(textNormalizationMode !== undefined && { text_normalization_mode: textNormalizationMode }),
+                ...(subtitleEnable !== undefined && { subtitle_enable: subtitleEnable }),
+                ...(subtitleType !== undefined && { subtitle_type: subtitleType }),
+                ...(continuousSound !== undefined && { continuous_sound: continuousSound }),
+                ...(sessionId !== undefined && { session_id: sessionId }),
+            },
+            ...(skipPatterns !== undefined && { skip_patterns: skipPatterns }),
+        };
     }
 }
 

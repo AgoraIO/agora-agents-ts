@@ -15,6 +15,70 @@ import type { TtsConfig } from "../types.js";
 import type { CartesiaSampleRate, ElevenLabsSampleRate, GoogleTTSSampleRate, MicrosoftSampleRate } from "./base.js";
 import { BaseTTS } from "./base.js";
 
+export interface SonioxTTSOptions {
+    apiKey: string;
+    baseUrl?: string;
+    model?: string;
+    language?: string;
+    voice?: string;
+    sampleRate?: number;
+    /** Speech rate multiplier, from 0.7 to 1.3 inclusive. */
+    speed?: number;
+    reduceSilence?: boolean;
+    returnTimestamps?: boolean;
+    clientReferenceId?: string;
+    dump?: boolean;
+    skipPatterns?: number[];
+    additionalParams?: Record<string, unknown>;
+}
+
+/** Soniox streaming TTS. Only apiKey is required. */
+export class SonioxTTS extends BaseTTS {
+    constructor(private readonly options: SonioxTTSOptions) {
+        super();
+        requireString(options.apiKey, "apiKey", "SonioxTTS");
+        if (options.speed !== undefined && !(options.speed >= 0.7 && options.speed <= 1.3)) {
+            throw new Error("SonioxTTS speed must be between 0.7 and 1.3");
+        }
+    }
+
+    toConfig(): TtsConfig {
+        const {
+            apiKey,
+            baseUrl,
+            model,
+            language,
+            voice,
+            sampleRate,
+            speed,
+            reduceSilence,
+            returnTimestamps,
+            clientReferenceId,
+            dump,
+            skipPatterns,
+            additionalParams,
+        } = this.options;
+        return {
+            vendor: "soniox",
+            params: {
+                ...additionalParams,
+                api_key: apiKey,
+                ...(baseUrl !== undefined && { base_url: baseUrl }),
+                ...(model !== undefined && { model }),
+                ...(language !== undefined && { language }),
+                ...(voice !== undefined && { voice }),
+                ...(sampleRate !== undefined && { sample_rate: sampleRate }),
+                ...(speed !== undefined && { speed }),
+                ...(reduceSilence !== undefined && { reduce_silence: reduceSilence }),
+                ...(returnTimestamps !== undefined && { return_timestamps: returnTimestamps }),
+                ...(clientReferenceId !== undefined && { client_reference_id: clientReferenceId }),
+                ...(dump !== undefined && { dump }),
+            },
+            ...(skipPatterns !== undefined && { skip_patterns: skipPatterns }),
+        };
+    }
+}
+
 /** Gemini 3.8 Flash TTS model. */
 export const GeminiTTSModels = {
     Flash38: "gemini-3.8-flash-tts",

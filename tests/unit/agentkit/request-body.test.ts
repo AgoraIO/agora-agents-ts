@@ -3,9 +3,9 @@ import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
 import { AudioScenario, CredentialMode } from "../../../src/agentkit/constants.js";
 import type { SttConfig } from "../../../src/agentkit/types.js";
-import { AnamAvatar, LemonSlice, Protoface, Tavus } from "../../../src/agentkit/vendors/avatar.js";
+import { AkoolAvatar, AnamAvatar, LemonSlice, Protoface, Tavus } from "../../../src/agentkit/vendors/avatar.js";
 import { BaseSTT } from "../../../src/agentkit/vendors/base.js";
-import { SpatiusAvatar } from "../../../src/agentkit/vendors/cn.js";
+import { MiniMaxDuplexTTS, SpatiusAvatar, StepFunSTT } from "../../../src/agentkit/vendors/cn.js";
 import {
     AmazonBedrock,
     Anthropic,
@@ -1985,4 +1985,44 @@ test("GPT Live keeps MCP on mllm and main parameters outside vendor params", () 
     expect(properties.mllm).toMatchObject({ enable: true, mcp_servers: servers, params: { prompt: "Be brief" } });
     expect(properties.mllm?.params).not.toHaveProperty("mcp_servers");
     expect(properties.mllm?.params).not.toHaveProperty("silence_config");
+});
+
+describe("MiniMax duplex and StepFun session configuration", () => {
+    test("CN Agent serializes duplex and StepFun through generated request types", () => {
+        const client = new AgoraClient({ area: Area.CN, appId: "0".repeat(32), appCertificate: "1".repeat(32) });
+        const tts = new MiniMaxDuplexTTS({ key: "k", model: "speech-2.8-turbo", voiceSetting: { voice_id: "v" } });
+        const properties = new Agent({ client, turnDetection: { language: "zh-CN" } })
+            .withStt(new StepFunSTT({ apiKey: "step-key" }))
+            .withLlm(new OpenAI({ model: "gpt-4o-mini" }))
+            .withTts(tts)
+            .toProperties({ channel: "room", token: "token", agentUid: "1", remoteUids: ["100"] });
+        expect(JSON.parse(JSON.stringify(properties)).tts).toEqual(tts.toConfig());
+        expect(properties.asr).toEqual({ vendor: "stepfun", params: { api_key: "step-key" }, language: "zh-CN" });
+        expect(properties.preset ?? []).not.toContain("minimax_speech_2_8_turbo");
+    });
+
+    test("duplex nested sample rate is checked against avatar requirements", async () => {
+        const fetchMock = vi.fn<typeof fetch>();
+        const client = new AgoraClient({
+            area: Area.CN,
+            appId: "0".repeat(32),
+            appCertificate: "1".repeat(32),
+            fetch: fetchMock,
+        });
+        const session = new Agent({ client })
+            .withStt(new StepFunSTT({ apiKey: "k" }))
+            .withLlm(new OpenAI({ model: "gpt-4o-mini" }))
+            .withTts(
+                new MiniMaxDuplexTTS({
+                    key: "k",
+                    model: "m",
+                    voiceSetting: { voice_id: "v" },
+                    audioSetting: { sample_rate: 24000 },
+                }),
+            )
+            .withAvatar(new AkoolAvatar({ apiKey: "avatar-key" }))
+            .createSession({ channel: "room", token: "token", agentUid: "1", remoteUids: ["100"] });
+        await expect(session.start()).rejects.toThrow("16,000");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
 });

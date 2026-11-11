@@ -361,6 +361,17 @@ Options serialize inside `tts.params`, including `api_key`. Blank credentials,
 model, or voice are rejected. v2.11.0 calls and raw configs remain compatible;
 no preview feature header is added and no sample rate option is exposed.
 
+### Soniox TTS
+
+`SonioxTTS` is a global streaming TTS helper. Only `apiKey` is required. Optional fields are `baseUrl`, `model`, `language`, `voice`, `sampleRate`, `speed` (0.7–1.3), `reduceSilence`, `returnTimestamps`, `clientReferenceId`, `dump`, `skipPatterns`, and `additionalParams`. Omitted values remain with the provider's defaults. Named options take precedence over `additionalParams`.
+
+<!-- snippet: executable -->
+```typescript
+import { SonioxTTS } from 'agora-agents';
+
+const tts = new SonioxTTS({ apiKey: 'your-soniox-key' });
+```
+
 ### Other TTS vendors
 
 The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts` for the full constructor options:
@@ -831,6 +842,7 @@ CN TTS helpers reuse shared vendor names where possible. `GenericTTS` is availab
 | Class | Key options |
 |---|---|
 | `MiniMaxCNTTS` | `key`, `model`, plus either `voiceSetting.voice_id` or non-empty `timberWeights`, with optional `audioSetting`, `pronunciationDict`, `languageBoost`, `skipPatterns` |
+| `MiniMaxDuplexTTS` | `key`, `model`, `voiceSetting.voice_id`; optional `url`, `audioSetting`, `pronunciationDict`, `voiceModify`, `languageBoost`, `textNormalizationMode`, `subtitleEnable`, `subtitleType`, `continuousSound`, `sessionId`, `skipPatterns`, `additionalParams` |
 | `TencentTTS` | `appId`, `secretId`, `secretKey`, `voiceType`; optional `volume`, `speed`, `emotionCategory`, `emotionIntensity`, `skipPatterns` |
 | `BytedanceTTS` | `token`, `appId`, `cluster`, `voiceType`; optional `speedRatio`, `volumeRatio`, `pitchRatio`, `emotion`, `skipPatterns` |
 | `MicrosoftCNTTS` | `key`, `region`, `voiceName`; optional `sampleRate`, `speed`, `volume`, `skipPatterns`, `additionalParams` |
@@ -838,11 +850,27 @@ CN TTS helpers reuse shared vendor names where possible. `GenericTTS` is availab
 | `BytedanceDuplexTTS` | `appId`, `token`, `speaker`; optional `skipPatterns` |
 | `StepFunTTS` | `apiKey`, `model`, `voiceId`; optional `skipPatterns` |
 
+`MiniMaxDuplexTTS` currently has only a CN variant (`vendor: "minimax_duplex"`). It requires BYOK credentials and does not infer a managed MiniMax preset. Its nested settings use the generated `MinimaxDuplexTtsParams` types; fractional voice multipliers and explicit `false` values are preserved.
+
+<!-- snippet: executable -->
+```typescript
+import { MiniMaxDuplexTTS, StepFunSTT } from 'agora-agents';
+
+const tts = new MiniMaxDuplexTTS({
+  key: 'your-minimax-key',
+  model: 'speech-2.8-turbo',
+  voiceSetting: { voice_id: 'female-shaonv' },
+  audioSetting: { sample_rate: 24000, format: 'pcm', channels: 1 },
+});
+const stt = new StepFunSTT({ apiKey: 'your-stepfun-key' });
+```
+
 ### CN STT vendors
 
 | Class | Key options |
 |---|---|
 | `FengmingSTT` | optional `keywords`, `additionalParams` |
+| `StepFunSTT` | `apiKey`; optional `additionalParams`; emits `vendor: "stepfun"` |
 | `TencentSTT` | `key`, `appId`, `secret`, `engineModelType`, `voiceId`; optional `language`, `additionalParams` |
 | `MicrosoftCNSTT` | `key`, `region`, `language` |
 | `XfyunSTT` | `apiKey`, `appId`, `apiSecret`, `language`; optional `additionalParams` |

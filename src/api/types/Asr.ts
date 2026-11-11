@@ -20,7 +20,8 @@ export type Asr =
     | Agora.Asr.Xfyun
     | Agora.Asr.XfyunBigmodel
     | Agora.Asr.XfyunDialect
-    | Agora.Asr.Smallestai;
+    | Agora.Asr.Smallestai
+    | Agora.Asr.Stepfun;
 
 export namespace Asr {
     export interface Ares extends Agora.AresAsr {
@@ -93,5 +94,9 @@ export namespace Asr {
 
     export interface Smallestai extends Agora.SmallestAiAsr {
         vendor: "smallestai";
+    }
+
+    export interface Stepfun extends Agora.StepfunAsr {
+        vendor: "stepfun";
     }
 }

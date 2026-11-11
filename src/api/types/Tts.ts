@@ -8,6 +8,7 @@ export type Tts =
     | Agora.Tts.Microsoft
     | Agora.Tts.Elevenlabs
     | Agora.Tts.Minimax
+    | Agora.Tts.MinimaxDuplex
     | Agora.Tts.Murf
     | Agora.Tts.Cartesia
     | Agora.Tts.Openai
@@ -27,7 +28,8 @@ export type Tts =
     | Agora.Tts.Gradium
     | Agora.Tts.Mistral
     | Agora.Tts.Typecast
-    | Agora.Tts.Smallestai;
+    | Agora.Tts.Smallestai
+    | Agora.Tts.Soniox;
 
 export namespace Tts {
     export interface Tencent extends Agora.TencentTts {
@@ -48,6 +50,10 @@ export namespace Tts {
 
     export interface Minimax extends Agora.MinimaxTts {
         vendor: "minimax";
+    }
+
+    export interface MinimaxDuplex extends Agora.MinimaxDuplexTts {
+        vendor: "minimax_duplex";
     }
 
     export interface Murf extends Agora.MurfTts {
@@ -128,5 +134,9 @@ export namespace Tts {
 
     export interface Smallestai extends Agora.SmallestAiTts {
         vendor: "smallestai";
+    }
+
+    export interface Soniox extends Agora.SonioxTts {
+        vendor: "soniox";
     }
 }

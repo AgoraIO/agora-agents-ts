@@ -11,9 +11,11 @@ import {
     MicrosoftCNSTT,
     MicrosoftCNTTS,
     MiniMaxCNTTS,
+    MiniMaxDuplexTTS,
     QwenOmni,
     SensetimeAvatar,
     SpatiusAvatar,
+    StepFunSTT,
     StepFunTTS,
     TencentLLM,
     TencentSTT,
@@ -628,5 +630,97 @@ describe("CN vendor helpers", () => {
                     model: "custom-model",
                 } as never),
         ).toThrow("CustomLLM requires url");
+    });
+});
+
+describe("MiniMax duplex TTS", () => {
+    test("MiniMax duplex preserves the generated shape and explicit zero/false values", () => {
+        const extra = { key: "overridden", continuous_sound: true, future_param: "kept" };
+        const tts = new MiniMaxDuplexTTS({
+            key: "mm-key",
+            model: "speech-2.8-turbo",
+            url: "wss://api.minimax.cn/ws/v1/t2a_v2_bidi",
+            voiceSetting: {
+                voice_id: "female-shaonv",
+                speed: 1.2,
+                vol: 0,
+                pitch: 0,
+                emotion: "happy",
+                latex_read: false,
+            },
+            audioSetting: { sample_rate: 24000, format: "pcm", channels: 1 },
+            pronunciationDict: { tone: ["测试/(ce4)(shi4)"] },
+            voiceModify: { pitch: 0, intensity: 0, timbre: 0, sound_effects: "spacious_echo" },
+            languageBoost: "Chinese",
+            textNormalizationMode: "basic",
+            subtitleEnable: false,
+            subtitleType: "word",
+            continuousSound: false,
+            sessionId: "session-1",
+            skipPatterns: [],
+            additionalParams: extra,
+        });
+        expect(tts.areaScope).toBe("cn");
+        expect(tts.toConfig()).toEqual({
+            vendor: "minimax_duplex",
+            params: {
+                key: "mm-key",
+                model: "speech-2.8-turbo",
+                url: "wss://api.minimax.cn/ws/v1/t2a_v2_bidi",
+                voice_setting: {
+                    voice_id: "female-shaonv",
+                    speed: 1.2,
+                    vol: 0,
+                    pitch: 0,
+                    emotion: "happy",
+                    latex_read: false,
+                },
+                audio_setting: { sample_rate: 24000, format: "pcm", channels: 1 },
+                pronunciation_dict: { tone: ["测试/(ce4)(shi4)"] },
+                voice_modify: { pitch: 0, intensity: 0, timbre: 0, sound_effects: "spacious_echo" },
+                language_boost: "Chinese",
+                text_normalization_mode: "basic",
+                subtitle_enable: false,
+                subtitle_type: "word",
+                continuous_sound: false,
+                session_id: "session-1",
+                future_param: "kept",
+            },
+            skip_patterns: [],
+        });
+        expect(extra).toEqual({ key: "overridden", continuous_sound: true, future_param: "kept" });
+    });
+
+    test("omits optional fields from the minimal configuration", () => {
+        expect(new MiniMaxDuplexTTS({ key: "k", model: "m", voiceSetting: { voice_id: "v" } }).toConfig()).toEqual({
+            vendor: "minimax_duplex",
+            params: { key: "k", model: "m", voice_setting: { voice_id: "v" } },
+        });
+    });
+
+    test.each(["key", "model"] as const)("duplex requires %s", (field) => {
+        expect(
+            () => new MiniMaxDuplexTTS({ key: "k", model: "m", voiceSetting: { voice_id: "v" }, [field]: "" }),
+        ).toThrow();
+    });
+
+    test("requires a voice ID", () => {
+        expect(() => new MiniMaxDuplexTTS({ key: "k", model: "m", voiceSetting: { voice_id: "" } })).toThrow();
+    });
+});
+
+describe("StepFun STT", () => {
+    test("requires only an API key and preserves explicit parameter precedence", () => {
+        expect(new StepFunSTT({ apiKey: "k" }).toConfig()).toEqual({ vendor: "stepfun", params: { api_key: "k" } });
+        expect(
+            new StepFunSTT({ apiKey: "k", additionalParams: { api_key: "overridden", future_param: 42 } }).toConfig(),
+        ).toEqual({
+            vendor: "stepfun",
+            params: { api_key: "k", future_param: 42 },
+        });
+    });
+
+    test("requires an API key", () => {
+        expect(() => new StepFunSTT({ apiKey: "" })).toThrow();
     });
 });

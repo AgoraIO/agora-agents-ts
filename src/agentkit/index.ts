@@ -19,11 +19,20 @@
  *    parts that need manual updates when adding new sugar.
  */
 
+export type {
+    MinimaxDuplexTts,
+    MinimaxDuplexTtsParams,
+    SonioxTts,
+    SonioxTtsParams,
+    StepfunAsr,
+    StepfunAsrParams,
+} from "../api/index.js";
 // Re-export the underlying client type for advanced usage
 export type { AgentsClient } from "../api/resources/agents/client/Client.js";
 export type { AgentOptions } from "./Agent.js";
 // Core classes
 export { Agent } from "./Agent.js";
+
 export type {
     AgentSessionEvent,
     AgentSessionEventHandler,
@@ -333,8 +342,10 @@ export type {
     MicrosoftCNSTTOptions,
     MicrosoftCNTTSOptions,
     MiniMaxCNTTSOptions,
+    MiniMaxDuplexTTSOptions,
     SensetimeAvatarOptions,
     SpatiusAvatarOptions,
+    StepFunSTTOptions,
     StepFunTTSOptions,
     TencentLLMOptions,
     TencentSTTOptions,
@@ -354,8 +365,10 @@ export {
     MicrosoftCNSTT,
     MicrosoftCNTTS,
     MiniMaxCNTTS,
+    MiniMaxDuplexTTS,
     SensetimeAvatar,
     SpatiusAvatar,
+    StepFunSTT,
     StepFunTTS,
     TencentLLM,
     TencentSTT,
@@ -471,6 +484,7 @@ export type {
     RimeTTSOptions,
     SarvamTTSOptions,
     SmallestAITTSOptions,
+    SonioxTTSOptions,
     TypecastTTSOptions,
     XAiTTSOptions,
 } from "./vendors/tts.js";
@@ -496,6 +510,7 @@ export {
     SarvamTTS,
     SarvamTTSLanguage,
     SmallestAITTS,
+    SonioxTTS,
     TypecastTTS,
     XAiTTS,
 } from "./vendors/tts.js";
