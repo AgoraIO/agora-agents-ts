@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2.13.1] — 2026-11-06
+
+### Added
+
+- `generateClientToken`, exported from the package root, for front-end token routes. It grants RTC and RTM only, with no ConvoAI service, so client tokens cannot authenticate ConvoAI REST calls. `uid` accepts a numeric UID or a string user account.
+- `generateConvoAIToken` accepts a string user account as `uid` as well as a numeric UID.
+
 ## [v2.13.0] — 2026-10-29
 
 ### Added

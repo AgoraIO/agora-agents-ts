@@ -136,12 +136,14 @@ export type {
     TtsVendor,
 } from "./region-vendors.js";
 export type {
+    GenerateClientTokenOptions,
     GenerateConvoAITokenOptions,
     GenerateTokenOptions,
 } from "./token.js";
 // Token generation
 export {
     ExpiresIn,
+    generateClientToken,
     generateConvoAIToken,
     generateRtcToken,
     MAX_EXPIRY_SECONDS,
