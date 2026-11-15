@@ -12,6 +12,50 @@ function _requireString(value: unknown, field: string, vendor: string): asserts 
     }
 }
 
+/** Constructor options for global ElevenLabs ASR. */
+export interface ElevenLabsSTTOptions {
+    apiKey: string;
+    /** Additional provider parameters. Explicit options take precedence. */
+    additionalParams?: Record<string, unknown>;
+}
+
+/** ElevenLabs ASR for global deployments. */
+export class ElevenLabsSTT extends BaseSTT {
+    constructor(private readonly options: ElevenLabsSTTOptions) {
+        super();
+        _requireString(options.apiKey, "apiKey", "ElevenLabsSTT");
+    }
+
+    toConfig(): SttConfig {
+        return {
+            vendor: "elevenlabs",
+            params: { ...this.options.additionalParams, api_key: this.options.apiKey },
+        };
+    }
+}
+
+/** Constructor options for global Fish Audio ASR. */
+export interface FishAudioSTTOptions {
+    apiKey: string;
+    /** Additional provider parameters. Explicit options take precedence. */
+    additionalParams?: Record<string, unknown>;
+}
+
+/** Fish Audio ASR for global deployments. */
+export class FishAudioSTT extends BaseSTT {
+    constructor(private readonly options: FishAudioSTTOptions) {
+        super();
+        _requireString(options.apiKey, "apiKey", "FishAudioSTT");
+    }
+
+    toConfig(): SttConfig {
+        return {
+            vendor: "fishaudio",
+            params: { ...this.options.additionalParams, api_key: this.options.apiKey },
+        };
+    }
+}
+
 function isDeepgramManagedModel(model: string | undefined): model is DeepgramPresetModel {
     return model !== undefined && DeepgramPresetModels.includes(model.trim().toLowerCase() as DeepgramPresetModel);
 }

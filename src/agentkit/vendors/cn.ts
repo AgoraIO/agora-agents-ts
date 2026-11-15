@@ -8,6 +8,28 @@ function requireString(value: unknown, field: string, vendor: string): asserts v
     }
 }
 
+/** Constructor options for mainland China Qwen ASR. */
+export interface QwenSTTOptions {
+    apiKey: string;
+    /** Additional provider parameters. Explicit options take precedence. */
+    additionalParams?: Record<string, unknown>;
+}
+
+/** Qwen ASR for mainland China. */
+export class QwenSTT extends BaseCNSTT {
+    constructor(private readonly options: QwenSTTOptions) {
+        super();
+        requireString(options.apiKey, "apiKey", "QwenSTT");
+    }
+
+    toConfig(): SttConfig {
+        return {
+            vendor: "qwen",
+            params: { ...this.options.additionalParams, api_key: this.options.apiKey },
+        };
+    }
+}
+
 export interface FengmingSTTOptions {
     /** Hotwords that improve recognition accuracy */
     keywords?: string[];
