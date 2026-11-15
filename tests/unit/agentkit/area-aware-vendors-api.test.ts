@@ -1,7 +1,26 @@
 import { describe, expect, test } from "vitest";
-import { Agent, AgoraClient, Area, DeepgramSTT, MiniMaxTTS, OpenAI, RTZRSTT } from "../../../src/index.js";
+import {
+    Agent,
+    AgoraClient,
+    Area,
+    DeepgramSTT,
+    ElevenLabsSTT,
+    FishAudioSTT,
+    MiniMaxTTS,
+    OpenAI,
+    QwenSTT,
+    RTZRSTT,
+} from "../../../src/index.js";
 
 describe("AgoraClient + Agent API", () => {
+    test.each([
+        { Provider: ElevenLabsSTT, scope: "global" },
+        { Provider: FishAudioSTT, scope: "global" },
+        { Provider: QwenSTT, scope: "cn" },
+    ] as const)("$Provider.name is exported as a $scope STT vendor", ({ Provider, scope }) => {
+        expect(new Provider({ apiKey: "asr-key" }).areaScope).toBe(scope);
+    });
+
     test("RTZRSTT is exported as a global STT vendor", () => {
         expect(new RTZRSTT({ clientId: "rtzr-client", clientSecret: "rtzr-secret" }).areaScope).toBe("global");
     });

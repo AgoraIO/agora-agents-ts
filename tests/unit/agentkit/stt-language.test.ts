@@ -1,11 +1,14 @@
 import { describe, expect, test } from "vitest";
 import { AgoraClient } from "../../../src/AgoraPoolClient.js";
 import { Agent } from "../../../src/agentkit/Agent.js";
+import { QwenSTT } from "../../../src/agentkit/vendors/cn.js";
 import { OpenAI } from "../../../src/agentkit/vendors/llm.js";
 import {
     AmazonSTT,
     AssemblyAISTT,
     DeepgramSTT,
+    ElevenLabsSTT,
+    FishAudioSTT,
     GoogleSTT,
     OpenAISTT,
     RTZRSTT,
@@ -43,6 +46,10 @@ function baseAgent() {
 }
 
 describe("STT language serialization", () => {
+    test.each([ElevenLabsSTT, FishAudioSTT, QwenSTT])("%s rejects an empty API key", (Provider) => {
+        expect(() => new Provider({ apiKey: "" })).toThrow("requires apiKey");
+    });
+
     test("keeps STT language on vendor params and defaults turn_detection", () => {
         const properties = baseAgent()
             .withStt(new SpeechmaticsSTT({ apiKey: "stt-key", language: "en" }))

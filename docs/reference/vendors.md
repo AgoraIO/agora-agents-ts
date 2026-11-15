@@ -79,27 +79,6 @@ const session = agent.createSession({
 });
 ```
 
-## Engine v2.16 ASR vendors
-
-| Class | Wire vendor | Scope |
-|---|---|---|
-| `ElevenLabsSTT` | `elevenlabs` | global |
-| `FishAudioSTT` | `fishaudio` | global |
-| `QwenSTT` | `qwen` | cn |
-
-All three require a non-empty `apiKey` and accept optional `additionalParams`. The explicit key takes precedence over `additionalParams.api_key`. Configure recognition language through the agent's `turnDetection.language`; AgentKit writes REST `asr.language` from it (default `en-US`).
-
-<!-- snippet: executable -->
-```typescript
-import { ElevenLabsSTT, FishAudioSTT, QwenSTT } from 'agora-agents';
-
-const elevenLabs = new ElevenLabsSTT({ apiKey: 'your-elevenlabs-key' });
-const fishAudio = new FishAudioSTT({ apiKey: 'your-fishaudio-key' });
-const qwen = new QwenSTT({ apiKey: 'your-dashscope-key' });
-```
-
-Pass the desired provider to `.withStt()` on your agent. Set `turnDetection: { language: 'zh-CN' }` on the agent for Chinese recognition.
-
 ## LLM vendors
 
 
@@ -431,6 +410,38 @@ For those models, omit `key` to use Agora-managed credentials. In that configura
 ---
 
 ## STT vendors
+
+### ElevenLabsSTT
+
+Global ElevenLabs ASR provider (`asr.vendor: "elevenlabs"`). The explicit key takes precedence over `additionalParams.api_key`. REST `asr.language` comes from the agent's `turnDetection.language` (default `en-US`).
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Non-empty ElevenLabs ASR API key |
+| `additionalParams` | `Record<string, unknown>` | No | Additional provider parameters |
+
+<!-- snippet: executable -->
+```typescript
+import { ElevenLabsSTT } from 'agora-agents';
+
+const stt = new ElevenLabsSTT({ apiKey: 'your-elevenlabs-key' });
+```
+
+### FishAudioSTT
+
+Global Fish Audio ASR provider (`asr.vendor: "fishaudio"`). The explicit key takes precedence over `additionalParams.api_key`. REST `asr.language` comes from the agent's `turnDetection.language` (default `en-US`).
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Non-empty Fish Audio ASR API key |
+| `additionalParams` | `Record<string, unknown>` | No | Additional provider parameters |
+
+<!-- snippet: executable -->
+```typescript
+import { FishAudioSTT } from 'agora-agents';
+
+const stt = new FishAudioSTT({ apiKey: 'your-fishaudio-key' });
+```
 
 ### DeepgramSTT
 
@@ -887,6 +898,22 @@ const stt = new StepFunSTT({ apiKey: 'your-stepfun-key' });
 ```
 
 ### CN STT vendors
+
+#### QwenSTT
+
+Mainland China Qwen ASR provider (`asr.vendor: "qwen"`). The explicit key takes precedence over `additionalParams.api_key`. Set the agent's `turnDetection: { language: 'zh-CN' }` for Chinese recognition; AgentKit writes REST `asr.language` from it (default `en-US`).
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Non-empty DashScope API key |
+| `additionalParams` | `Record<string, unknown>` | No | Additional Qwen ASR parameters |
+
+<!-- snippet: executable -->
+```typescript
+import { QwenSTT } from 'agora-agents';
+
+const stt = new QwenSTT({ apiKey: 'your-dashscope-key' });
+```
 
 | Class | Key options |
 |---|---|
