@@ -79,6 +79,27 @@ const session = agent.createSession({
 });
 ```
 
+## Engine v2.16 ASR vendors
+
+| Class | Wire vendor | Scope |
+|---|---|---|
+| `ElevenLabsSTT` | `elevenlabs` | global |
+| `FishAudioSTT` | `fishaudio` | global |
+| `QwenSTT` | `qwen` | cn |
+
+All three require a non-empty `apiKey` and accept optional `additionalParams`. The explicit key takes precedence over `additionalParams.api_key`. Configure recognition language through the agent's `turnDetection.language`; AgentKit writes REST `asr.language` from it (default `en-US`).
+
+<!-- snippet: executable -->
+```typescript
+import { ElevenLabsSTT, FishAudioSTT, QwenSTT } from 'agora-agents';
+
+const elevenLabs = new ElevenLabsSTT({ apiKey: 'your-elevenlabs-key' });
+const fishAudio = new FishAudioSTT({ apiKey: 'your-fishaudio-key' });
+const qwen = new QwenSTT({ apiKey: 'your-dashscope-key' });
+```
+
+Pass the desired provider to `.withStt()` on your agent. Set `turnDetection: { language: 'zh-CN' }` on the agent for Chinese recognition.
+
 ## LLM vendors
 
 

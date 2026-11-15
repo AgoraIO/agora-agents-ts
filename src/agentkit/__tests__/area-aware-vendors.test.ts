@@ -1,6 +1,14 @@
 import { AgoraClient } from "../../AgoraPoolClient.js";
 import { Area } from "../../core/domain/index.js";
-import { MiniMaxDuplexTTS, type MiniMaxDuplexTTSOptions, SonioxTTS, StepFunSTT } from "../../index.js";
+import {
+    ElevenLabsSTT,
+    FishAudioSTT,
+    MiniMaxDuplexTTS,
+    type MiniMaxDuplexTTSOptions,
+    QwenSTT,
+    SonioxTTS,
+    StepFunSTT,
+} from "../../index.js";
 import { Agent } from "../Agent.js";
 import type {
     CNMllmVendor,
@@ -51,6 +59,17 @@ const globalGeminiStt: GlobalSttVendor = new GeminiSTT({
 });
 new Agent({ client }).withStt(globalGeminiStt);
 const globalSmallestStt: GlobalSttVendor = new SmallestAISTT({ apiKey: "smallest-key" });
+const globalElevenLabsStt: GlobalSttVendor = new ElevenLabsSTT({ apiKey: "elevenlabs-key" });
+const globalFishAudioStt: GlobalSttVendor = new FishAudioSTT({ apiKey: "fish-key" });
+const cnQwenStt: CNSttVendor = new QwenSTT({ apiKey: "qwen-key" });
+new Agent({ client }).withStt(globalElevenLabsStt).withStt(globalFishAudioStt).withStt(cnQwenStt);
+
+// @ts-expect-error ElevenLabs ASR is a global provider.
+const _invalidCnElevenLabsStt: CNSttVendor = new ElevenLabsSTT({ apiKey: "key" });
+// @ts-expect-error Fish Audio ASR is a global provider.
+const _invalidCnFishAudioStt: CNSttVendor = new FishAudioSTT({ apiKey: "key" });
+// @ts-expect-error Qwen ASR is a mainland China provider.
+const _invalidGlobalQwenStt: GlobalSttVendor = new QwenSTT({ apiKey: "key" });
 const globalRtzrStt: GlobalSttVendor = new RTZRSTT({ clientId: "rtzr-client", clientSecret: "rtzr-secret" });
 const globalSmallestTts: GlobalTtsVendor = new SmallestAITTS({ apiKey: "smallest-key" });
 new Agent({ client }).withStt(globalSmallestStt).withStt(globalRtzrStt).withTts(globalSmallestTts);

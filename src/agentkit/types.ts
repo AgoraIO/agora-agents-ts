@@ -11,8 +11,10 @@ import type {
     AsrLanguage,
     CartesiaTtsParams as CartesiaTtsParamsType,
     CartesiaTts as CartesiaTtsType,
+    ElevenLabsAsrParams,
     ElevenLabsTtsParams as ElevenLabsTtsParamsType,
     ElevenLabsTts as ElevenLabsTtsType,
+    FishAudioAsrParams,
     FishAudioTtsParams as FishAudioTtsParamsType,
     FishAudioTts as FishAudioTtsType,
     GeminiAsrParams as GeminiAsrParamsType,
@@ -47,6 +49,7 @@ import type {
     MurfTts as MurfTtsType,
     OpenAiTtsParams as OpenAiTtsParamsType,
     OpenAiTts as OpenAiTtsType,
+    QwenAsrParams,
     RimeTtsParams as RimeTtsParamsType,
     RimeTts as RimeTtsType,
     RtzrAsrParams as RtzrAsrParamsType,
@@ -85,6 +88,9 @@ export type LlmStyle = Llm.Style;
  * When using shorthand strings or minimal configs, the untyped variant is available.
  */
 export type SttConfig =
+    | { vendor: "elevenlabs"; language?: TurnDetectionLanguage; params: ElevenLabsAsrParams }
+    | { vendor: "fishaudio"; language?: TurnDetectionLanguage; params: FishAudioAsrParams }
+    | { vendor: "qwen"; language?: TurnDetectionLanguage; params: QwenAsrParams }
     | {
           vendor: "fengming";
           language?: TurnDetectionLanguage;
