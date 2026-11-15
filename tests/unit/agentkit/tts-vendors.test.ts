@@ -23,6 +23,7 @@ import {
     type CredentialMode as CredentialModeType,
     SarvamTTSLanguage,
     type SarvamTTSLanguage as SarvamTTSLanguageType,
+    SonioxTTS,
 } from "../../../src/index.js";
 
 describe("TTS vendor helpers", () => {
@@ -364,5 +365,56 @@ describe("TTS vendor helpers", () => {
             skip_patterns: [1, 2],
         });
         expect(() => new SmallestAITTS({ apiKey: "" })).toThrow("SmallestAITTS requires apiKey");
+    });
+});
+
+describe("Soniox TTS", () => {
+    test("Soniox maps all optional fields and explicit options win", () => {
+        const tts = new SonioxTTS({
+            apiKey: "k",
+            baseUrl: "wss://tts.soniox.com",
+            model: "model",
+            language: "en",
+            voice: "voice",
+            sampleRate: 24000,
+            speed: 0.7,
+            reduceSilence: false,
+            returnTimestamps: false,
+            clientReferenceId: "ref",
+            dump: false,
+            skipPatterns: [1],
+            additionalParams: { api_key: "overridden", reduce_silence: true, future_param: 42 },
+        });
+        expect(tts.areaScope).toBe("global");
+        expect(tts.toConfig()).toEqual({
+            vendor: "soniox",
+            params: {
+                api_key: "k",
+                base_url: "wss://tts.soniox.com",
+                model: "model",
+                language: "en",
+                voice: "voice",
+                sample_rate: 24000,
+                speed: 0.7,
+                reduce_silence: false,
+                return_timestamps: false,
+                client_reference_id: "ref",
+                dump: false,
+                future_param: 42,
+            },
+            skip_patterns: [1],
+        });
+    });
+
+    test("requires only an API key and omits optional fields", () => {
+        expect(new SonioxTTS({ apiKey: "k" }).toConfig()).toEqual({ vendor: "soniox", params: { api_key: "k" } });
+    });
+
+    test("rejects an empty API key", () => {
+        expect(() => new SonioxTTS({ apiKey: "" })).toThrow();
+    });
+
+    test.each([0.6, 1.4, Number.NaN])("rejects Soniox speed %s", (speed) => {
+        expect(() => new SonioxTTS({ apiKey: "k", speed })).toThrow();
     });
 });

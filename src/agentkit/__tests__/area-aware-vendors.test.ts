@@ -1,8 +1,10 @@
 import { AgoraClient } from "../../AgoraPoolClient.js";
 import { Area } from "../../core/domain/index.js";
+import { MiniMaxDuplexTTS, type MiniMaxDuplexTTSOptions, SonioxTTS, StepFunSTT } from "../../index.js";
 import { Agent } from "../Agent.js";
 import type {
     CNMllmVendor,
+    CNSttVendor,
     CNTtsVendor,
     GlobalMllmVendor,
     GlobalSttVendor,
@@ -154,3 +156,19 @@ const _invalidGlobalMllm: GlobalMllmVendor = new QwenOmni({
 }
 
 new Agent({ client }).withStt(new DeepgramSTT({ model: "nova-3", language: "en-US" }));
+
+function checkSpeechVendorTypes() {
+    const duplex = new MiniMaxDuplexTTS({ key: "k", model: "m", voiceSetting: { voice_id: "v" } });
+    const cnTts: CNTtsVendor = duplex;
+    const cnStt: CNSttVendor = new StepFunSTT({ apiKey: "k" });
+    const globalTts: GlobalTtsVendor = new SonioxTTS({ apiKey: "k" });
+    // @ts-expect-error MiniMax duplex currently has only a CN variant.
+    const invalidGlobalTts: GlobalTtsVendor = duplex;
+    // @ts-expect-error StepFun ASR is a CN vendor.
+    const invalidGlobalStt: GlobalSttVendor = cnStt;
+    // @ts-expect-error Duplex requires a voice setting; timber weights do not replace it.
+    const missingVoice: MiniMaxDuplexTTSOptions = { key: "k", model: "m" };
+    return { cnTts, cnStt, globalTts, invalidGlobalTts, invalidGlobalStt, missingVoice };
+}
+
+void checkSpeechVendorTypes;

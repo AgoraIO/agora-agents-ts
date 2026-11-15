@@ -21,7 +21,10 @@ export type Asr =
     | Agora.Asr.XfyunBigmodel
     | Agora.Asr.XfyunDialect
     | Agora.Asr.Smallestai
-    | Agora.Asr.Stepfun;
+    | Agora.Asr.Stepfun
+    | Agora.Asr.Elevenlabs
+    | Agora.Asr.Fishaudio
+    | Agora.Asr.Qwen;
 
 export namespace Asr {
     export interface Ares extends Agora.AresAsr {
@@ -98,5 +101,17 @@ export namespace Asr {
 
     export interface Stepfun extends Agora.StepfunAsr {
         vendor: "stepfun";
+    }
+
+    export interface Elevenlabs extends Agora.ElevenLabsAsr {
+        vendor: "elevenlabs";
+    }
+
+    export interface Fishaudio extends Agora.FishAudioAsr {
+        vendor: "fishaudio";
+    }
+
+    export interface Qwen extends Agora.QwenAsr {
+        vendor: "qwen";
     }
 }

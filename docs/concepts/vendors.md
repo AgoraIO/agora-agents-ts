@@ -58,6 +58,7 @@ const llm = new OpenAI({
 | `SarvamTTS`     | Sarvam AI        | Configurable                            |
 | `XAiTTS`        | xAI              | Configurable                            |
 | `SmallestAITTS` | Smallest AI (global) | Configurable                         |
+| `SonioxTTS` | Soniox (global) | Configurable; only `apiKey` is required |
 
 AgentKit exposes generic synthesis through `GenericTTS`. The current implementation accepts HTTP(S) endpoints and emits the generated `generic_http` wire vendor. WebSocket endpoints are not yet supported.
 
@@ -158,8 +159,8 @@ CN vendor classes use the same builder methods (`.withLlm()`, `.withStt()`, `.wi
 |---|---|
 | LLM | `AliyunLLM`, `BytedanceLLM`, `DeepSeekLLM`, `TencentLLM`, `CustomLLM` |
 | MLLM | `QwenOmni` |
-| STT | `FengmingSTT`, `TencentSTT`, `MicrosoftCNSTT`, `XfyunSTT`, `XfyunBigModelSTT`, `XfyunDialectSTT` |
-| TTS | `GenericTTS` (shared with Global), `MiniMaxCNTTS`, `MicrosoftCNTTS`, `TencentTTS`, `CosyVoiceTTS`, `BytedanceDuplexTTS`, `StepFunTTS` |
+| STT | `FengmingSTT`, `StepFunSTT`, `TencentSTT`, `MicrosoftCNSTT`, `XfyunSTT`, `XfyunBigModelSTT`, `XfyunDialectSTT` |
+| TTS | `GenericTTS` (shared with Global), `MiniMaxCNTTS`, `MiniMaxDuplexTTS` (CN only), `MicrosoftCNTTS`, `TencentTTS`, `CosyVoiceTTS`, `BytedanceDuplexTTS`, `StepFunTTS` |
 | Avatar | `SensetimeAvatar`, `SpatiusAvatar` |
 
 See [Regional Routing](../guides/regional-routing.md) and [Vendor Reference](../reference/vendors.md) for constructor options.
