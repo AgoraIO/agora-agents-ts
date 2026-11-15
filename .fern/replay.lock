@@ -3020,7 +3020,7 @@ patches:
         }
       src/version.ts: |
         export const SDK_VERSION = "v2.13.1";
-    status: unresolved
+    status: resolving
 dismissals:
   - patch_id: patch-49d85678
     original_commit: 49d8567869e02d0a32eefe43222ca9d2edbb627f
