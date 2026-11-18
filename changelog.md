@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2.14.1] — 2026-11-18
+
+### Fixed
+
+- **Multi-language turn detection** — `turnDetection.language` rejected multiple languages, although the API supports them. It now accepts one language or a non-empty list, such as `["en-US", "es-ES"]`. AgentKit sends a list to `asr.language` and `turn_detection.language` as a comma-separated string, without duplicates. When the list has more than one language and `config.end_of_speech.mode` is unset, AgentKit sends `end_of_speech.mode: "vad"`. New exported types: `TurnDetectionLanguages` and `SemanticEndOfSpeechLanguage`.
+- **Semantic end-of-speech languages** — Semantic end of speech supports one English or Chinese language only (`en-US`, `en-IN`, `zh-CN`, `zh-HK`, `zh-TW`). With a list or any other language, the service silently used VAD instead, so the setting had no effect. TypeScript now reports these configs as compile errors, and AgentKit throws at runtime. Use one English or Chinese language, or set `end_of_speech.mode: "vad"`.
+
 ## [v2.14.0] — 2026-11-11
 
 ### Added
