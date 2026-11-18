@@ -40,6 +40,7 @@ import type {
     TtsConfig,
     TurnDetectionConfig,
     TurnDetectionLanguage,
+    TurnDetectionLanguages,
 } from "./types.js";
 import { isOpenAIGPTLiveConfig } from "./vendors/mllm.js";
 
@@ -94,6 +95,51 @@ function assertTurnDetectionLanguage(value: string): asserts value is TurnDetect
     if (!isTurnDetectionLanguage(value)) {
         throw new Error(`Invalid turnDetection.language: ${value}`);
     }
+}
+
+/** Wire shape of `turn_detection` once AgentKit has resolved `language` to one string. */
+type ResolvedTurnDetectionConfig = Omit<TurnDetectionConfig, "language"> & { language?: string };
+
+/** Joins a language list into the comma-separated string the API expects. */
+function toWireLanguage(language: TurnDetectionLanguages): string {
+    return typeof language === "string" ? language : [...new Set(language)].join(",");
+}
+
+/**
+ * Validates `turnDetection` and resolves `language` to the wire string.
+ *
+ * - Defaults `language` to en-US.
+ * - Semantic EoS takes only one English or Chinese language. The types already
+ *   enforce this; the runtime check covers untyped callers.
+ * - Several languages with no EoS mode set fall back to silence VAD.
+ */
+function resolveTurnDetectionConfig(config: TurnDetectionConfig | undefined): ResolvedTurnDetectionConfig {
+    const language: TurnDetectionLanguages = config?.language ?? DEFAULT_TURN_DETECTION_LANGUAGE;
+    const languages: string[] = typeof language === "string" ? [language] : [...new Set(language)];
+    if (languages.length === 0) {
+        throw new Error("turnDetection.language must not be an empty list");
+    }
+    languages.forEach(assertTurnDetectionLanguage);
+
+    const endOfSpeech = config?.config?.end_of_speech;
+    if (endOfSpeech?.mode === "semantic") {
+        if (typeof language !== "string") {
+            throw new Error(
+                "turnDetection.language cannot be a list when end_of_speech.mode is semantic; use one English or Chinese language, or use end_of_speech.mode vad. Otherwise the service silently uses VAD instead of semantic end of speech",
+            );
+        }
+        if (!/^(en|zh)-/.test(language)) {
+            throw new Error(
+                `Semantic end_of_speech supports only English and Chinese languages; got turnDetection.language: ${language}. Otherwise the service silently uses VAD instead of semantic end of speech`,
+            );
+        }
+    }
+
+    const resolved: ResolvedTurnDetectionConfig = { ...config, language: languages.join(",") };
+    if (languages.length > 1 && endOfSpeech?.mode === undefined) {
+        resolved.config = { ...config?.config, end_of_speech: { ...endOfSpeech, mode: "vad" } };
+    }
+    return resolved;
 }
 
 /**
@@ -874,7 +920,12 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
                 mllm: mllmConfig,
                 ...(!isOpenAIGPTLive &&
                     this._turnDetection !== undefined && {
-                        turn_detection: this._turnDetection as Agora.StartAgentsRequest.Properties.TurnDetection,
+                        turn_detection: {
+                            ...this._turnDetection,
+                            ...(this._turnDetection.language !== undefined && {
+                                language: toWireLanguage(this._turnDetection.language),
+                            }),
+                        } as Agora.StartAgentsRequest.Properties.TurnDetection,
                     }),
             };
         }
@@ -917,7 +968,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
               }
             : undefined;
 
-        const turnDetectionConfig = this._resolveTurnDetectionConfig();
+        const turnDetectionConfig = resolveTurnDetectionConfig(this._turnDetection);
         const asrConfig =
             this._stt !== undefined || !allowMissingAsr
                 ? (this._resolveAsrConfig(turnDetectionConfig) as Agora.Asr | undefined)
@@ -968,7 +1019,7 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         return newAgent;
     }
 
-    private _resolveAsrConfig(turnDetectionConfig: TurnDetectionConfig): SttConfig | undefined {
+    private _resolveAsrConfig(turnDetectionConfig: ResolvedTurnDetectionConfig): SttConfig | undefined {
         const asrConfig =
             this._stt !== undefined
                 ? ({ ...this._stt } as SttConfig & { language?: string })
@@ -996,17 +1047,6 @@ export class Agent<TTSSampleRate extends number = number, TArea extends AgoraAre
         asrConfig.language = turnDetectionConfig.language;
 
         return Object.keys(asrConfig).length > 0 ? asrConfig : undefined;
-    }
-
-    private _resolveTurnDetectionConfig(): TurnDetectionConfig {
-        const turnDetection = { ...(this._turnDetection ?? {}) } as TurnDetectionConfig & { language?: string };
-        const existingTurnDetectionLanguage = turnDetection.language;
-        const language = existingTurnDetectionLanguage ?? DEFAULT_TURN_DETECTION_LANGUAGE;
-
-        assertTurnDetectionLanguage(language);
-        turnDetection.language = language;
-
-        return turnDetection;
     }
 }
 

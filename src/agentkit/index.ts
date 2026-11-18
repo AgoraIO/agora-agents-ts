@@ -242,6 +242,7 @@ export type {
     SarvamTtsParams,
     // Say/Speak types
     SayOptions,
+    SemanticEndOfSpeechLanguage,
     SessionInfo,
     SessionListResponse,
     // Session types
@@ -274,6 +275,7 @@ export type {
     TtsConfig,
     TurnDetectionConfig,
     TurnDetectionLanguage,
+    TurnDetectionLanguages,
     TurnDetectionNestedConfig,
     TurnDetectionType,
     TypecastTts,

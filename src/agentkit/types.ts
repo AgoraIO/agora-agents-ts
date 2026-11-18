@@ -142,10 +142,46 @@ export type AvatarWireVendor = StartAgentsRequest.Properties.Avatar.Vendor;
 /** BCP-47 language tag used by `turn_detection.language`. */
 export type TurnDetectionLanguage = AsrLanguage;
 
-/** Turn detection configuration */
-export type TurnDetectionConfig = Omit<StartAgentsRequest.Properties.TurnDetection, "language"> & {
-    language?: TurnDetectionLanguage;
+/**
+ * Languages supported by semantic end-of-speech detection
+ * (`turn_detection.config.end_of_speech.mode = "semantic"`): English and Chinese only.
+ */
+export type SemanticEndOfSpeechLanguage = Extract<TurnDetectionLanguage, `en-${string}` | `zh-${string}`>;
+
+/**
+ * One language, or a non-empty list of languages for multi-language sessions.
+ * A list is sent to `asr.language` as a comma-separated string.
+ */
+export type TurnDetectionLanguages =
+    | TurnDetectionLanguage
+    | readonly [TurnDetectionLanguage, ...TurnDetectionLanguage[]];
+
+type TurnDetectionBase = Omit<StartAgentsRequest.Properties.TurnDetection, "language" | "config">;
+type GeneratedEndOfSpeech = StartAgentsRequest.Properties.TurnDetection.Config.EndOfSpeech;
+
+/** Semantic EoS: only one English or Chinese language. */
+type SemanticTurnDetectionConfig = TurnDetectionBase & {
+    config: TurnDetectionNestedConfig & { end_of_speech: GeneratedEndOfSpeech & { mode: "semantic" } };
+    language?: SemanticEndOfSpeechLanguage;
 };
+
+/** VAD or manual EoS (or unset): one language or a list of languages. */
+type NonSemanticTurnDetectionConfig = TurnDetectionBase & {
+    config?: TurnDetectionNestedConfig & {
+        end_of_speech?: Omit<GeneratedEndOfSpeech, "mode"> & { mode?: Exclude<EndOfSpeechMode, "semantic"> };
+    };
+    language?: TurnDetectionLanguages;
+};
+
+/**
+ * Turn detection configuration.
+ *
+ * `language` takes one BCP-47 tag or a list of tags. A list cannot be used with
+ * semantic end-of-speech: TypeScript reports an error at compile time, and the
+ * SDK also throws at runtime. When a list has more than one language and
+ * `end_of_speech.mode` is unset, the SDK sends `end_of_speech.mode = "vad"`.
+ */
+export type TurnDetectionConfig = NonSemanticTurnDetectionConfig | SemanticTurnDetectionConfig;
 
 // --- New SOS/EOS turn detection types (preferred) ---
 

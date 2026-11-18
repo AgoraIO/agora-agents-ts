@@ -370,3 +370,86 @@ describe("STT language serialization", () => {
         expect(() => new SmallestAISTT({ apiKey: "" })).toThrow("SmallestAISTT requires apiKey");
     });
 });
+
+describe("turn detection multi-language", () => {
+    const sessionOptions = { channel: "channel", token: "token", agentUid: "1001", remoteUids: ["1002"] };
+
+    test("joins a language list into a comma-separated asr.language and falls back to silence VAD", () => {
+        const properties = baseAgent()
+            .withTurnDetection({ language: ["en-US", "es-ES", "fr-FR"] })
+            .toProperties(sessionOptions);
+
+        expect(properties.asr).toMatchObject({ vendor: "ares", language: "en-US,es-ES,fr-FR" });
+        expect(properties.turn_detection).toMatchObject({
+            language: "en-US,es-ES,fr-FR",
+            config: { end_of_speech: { mode: "vad" } },
+        });
+    });
+
+    test("keeps caller VAD settings and removes duplicate languages", () => {
+        const properties = baseAgent()
+            .withTurnDetection({
+                language: ["en-US", "hi-IN", "en-US"],
+                config: {
+                    speech_threshold: 0.5,
+                    end_of_speech: { mode: "vad", vad_config: { silence_duration_ms: 640 } },
+                },
+            })
+            .toProperties(sessionOptions);
+
+        expect(properties.asr).toMatchObject({ language: "en-US,hi-IN" });
+        expect(properties.turn_detection).toMatchObject({
+            language: "en-US,hi-IN",
+            config: { speech_threshold: 0.5, end_of_speech: { mode: "vad", vad_config: { silence_duration_ms: 640 } } },
+        });
+    });
+
+    test("a one-item list behaves like a single language", () => {
+        const properties = baseAgent()
+            .withTurnDetection({ language: ["ja-JP"] })
+            .toProperties(sessionOptions);
+
+        expect(properties.asr).toMatchObject({ language: "ja-JP" });
+        expect(properties.turn_detection?.config).toBeUndefined();
+    });
+
+    test("allows semantic EoS with one English or Chinese language", () => {
+        const properties = baseAgent()
+            .withTurnDetection({ language: "zh-CN", config: { end_of_speech: { mode: "semantic" } } })
+            .toProperties(sessionOptions);
+
+        expect(properties.asr).toMatchObject({ language: "zh-CN" });
+        expect(properties.turn_detection).toMatchObject({ config: { end_of_speech: { mode: "semantic" } } });
+    });
+
+    test("rejects a language list with semantic EoS at runtime", () => {
+        const agent = baseAgent().withTurnDetection({
+            language: ["en-US", "zh-CN"],
+            config: { end_of_speech: { mode: "semantic" } },
+        } as never);
+
+        expect(() => agent.toProperties(sessionOptions)).toThrow(/cannot be a list/);
+    });
+
+    test("rejects semantic EoS with a non English or Chinese language at runtime", () => {
+        const agent = baseAgent().withTurnDetection({
+            language: "fr-FR",
+            config: { end_of_speech: { mode: "semantic" } },
+        } as never);
+
+        expect(() => agent.toProperties(sessionOptions)).toThrow(/only English and Chinese/);
+    });
+
+    test("rejects empty and unknown language lists", () => {
+        expect(() =>
+            baseAgent()
+                .withTurnDetection({ language: [] as never })
+                .toProperties(sessionOptions),
+        ).toThrow(/must not be an empty list/);
+        expect(() =>
+            baseAgent()
+                .withTurnDetection({ language: ["en-US", "xx-XX" as never] })
+                .toProperties(sessionOptions),
+        ).toThrow(/Invalid turnDetection.language: xx-XX/);
+    });
+});
