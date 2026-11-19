@@ -50,7 +50,6 @@ import {
     FishAudioTTS,
     GenericTTS,
     GoogleTTS,
-    HumeAITTS,
     MicrosoftTTS,
     MiniMaxTTS,
     MurfTTS,
@@ -1429,24 +1428,6 @@ describe("TTS vendor coverage", () => {
         expect(p.tts?.vendor).toBe("deepgram");
         expect((p.tts?.params as Record<string, unknown>)?.api_key).toBe("dg-tts-key");
         expect((p.tts?.params as Record<string, unknown>)?.model).toBe("aura-2-thalia-en");
-    });
-
-    test("HumeAITTS serializes key, voice_id, provider", () => {
-        const p = new Agent({ client: TEST_AGENT_CLIENT })
-            .withLlm(STUB_LLM)
-            .withTts(
-                new HumeAITTS({
-                    key: "hume-key",
-                    voiceId: "hume-voice-id",
-                    provider: "HUME_AI",
-                }),
-            )
-            .toProperties({ ...SESSION_OPTS });
-
-        expect(p.tts?.vendor).toBe("humeai");
-        expect(p.tts?.params?.key).toBe("hume-key");
-        expect((p.tts?.params as Record<string, unknown>)?.voice_id).toBe("hume-voice-id");
-        expect((p.tts?.params as Record<string, unknown>)?.provider).toBe("HUME_AI");
     });
 
     test("RimeTTS serializes api_key, speaker, modelId", () => {

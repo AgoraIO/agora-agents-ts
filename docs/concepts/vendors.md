@@ -45,7 +45,6 @@ const llm = new OpenAI({
 | `GoogleTTS`     | Google Cloud TTS | Configurable                            |
 | `GeminiTTS`     | Google Gemini TTS | Not configurable; production routing   |
 | `AmazonTTS`     | Amazon Polly     | Configurable                            |
-| `HumeAITTS`     | Hume AI          | Configurable                            |
 | `RimeTTS`       | Rime             | Configurable                            |
 | `FishAudioTTS`  | Fish Audio       | Configurable                            |
 | `MiniMaxTTS`    | MiniMax          | `model` for supported Agora-managed models; BYOK accepts `key`, `groupId`, `model`, `voiceId`, and `url` |

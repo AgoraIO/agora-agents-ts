@@ -8,7 +8,6 @@ import {
     GenericTTS,
     GoogleTTS,
     GradiumTTS,
-    HumeAITTS,
     MicrosoftTTS,
     MiniMaxTTS,
     MistralTTS,
@@ -175,14 +174,6 @@ describe("TTS vendor helpers", () => {
 
         expect(new OpenAITTS({ voice: "coral" }).toConfig().params).toEqual({
             voice: "coral",
-        });
-
-        expect(
-            new HumeAITTS({ key: "hume-key", voiceId: "voice", provider: "CUSTOM_VOICE" }).toConfig().params,
-        ).toMatchObject({
-            key: "hume-key",
-            voice_id: "voice",
-            provider: "CUSTOM_VOICE",
         });
 
         expect(
