@@ -92,6 +92,18 @@ Set the avatar vendor. The `this` constraint enforces that the Agent's TTS sampl
 
 Configure cascading-flow turn detection. Use `language` for the Agora interaction language, `config.start_of_speech` and `config.end_of_speech` for SOS/EOS detection, `withInterruption()` for interruption behavior, and MLLM vendor `turnDetection` for MLLM turn detection.
 
+`language` takes one language or a list. AgentKit sends a list to `asr.language` as one comma-separated string. When the list has more than one language and `config.end_of_speech.mode` is unset, AgentKit sends `end_of_speech.mode: "vad"` (silence VAD).
+
+Semantic end of speech supports one English or Chinese language only (`en-US`, `en-IN`, `zh-CN`, `zh-HK`, `zh-TW`). TypeScript reports a list, or any other language, with `end_of_speech.mode: "semantic"` as a compile error, and AgentKit throws at runtime for untyped callers.
+
+```typescript
+// Sends asr.language "en-US,es-ES" and end_of_speech.mode "vad"
+agent.withTurnDetection({ language: ["en-US", "es-ES"] });
+
+// Compile error: semantic end of speech takes one English or Chinese language
+// agent.withTurnDetection({ language: ["en-US", "zh-CN"], config: { end_of_speech: { mode: "semantic" } } });
+```
+
 ### `withInterruption(config: InterruptionConfig): Agent<TTSSampleRate, TArea>`
 
 Configure unified interruption behavior using the top-level `interruption` object. Use this for `start_of_speech` and `keywords` interruption modes.
