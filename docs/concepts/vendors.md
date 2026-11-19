@@ -85,6 +85,8 @@ The `sampleRate` is critical when using avatars. See [Avatar Integration](../gui
 | Class             | Provider          | Key constructor params                           |
 | ----------------- | ----------------- | ------------------------------------------------ |
 | `SpeechmaticsSTT` | Speechmatics      | `key`, `language`, `uri?`; deprecated `apiKey?`  |
+| `ElevenLabsSTT`   | ElevenLabs (global) | `apiKey`; optional `additionalParams` |
+| `FishAudioSTT`    | Fish Audio (global) | `apiKey`; optional `additionalParams` |
 | `DeepgramSTT`     | Deepgram          | `model` for Agora-managed `nova-2`/`nova-3`; `apiKey` for BYOK; `language?`, `smartFormat?`, `keyterm?` |
 | `MicrosoftSTT`    | Azure Speech      | `key`, `region`, `language`                      |
 | `OpenAISTT`       | OpenAI Whisper    | `apiKey`, `model?`, `language?`, `prompt?`       |
@@ -159,7 +161,7 @@ CN vendor classes use the same builder methods (`.withLlm()`, `.withStt()`, `.wi
 |---|---|
 | LLM | `AliyunLLM`, `BytedanceLLM`, `DeepSeekLLM`, `TencentLLM`, `CustomLLM` |
 | MLLM | `QwenOmni` |
-| STT | `FengmingSTT`, `StepFunSTT`, `TencentSTT`, `MicrosoftCNSTT`, `XfyunSTT`, `XfyunBigModelSTT`, `XfyunDialectSTT` |
+| STT | `QwenSTT`, `FengmingSTT`, `StepFunSTT`, `TencentSTT`, `MicrosoftCNSTT`, `XfyunSTT`, `XfyunBigModelSTT`, `XfyunDialectSTT` |
 | TTS | `GenericTTS` (shared with Global), `MiniMaxCNTTS`, `MiniMaxDuplexTTS` (CN only), `MicrosoftCNTTS`, `TencentTTS`, `CosyVoiceTTS`, `BytedanceDuplexTTS`, `StepFunTTS` |
 | Avatar | `SensetimeAvatar`, `SpatiusAvatar` |
 

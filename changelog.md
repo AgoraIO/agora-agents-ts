@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [v2.14.1] — 2026-11-18
+## [v2.15.0] — 2026-11-19
+
+### Added
+
+- **ElevenLabs ASR** — Added the global `ElevenLabsSTT` provider with typed API keys and additional parameters for Engine v2.16.
+- **Fish Audio ASR** — Added the global `FishAudioSTT` provider with typed API keys and additional parameters.
+- **Qwen ASR** — Added the mainland China `QwenSTT` provider with typed options and regional scope checks. Generated ASR types and public exports support all three providers. Recognition language follows the agent's turn-detection configuration.
 
 ### Fixed
 

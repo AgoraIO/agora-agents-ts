@@ -5,7 +5,7 @@ import { AudioScenario, CredentialMode } from "../../../src/agentkit/constants.j
 import type { SttConfig } from "../../../src/agentkit/types.js";
 import { AkoolAvatar, AnamAvatar, LemonSlice, Protoface, Tavus } from "../../../src/agentkit/vendors/avatar.js";
 import { BaseSTT } from "../../../src/agentkit/vendors/base.js";
-import { MiniMaxDuplexTTS, SpatiusAvatar, StepFunSTT } from "../../../src/agentkit/vendors/cn.js";
+import { MiniMaxDuplexTTS, QwenSTT, SpatiusAvatar, StepFunSTT } from "../../../src/agentkit/vendors/cn.js";
 import {
     AmazonBedrock,
     Anthropic,
@@ -31,6 +31,8 @@ import {
     AresSTT,
     AssemblyAISTT,
     DeepgramSTT,
+    ElevenLabsSTT,
+    FishAudioSTT,
     GeminiSTT,
     GoogleSTT,
     MicrosoftSTT,
@@ -1985,6 +1987,51 @@ test("GPT Live keeps MCP on mllm and main parameters outside vendor params", () 
     expect(properties.mllm).toMatchObject({ enable: true, mcp_servers: servers, params: { prompt: "Be brief" } });
     expect(properties.mllm?.params).not.toHaveProperty("mcp_servers");
     expect(properties.mllm?.params).not.toHaveProperty("silence_config");
+});
+
+describe("STT start request serialization", () => {
+    test.each([
+        { Provider: ElevenLabsSTT, vendor: "elevenlabs", area: Area.US },
+        { Provider: FishAudioSTT, vendor: "fishaudio", area: Area.US },
+        { Provider: QwenSTT, vendor: "qwen", area: Area.CN },
+    ] as const)("serializes $vendor through AgentKit", async ({ Provider, vendor, area }) => {
+        const additionalParams = { api_key: "ignored", enabled: false, keywords: [] };
+        const stt = new Provider({ apiKey: "asr-key", additionalParams });
+        const fetchMock = vi.fn<typeof fetch>(
+            async () =>
+                new Response(JSON.stringify({ agent_id: "agent-1" }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                }),
+        );
+        const client = new AgoraClient({
+            area,
+            appId: "0".repeat(32),
+            appCertificate: "1".repeat(32),
+            fetch: fetchMock,
+        });
+        const agent = new Agent({ client, turnDetection: { language: "zh-CN" } })
+            .withStt(stt)
+            .withLlm(new OpenAI({ model: "gpt-4o-mini" }))
+            .withTts(new MiniMaxTTS({ model: "speech-2.6-turbo", voiceId: "voice" }));
+        const options = {
+            channel: "room",
+            token: "rtc-token",
+            agentUid: "1",
+            remoteUids: ["100"],
+        };
+        const expected = {
+            vendor,
+            language: "zh-CN",
+            params: { api_key: "asr-key", enabled: false, keywords: [] },
+        };
+        expect(agent.toProperties(options).asr).toEqual(expected);
+        await agent.createSession(options).start();
+        expect(fetchMock).toHaveBeenCalledOnce();
+        const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+        expect(body.properties.asr).toEqual(expected);
+        expect(additionalParams.api_key).toBe("ignored");
+    });
 });
 
 describe("MiniMax duplex and StepFun session configuration", () => {

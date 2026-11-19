@@ -411,6 +411,38 @@ For those models, omit `key` to use Agora-managed credentials. In that configura
 
 ## STT vendors
 
+### ElevenLabsSTT
+
+Global ElevenLabs ASR provider (`asr.vendor: "elevenlabs"`). The explicit key takes precedence over `additionalParams.api_key`. REST `asr.language` comes from the agent's `turnDetection.language` (default `en-US`).
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Non-empty ElevenLabs ASR API key |
+| `additionalParams` | `Record<string, unknown>` | No | Additional provider parameters |
+
+<!-- snippet: executable -->
+```typescript
+import { ElevenLabsSTT } from 'agora-agents';
+
+const stt = new ElevenLabsSTT({ apiKey: 'your-elevenlabs-key' });
+```
+
+### FishAudioSTT
+
+Global Fish Audio ASR provider (`asr.vendor: "fishaudio"`). The explicit key takes precedence over `additionalParams.api_key`. REST `asr.language` comes from the agent's `turnDetection.language` (default `en-US`).
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Non-empty Fish Audio ASR API key |
+| `additionalParams` | `Record<string, unknown>` | No | Additional provider parameters |
+
+<!-- snippet: executable -->
+```typescript
+import { FishAudioSTT } from 'agora-agents';
+
+const stt = new FishAudioSTT({ apiKey: 'your-fishaudio-key' });
+```
+
 ### DeepgramSTT
 
 <!-- snippet: fragment -->
@@ -866,6 +898,22 @@ const stt = new StepFunSTT({ apiKey: 'your-stepfun-key' });
 ```
 
 ### CN STT vendors
+
+#### QwenSTT
+
+Mainland China Qwen ASR provider (`asr.vendor: "qwen"`). The explicit key takes precedence over `additionalParams.api_key`. Set the agent's `turnDetection: { language: 'zh-CN' }` for Chinese recognition; AgentKit writes REST `asr.language` from it (default `en-US`).
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Non-empty DashScope API key |
+| `additionalParams` | `Record<string, unknown>` | No | Additional Qwen ASR parameters |
+
+<!-- snippet: executable -->
+```typescript
+import { QwenSTT } from 'agora-agents';
+
+const stt = new QwenSTT({ apiKey: 'your-dashscope-key' });
+```
 
 | Class | Key options |
 |---|---|
