@@ -119,9 +119,6 @@ export type {
     HeyGenAvatarConfig,
     HeyGenAvatarOptions,
     HeyGenSampleRate,
-    HumeAITTSOptions,
-    HumeAiTts,
-    HumeAiTtsParams,
     InterruptionConfig,
     InterruptionMode,
     InterruptMode,
@@ -344,7 +341,6 @@ export {
     generateRtcToken,
     // Avatar vendors
     HeyGenAvatar,
-    HumeAITTS,
     InterruptionDisabledStrategy,
     InterruptionDisabledStrategyAppend,
     InterruptionDisabledStrategyIgnore,

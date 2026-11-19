@@ -48,8 +48,6 @@ export * from "./GoogleTtsParams.js";
 export * from "./GoogleTtsVoiceSelectionParams.js";
 export * from "./GradiumTts.js";
 export * from "./GradiumTtsParams.js";
-export * from "./HumeAiTts.js";
-export * from "./HumeAiTtsParams.js";
 export * from "./Llm.js";
 export * from "./LlmParams.js";
 export * from "./LlmTool.js";

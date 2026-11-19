@@ -27,8 +27,6 @@ import type {
     GoogleTts as GoogleTtsType,
     GradiumTtsParams as GradiumTtsParamsType,
     GradiumTts as GradiumTtsType,
-    HumeAiTtsParams as HumeAiTtsParamsType,
-    HumeAiTts as HumeAiTtsType,
     ListAgentsResponse,
     Llm,
     LlmToolExecution as LlmToolExecutionType,
@@ -775,8 +773,6 @@ export type CartesiaTts = CartesiaTtsType;
 export type CartesiaTtsParams = CartesiaTtsParamsType;
 export type OpenAiTts = OpenAiTtsType;
 export type OpenAiTtsParams = OpenAiTtsParamsType;
-export type HumeAiTts = HumeAiTtsType;
-export type HumeAiTtsParams = HumeAiTtsParamsType;
 export type RimeTts = RimeTtsType;
 export type RimeTtsParams = RimeTtsParamsType;
 export type FishAudioTts = FishAudioTtsType;

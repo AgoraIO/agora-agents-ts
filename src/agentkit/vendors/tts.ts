@@ -776,67 +776,6 @@ export class TypecastTTS extends BaseTTS {
 }
 
 /**
- * Constructor options for Hume AI TTS.
- */
-export interface HumeAITTSOptions {
-    /** Hume AI API key */
-    key: string;
-    /** Configuration ID */
-    configId?: string;
-    /** Hume AI voice ID */
-    voiceId: string;
-    /** Base URL for the Hume AI API */
-    baseUrl?: string;
-    /** Voice provider type */
-    provider: "HUME_AI" | "CUSTOM_VOICE";
-    /** Playback speed of the generated speech */
-    speed?: number;
-    /** Duration of silence in seconds to add at the end of each utterance */
-    trailingSilence?: number;
-    /** Skip patterns for bracketed content */
-    skipPatterns?: number[];
-}
-
-/**
- * Hume AI TTS vendor.
- *
- * @example
- * ```typescript
- * const tts = new HumeAITTS({
- *   key: process.env.HUME_API_KEY,
- *   voiceId: 'voice-id',
- *   provider: 'CUSTOM_VOICE',
- * });
- * ```
- */
-export class HumeAITTS extends BaseTTS {
-    private readonly options: HumeAITTSOptions;
-
-    constructor(options: HumeAITTSOptions) {
-        super();
-        this.options = options;
-    }
-
-    toConfig(): TtsConfig {
-        const { key, configId, voiceId, baseUrl, provider, speed, trailingSilence, skipPatterns } = this.options;
-
-        return {
-            vendor: "humeai",
-            params: {
-                key,
-                voice_id: voiceId,
-                ...(baseUrl && { base_url: baseUrl }),
-                provider,
-                ...(speed !== undefined && { speed }),
-                ...(trailingSilence !== undefined && { trailing_silence: trailingSilence }),
-                ...(configId && { config_id: configId }),
-            },
-            ...(skipPatterns && { skip_patterns: skipPatterns }),
-        };
-    }
-}
-
-/**
  * Constructor options for Rime TTS.
  *
  * - `credentialMode: CredentialMode.Managed` requires `baseUrl` and `modelId`

@@ -12,7 +12,6 @@ export type Tts =
     | Agora.Tts.Murf
     | Agora.Tts.Cartesia
     | Agora.Tts.Openai
-    | Agora.Tts.Humeai
     | Agora.Tts.Rime
     | Agora.Tts.Fishaudio
     | Agora.Tts.Google
@@ -66,10 +65,6 @@ export namespace Tts {
 
     export interface Openai extends Agora.OpenAiTts {
         vendor: "openai";
-    }
-
-    export interface Humeai extends Agora.HumeAiTts {
-        vendor: "humeai";
     }
 
     export interface Rime extends Agora.RimeTts {

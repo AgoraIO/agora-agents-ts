@@ -385,7 +385,6 @@ The following vendors share a similar pattern. See `src/agentkit/vendors/tts.ts`
 | `MistralTTS` | `apiKey`, `model?`, `voice?`, `additionalParams?` |
 | `TypecastTTS` | `apiKey`, `voiceId`, `model`, `additionalParams?`, `skipPatterns?` |
 | `GenericTTS` | `url`, `headers?`, `apiKey?`, `model?`, `voice?`, `speed?`, `sampleRate?`, `responseFormat?`, `instruction?`, `additionalParams?`, `skipPatterns?` |
-| `HumeAITTS` | `key`, `voiceId`, `provider`, `configId?`, `baseUrl?`, `speed?`, `trailingSilence?` |
 | `FishAudioTTS` | `referenceId`, `backend`, `credentialMode?`; `key` required unless `credentialMode: CredentialMode.Managed` |
 | `MiniMaxTTS` | `key?`, `groupId?`, `model`, `voiceId?`, `url?` |
 | `MurfTTS` | `key`, `voiceId?`, `baseUrl?`, `locale?`, `rate?`, `pitch?`, `model?`, `sampleRate?` |
